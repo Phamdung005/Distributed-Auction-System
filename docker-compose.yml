@@ -1,0 +1,105 @@
+services:
+  # MongoDB Database
+  mongodb:
+    image: mongo:7.0
+    container_name: auction-mongodb
+    restart: always
+    ports:
+      - "27017:27017"
+    environment:
+      MONGO_INITDB_ROOT_USERNAME: admin
+      MONGO_INITDB_ROOT_PASSWORD: admin123
+      MONGO_INITDB_DATABASE: auction_db
+    volumes:
+      - mongodb_data:/data/db
+    networks:
+      - auction-network
+
+  # Redis Cache & Pub/Sub
+  redis:
+    image: redis:7-alpine
+    container_name: auction-redis
+    restart: always
+    ports:
+      - "6379:6379"
+    command: redis-server --appendonly yes --requirepass redis123
+    volumes:
+      - redis_data:/data
+    networks:
+      - auction-network
+
+  # Auth Service - Xác thực người dùng
+  auth-service:
+    build:
+      context: .
+      dockerfile: ./services/auth-service/Dockerfile
+    container_name: auth-service
+    restart: always
+    ports:
+      - "3001:3001"
+    environment:
+      - NODE_ENV=production
+      - PORT=3001
+      - MONGODB_URI=mongodb://admin:admin123@mongodb:27017/auction_db?authSource=admin
+      - REDIS_URL=redis://:redis123@redis:6379
+      - JWT_SECRET=your-super-secret-jwt-key-change-in-production
+      - JWT_EXPIRE=7d
+    depends_on:
+      - mongodb
+      - redis
+    networks:
+      - auction-network
+
+  # Auction Service - Quản lý đấu giá
+  auction-service:
+    build:
+      context: .
+      dockerfile: ./services/auction-service/Dockerfile
+    container_name: auction-service
+    restart: always
+    ports:
+      - "3002:3002"
+    environment:
+      - NODE_ENV=production
+      - PORT=3002
+      - MONGODB_URI=mongodb://admin:admin123@mongodb:27017/auction_db?authSource=admin
+      - REDIS_URL=redis://:redis123@redis:6379
+      - AUTH_SERVICE_URL=http://auth-service:3001
+    depends_on:
+      - mongodb
+      - redis
+      - auth-service
+    networks:
+      - auction-network
+
+  # Bidding Service - Xử lý đấu giá realtime
+  bidding-service:
+    build:
+      context: .
+      dockerfile: ./services/bidding-service/Dockerfile
+    container_name: bidding-service
+    restart: always
+    ports:
+      - "3003:3003"
+    environment:
+      - NODE_ENV=production
+      - PORT=3003
+      - MONGODB_URI=mongodb://admin:admin123@mongodb:27017/auction_db?authSource=admin
+      - REDIS_URL=redis://:redis123@redis:6379
+      - AUTH_SERVICE_URL=http://auth-service:3001
+      - AUCTION_SERVICE_URL=http://auction-service:3002
+    depends_on:
+      - mongodb
+      - redis
+      - auth-service
+      - auction-service
+    networks:
+      - auction-network
+
+networks:
+  auction-network:
+    driver: bridge
+
+volumes:
+  mongodb_data:
+  redis_data:
