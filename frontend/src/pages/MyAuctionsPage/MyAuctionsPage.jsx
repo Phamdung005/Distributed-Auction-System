@@ -3,7 +3,7 @@ import { Link } from 'react-router-dom';
 import { toast } from 'react-toastify';
 import { format } from 'date-fns';
 import { vi } from 'date-fns/locale';
-import { auctionAPI } from '../services/api';
+import { auctionAPI } from '../../services/api';
 import './MyAuctionsPage.css';
 
 const MyAuctionsPage = () => {

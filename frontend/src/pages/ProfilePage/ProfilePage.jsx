@@ -2,8 +2,8 @@ import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useForm } from 'react-hook-form';
 import { toast } from 'react-toastify';
-import { useAuth } from '../contexts/AuthContext';
-import { authAPI } from '../services/api';
+import { useAuth } from '../../contexts/AuthContext';
+import { authAPI } from '../../services/api';
 import './ProfilePage.css';
 
 const ProfilePage = () => {

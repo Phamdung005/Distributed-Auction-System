@@ -4,19 +4,19 @@ import { toast } from 'react-toastify';
 import { format } from 'date-fns';
 import { vi } from 'date-fns/locale';
 
-import { useAuth } from '../contexts/AuthContext';
-import { auctionAPI, biddingAPI } from '../services/api';
-import { 
-  connectSocket, 
-  disconnectSocket, 
-  joinAuction, 
+import { useAuth } from '../../contexts/AuthContext';
+import { auctionAPI, biddingAPI } from '../../services/api';
+import {
+  connectSocket,
+  disconnectSocket,
+  joinAuction,
   leaveAuction,
   placeBid,
   onBidUpdate,
   onUserJoined,
   onUserLeft,
-  removeListeners 
-} from '../services/socket';
+  removeListeners
+} from '../../services/socket';
 
 import './AuctionDetailPage.css';
 
@@ -144,7 +144,7 @@ const AuctionDetailPage = () => {
   if (!auction) return null;
 
   const isActive = auction.status === 'active';
-  const timeRemaining = auction.timeRemaining > 0 
+  const timeRemaining = auction.timeRemaining > 0
     ? Math.floor(auction.timeRemaining / 60) + ' phút'
     : 'Đã kết thúc';
 
@@ -223,8 +223,8 @@ const AuctionDetailPage = () => {
                     min={auction.currentPrice + auction.minBidIncrement}
                     step={auction.minBidIncrement}
                   />
-                  <button 
-                    type="submit" 
+                  <button
+                    type="submit"
                     className="btn btn-success"
                     disabled={bidding || !connected}
                   >
@@ -234,19 +234,19 @@ const AuctionDetailPage = () => {
               </form>
 
               <div className="quick-bid-buttons">
-                <button 
+                <button
                   className="btn btn-secondary"
                   onClick={() => quickBid(auction.minBidIncrement)}
                 >
                   +{auction.minBidIncrement.toLocaleString('vi-VN')}
                 </button>
-                <button 
+                <button
                   className="btn btn-secondary"
                   onClick={() => quickBid(auction.minBidIncrement * 5)}
                 >
                   +{(auction.minBidIncrement * 5).toLocaleString('vi-VN')}
                 </button>
-                <button 
+                <button
                   className="btn btn-secondary"
                   onClick={() => quickBid(auction.minBidIncrement * 10)}
                 >

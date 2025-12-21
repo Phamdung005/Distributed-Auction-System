@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useForm } from 'react-hook-form';
 import { toast } from 'react-toastify';
-import { auctionAPI } from '../services/api';
+import { auctionAPI } from '../../services/api';
 import './CreateAuctionPage.css';
 
 const CreateAuctionPage = () => {
