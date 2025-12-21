@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { useForm } from 'react-hook-form';
-import { useAuth } from '../contexts/AuthContext';
+import { useAuth } from '../../contexts/AuthContext';
 import './AuthPage.css';
 
 const RegisterPage = () => {
@@ -133,8 +133,8 @@ const RegisterPage = () => {
               {errors.confirmPassword && <p className="form-error">{errors.confirmPassword.message}</p>}
             </div>
 
-            <button 
-              type="submit" 
+            <button
+              type="submit"
               className="btn btn-success btn-block"
               disabled={loading}
             >

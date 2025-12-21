@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { useForm } from 'react-hook-form';
-import { useAuth } from '../contexts/AuthContext';
+import { useAuth } from '../../contexts/AuthContext';
 import './AuthPage.css';
 
 const LoginPage = () => {
@@ -62,8 +62,8 @@ const LoginPage = () => {
               {errors.password && <p className="form-error">{errors.password.message}</p>}
             </div>
 
-            <button 
-              type="submit" 
+            <button
+              type="submit"
               className="btn btn-primary btn-block"
               disabled={loading}
             >
