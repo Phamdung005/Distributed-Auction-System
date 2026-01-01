@@ -22,7 +22,7 @@ Tạo file `.env` ở thư mục gốc:
 
 ```bash
 # MongoDB
-MONGODB_URI=mongodb://mongodb:27017/auction-system
+MONGODB_URI=mongodb://mongodb:27017/auction-db
 
 # Redis
 REDIS_HOST=redis
@@ -125,7 +125,7 @@ Tạo file `.env` ở mỗi service:
 **services/auth-service/.env**
 ```bash
 PORT=3001
-MONGODB_URI=mongodb://localhost:27017/auction-system
+MONGODB_URI=mongodb://localhost:27018/auction_db
 REDIS_HOST=localhost
 REDIS_PORT=6379
 JWT_SECRET=your-super-secret-jwt-key
@@ -136,7 +136,7 @@ NODE_ENV=development
 **services/auction-service/.env**
 ```bash
 PORT=3002
-MONGODB_URI=mongodb://localhost:27017/auction-system
+MONGODB_URI=mongodb://localhost:27018/auction_db
 REDIS_HOST=localhost
 REDIS_PORT=6379
 JWT_SECRET=your-super-secret-jwt-key
@@ -147,7 +147,7 @@ NODE_ENV=development
 **services/bidding-service/.env**
 ```bash
 PORT=3003
-MONGODB_URI=mongodb://localhost:27017/auction-system
+MONGODB_URI=mongodb://localhost:27018/auction_db
 REDIS_HOST=localhost
 REDIS_PORT=6379
 JWT_SECRET=your-super-secret-jwt-key
@@ -365,7 +365,7 @@ mongosh
 show dbs
 
 # Use database
-use auction-system
+use auction_db
 
 # Show collections
 show collections
@@ -415,7 +415,7 @@ docker-compose up -d
 ```bash
 # MongoDB
 mongosh
-use auction-system
+use auction_db
 db.dropDatabase()
 
 # Redis

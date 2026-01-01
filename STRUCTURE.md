@@ -272,7 +272,7 @@ npm run dev
 ### Xem MongoDB
 ```bash
 # Connect với MongoDB Compass
-mongodb://admin:admin123@localhost:27017
+mongodb://admin:admin123@localhost:27018
 ```
 
 ### Xem Redis

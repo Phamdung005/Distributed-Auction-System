@@ -45,7 +45,7 @@ docker-compose down
 - **auth-service**: `http://localhost:3001`
 - **auction-service**: `http://localhost:3002`
 - **bidding-service**: `http://localhost:3003` (WebSocket)
-- **MongoDB**: `localhost:27017`
+- **MongoDB**: `localhost:27018`
 - **Redis**: `localhost:6379`
 
 ## 🔐 Environment Variables

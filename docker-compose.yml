@@ -5,10 +5,8 @@ services:
     container_name: auction-mongodb
     restart: always
     ports:
-      - "27017:27017"
+      - "27018:27017"
     environment:
-      MONGO_INITDB_ROOT_USERNAME: admin
-      MONGO_INITDB_ROOT_PASSWORD: admin123
       MONGO_INITDB_DATABASE: auction_db
     volumes:
       - mongodb_data:/data/db
@@ -40,7 +38,7 @@ services:
     environment:
       - NODE_ENV=production
       - PORT=3001
-      - MONGODB_URI=mongodb://admin:admin123@mongodb:27017/auction_db?authSource=admin
+      - MONGODB_URI=mongodb://mongodb:27017/auction_db
       - REDIS_URL=redis://:redis123@redis:6379
       - JWT_SECRET=your-super-secret-jwt-key-change-in-production
       - JWT_EXPIRE=7d
@@ -62,7 +60,7 @@ services:
     environment:
       - NODE_ENV=production
       - PORT=3002
-      - MONGODB_URI=mongodb://admin:admin123@mongodb:27017/auction_db?authSource=admin
+      - MONGODB_URI=mongodb://mongodb:27017/auction_db
       - REDIS_URL=redis://:redis123@redis:6379
       - AUTH_SERVICE_URL=http://auth-service:3001
     depends_on:
@@ -84,7 +82,7 @@ services:
     environment:
       - NODE_ENV=production
       - PORT=3003
-      - MONGODB_URI=mongodb://admin:admin123@mongodb:27017/auction_db?authSource=admin
+      - MONGODB_URI=mongodb://mongodb:27017/auction_db
       - REDIS_URL=redis://:redis123@redis:6379
       - AUTH_SERVICE_URL=http://auth-service:3001
       - AUCTION_SERVICE_URL=http://auction-service:3002
