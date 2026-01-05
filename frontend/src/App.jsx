@@ -8,13 +8,9 @@ import PrivateRoute from './components/auth';
 import Navbar from './components/layout/Navbar';
 
 // Pages
-import LoginPage from './pages/LoginPage';
-import RegisterPage from './pages/RegisterPage';
-import HomePage from './pages/HomePage';
-import AuctionDetailPage from './pages/AuctionDetailPage';
-import CreateAuctionPage from './pages/CreateAuctionPage';
-import MyAuctionsPage from './pages/MyAuctionsPage';
-import ProfilePage from './pages/ProfilePage';
+import { LoginPage, RegisterPage } from './pages/AuthPage';
+import { HomePage, AuctionDetailPage, ProfilePage } from './pages/BidderPage';
+import { CreateAuctionPage, MyAuctionsPage } from './pages/SellerPage';
 
 function App() {
     return (
