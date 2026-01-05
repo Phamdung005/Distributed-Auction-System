@@ -31,4 +31,19 @@ const authenticate = async (req, res, next) => {
     }
 };
 
-module.exports = { authenticate };
+/**
+ * Middleware kiểm tra role
+ */
+const authorize = (...roles) => {
+    return (req, res, next) => {
+        if (!roles.includes(req.user.role)) {
+            return res.status(403).json({
+                success: false,
+                message: 'Bạn không có quyền truy cập'
+            });
+        }
+        next();
+    };
+};
+
+module.exports = { authenticate, authorize };

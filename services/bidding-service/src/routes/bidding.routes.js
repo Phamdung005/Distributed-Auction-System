@@ -1,7 +1,7 @@
 const express = require('express');
 const router = express.Router();
 const biddingController = require('../controllers/bidding.controller');
-const { authenticate } = require('../middlewares/auth.middleware');
+const { authenticate, authorize } = require('../middlewares/auth.middleware');
 
 /**
  * @route   GET /api/bidding/auction/:auctionId
@@ -29,6 +29,6 @@ router.get('/auction/:auctionId/can-bid', authenticate, biddingController.canBid
  * @desc    Kết thúc auction
  * @access  Private (Admin)
  */
-router.post('/auction/:auctionId/end', authenticate, biddingController.endAuction);
+router.post('/auction/:auctionId/end', authenticate, authorize('admin'), biddingController.endAuction);
 
 module.exports = router;

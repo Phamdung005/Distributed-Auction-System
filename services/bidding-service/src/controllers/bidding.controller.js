@@ -56,8 +56,9 @@ class BiddingController {
         try {
             const { auctionId } = req.params;
             const userId = req.user.userId; // Từ auth middleware
+            const role = req.user.role;
 
-            const result = await biddingService.canUserBid(userId, auctionId);
+            const result = await biddingService.canUserBid(userId, auctionId, role);
 
             res.status(200).json({
                 success: true,

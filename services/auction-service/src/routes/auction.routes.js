@@ -1,7 +1,7 @@
 const express = require('express');
 const router = express.Router();
 const auctionController = require('../controllers/auction.controller');
-const { authenticate } = require('../middlewares/auth.middleware');
+const { authenticate, authorize } = require('../middlewares/auth.middleware');
 const { createAuctionValidation, updateAuctionValidation } = require('../middlewares/validator');
 
 /**
@@ -23,7 +23,7 @@ router.get('/active', auctionController.getActiveAuctions);
  * @desc    Lấy auctions của user hiện tại
  * @access  Private
  */
-router.get('/my', authenticate, auctionController.getMyAuctions);
+router.get('/my', authenticate, authorize('seller'), auctionController.getMyAuctions);
 
 /**
  * @route   GET /api/auctions/:id
@@ -35,29 +35,29 @@ router.get('/:id', auctionController.getAuctionById);
 /**
  * @route   POST /api/auctions
  * @desc    Tạo auction mới
- * @access  Private
+ * @access  Private (Seller)
  */
-router.post('/', authenticate, createAuctionValidation, auctionController.createAuction);
+router.post('/', authenticate, authorize('seller'), createAuctionValidation, auctionController.createAuction);
 
 /**
  * @route   PUT /api/auctions/:id
  * @desc    Cập nhật auction
- * @access  Private (Owner)
+ * @access  Private (Seller, Owner)
  */
-router.put('/:id', authenticate, updateAuctionValidation, auctionController.updateAuction);
+router.put('/:id', authenticate, authorize('seller'), updateAuctionValidation, auctionController.updateAuction);
 
 /**
  * @route   DELETE /api/auctions/:id
  * @desc    Xóa auction
- * @access  Private (Owner)
+ * @access  Private (Seller, Owner)
  */
-router.delete('/:id', authenticate, auctionController.deleteAuction);
+router.delete('/:id', authenticate, authorize('seller'), auctionController.deleteAuction);
 
 /**
  * @route   POST /api/auctions/:id/cancel
  * @desc    Hủy auction
- * @access  Private (Owner)
+ * @access  Private (Seller, Owner)
  */
-router.post('/:id/cancel', authenticate, auctionController.cancelAuction);
+router.post('/:id/cancel', authenticate, authorize('seller'), auctionController.cancelAuction);
 
 module.exports = router;

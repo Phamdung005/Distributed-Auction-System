@@ -106,8 +106,14 @@ const initializeSocketHandlers = (io, redis) => {
                     return;
                 }
 
+                // Kiểm tra role trước (gửi lỗi nhanh)
+                if (socket.user.role !== 'bidder') {
+                    socket.emit('bid:error', { message: 'Chỉ bidder mới được đặt giá' });
+                    return;
+                }
+
                 // Kiểm tra user có thể bid không
-                const canBid = await biddingService.canUserBid(socket.user.userId, auctionId);
+                const canBid = await biddingService.canUserBid(socket.user.userId, auctionId, socket.user.role);
                 if (!canBid.canBid) {
                     socket.emit('bid:error', { message: canBid.reason });
                     return;
@@ -118,7 +124,8 @@ const initializeSocketHandlers = (io, redis) => {
                     redis,
                     auctionId,
                     socket.user.userId,
-                    amount
+                    amount,
+                    socket.user.role
                 );
 
                 // Gửi confirmation cho người bid

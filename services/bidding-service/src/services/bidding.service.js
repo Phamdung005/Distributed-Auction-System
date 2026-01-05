@@ -13,7 +13,19 @@ class BiddingService {
      * @param {number} bidAmount
      * @returns {Promise<Object>}
      */
-    async placeBid(redis, auctionId, bidderId, bidAmount) {
+    /**
+     * @param {Object} redis
+     * @param {string} auctionId
+     * @param {string} bidderId
+     * @param {number} bidAmount
+     * @param {string} role - Role của user (phải là 'bidder')
+     */
+    async placeBid(redis, auctionId, bidderId, bidAmount, role) {
+        // Chắn chắn chỉ bidder mới được đặt giá
+        if (role !== 'bidder') {
+            throw new Error('Chỉ bidder mới được đặt giá');
+        }
+
         // Tạo lock key để đảm bảo atomic operation
         const lockKey = `auction:${auctionId}:lock`;
         const lockValue = `${bidderId}-${Date.now()}`;
@@ -163,7 +175,12 @@ class BiddingService {
      * @param {string} auctionId
      * @returns {Promise<Object>}
      */
-    async canUserBid(userId, auctionId) {
+    async canUserBid(userId, auctionId, role) {
+        // Chỉ 'bidder' mới được phép đặt giá
+        if (role !== 'bidder') {
+            return { canBid: false, reason: 'Chỉ bidder mới được đặt giá' };
+        }
+
         const auction = await biddingRepository.getAuctionById(auctionId);
 
         if (!auction) {
