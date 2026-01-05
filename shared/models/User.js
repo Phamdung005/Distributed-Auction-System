@@ -70,9 +70,7 @@ const userSchema = new mongoose.Schema({
     timestamps: true // Tự động tạo createdAt và updatedAt
 });
 
-// Index để tối ưu query
-userSchema.index({ email: 1 });
-userSchema.index({ username: 1 });
+// Index đã được tạo tự động bởi unique: true, không cần khai báo lại
 
 /**
  * Middleware: Hash password trước khi lưu

@@ -5,19 +5,19 @@ import 'react-toastify/dist/ReactToastify.css';
 
 import { AuthProvider } from './contexts/AuthContext';
 import PrivateRoute from './components/auth';
-import Navbar from './components/layout/Navbar';
+import { NavbarSelector } from './components/layout/Navbar';
 
 // Pages
 import { LoginPage, RegisterPage } from './pages/AuthPage';
-import { HomePage, AuctionDetailPage, ProfilePage } from './pages/BidderPage';
+import { HomePage, AuctionDetailPage, ProfilePage, AuctionListPage, AuctionCommunityPage } from './pages/BidderPage';
 import { CreateAuctionPage, MyAuctionsPage } from './pages/SellerPage';
 
 function App() {
     return (
         <AuthProvider>
-            <Router>
+            <Router future={{ v7_startTransition: true, v7_relativeSplatPath: true }}>
                 <div className="webapp">
-                    <Navbar />
+                    <NavbarSelector />
                     <div className="container" style={{ marginTop: '80px', minHeight: 'calc(100vh - 80px)' }}>
                         <Routes>
                             {/* Public routes */}
@@ -40,6 +40,16 @@ function App() {
                             <Route path="/profile" element={
                                 <PrivateRoute>
                                     <ProfilePage />
+                                </PrivateRoute>
+                            } />
+                            <Route path="/auction-list" element={
+                                <PrivateRoute>
+                                    <AuctionListPage />
+                                </PrivateRoute>
+                            } />
+                            <Route path="/auction-community" element={
+                                <PrivateRoute>
+                                    <AuctionCommunityPage />
                                 </PrivateRoute>
                             } />
 

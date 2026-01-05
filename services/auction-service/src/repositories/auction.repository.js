@@ -1,4 +1,5 @@
 const Auction = require('shared/models/Auction');
+const User = require('shared/models/User');
 
 /**
  * Repository Layer cho Auction

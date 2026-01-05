@@ -1,7 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { auctionAPI } from '../../services/api';
 import AuctionCard from '../../components/auction/AuctionCard';
-import './HomePage.css';
 
 const HomePage = () => {
   const [auctions, setAuctions] = useState([]);

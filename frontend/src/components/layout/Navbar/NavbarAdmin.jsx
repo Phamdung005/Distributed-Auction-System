@@ -3,7 +3,7 @@ import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '../../../contexts/AuthContext';
 import './Navbar.css';
 
-const Navbar = () => {
+const NavbarAdmin = () => {
     const { user, isAuthenticated, logout } = useAuth();
     const navigate = useNavigate();
 
@@ -25,8 +25,6 @@ const Navbar = () => {
 
                         {isAuthenticated ? (
                             <>
-                                <Link to="/create-auction" className="navbar-link">Tạo đấu giá</Link>
-                                <Link to="/my-auctions" className="navbar-link">Đấu giá của tôi</Link>
                                 <div className="navbar-user">
                                     <span className="navbar-username">👤 {user?.fullName}</span>
                                     <span className="navbar-balance">
@@ -50,4 +48,4 @@ const Navbar = () => {
     );
 };
 
-export default Navbar;
+export default NavbarAdmin;
