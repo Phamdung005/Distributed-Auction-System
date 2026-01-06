@@ -9,8 +9,9 @@ import { NavbarSelector } from './components/layout/Navbar';
 
 // Pages
 import { LoginPage, RegisterPage } from './pages/AuthPage';
-import { HomePage, AuctionDetailPage, ProfilePage, AuctionListPage, AuctionCommunityPage } from './pages/BidderPage';
+import { HomePage, AuctionDetailPage, ProfilePage, AuctionListPage, AuctionCommunityPage, BidderNotification } from './pages/BidderPage';
 import { CreateAuctionPage, MyAuctionsPage } from './pages/SellerPage';
+import { SupportPage } from './components/support';
 
 function App() {
     return (
@@ -18,13 +19,14 @@ function App() {
             <Router future={{ v7_startTransition: true, v7_relativeSplatPath: true }}>
                 <div className="webapp">
                     <NavbarSelector />
-                    <div className="container" style={{ marginTop: '80px', minHeight: 'calc(100vh - 80px)' }}>
+                    <div className="container" style={{minHeight: 'calc(100vh - 80px)' }}>
                         <Routes>
                             {/* Public routes */}
                             <Route path="/login" element={<LoginPage />} />
                             <Route path="/register" element={<RegisterPage />} />
                             <Route path="/" element={<HomePage />} />
                             <Route path="/auction/:id" element={<AuctionDetailPage />} />
+                            <Route path="/support" element={<SupportPage />} />
 
                             {/* Protected routes */}
                             <Route path="/create-auction" element={
@@ -50,6 +52,11 @@ function App() {
                             <Route path="/auction-community" element={
                                 <PrivateRoute>
                                     <AuctionCommunityPage />
+                                </PrivateRoute>
+                            } />
+                            <Route path="/notifications" element={
+                                <PrivateRoute>
+                                    <BidderNotification />
                                 </PrivateRoute>
                             } />
 

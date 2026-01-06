@@ -1,7 +1,8 @@
-import React, { useState } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
+import React, {useState} from 'react';
+import { Link, useNavigate, NavLink as RouterNavLink } from 'react-router-dom';
 import { useAuth } from '../../../contexts/AuthContext';
-import { Gavel, Bell, Search, User, LogOut } from 'lucide-react';
+import { Gavel, Bell, LogOut, User, Search } from 'lucide-react';
+
 
 const NavLink = ({ to, children }) => (
     <Link
@@ -12,7 +13,8 @@ const NavLink = ({ to, children }) => (
     </Link>
 );
 
-const NavbarBidder = () => {
+
+const Navbar = () => {
     const { user, isAuthenticated, logout } = useAuth();
     const navigate = useNavigate();
     const [searchKeyword, setSearchKeyword] = useState('');
@@ -52,26 +54,19 @@ const NavbarBidder = () => {
                         />
                     </form>
                 </div>
-                <nav className="hidden xl:flex items-center mx-6 bg-gray-50/80 px-2 py-1 rounded-full border border-gray-100">
+                <nav className="hidden lg:flex items-center bg-gray-50/50 px-2 py-1 rounded-full border border-gray-100">
                     <NavLink to="/">Home</NavLink>
                     <NavLink to="/auction-list">Auctions</NavLink>
-                    <NavLink to="/auction-community">Community</NavLink>
                     <NavLink to="/support">Support</NavLink>
                 </nav>
-                <div className="flex items-center gap-2 lg:gap-4">
-                    <Link to="/notifications" className="p-2.5 bg-[#f5f0eb] text-gray-600 hover:text-[#f26c0d] hover:bg-orange-50 rounded-xl transition-all relative">
-                        <Bell size={22} />
-                    </Link>
+                <div className="flex items-center gap-3">
 
-                    <div className="h-8 w-[1px] bg-gray-200 mx-1 hidden sm:block"></div>
-                    <div className="flex items-center gap-3">
-                        <Link to="/profile" className="flex items-center gap-2 pl-1 pr-3 py-1 hover:bg-gray-50 rounded-full border border-transparent hover:border-gray-100 transition-all group">
-                            <div className="w-10 h-10 rounded-full bg-gradient-to-tr from-orange-500 to-orange-400 text-white flex items-center justify-center font-bold text-sm shadow-sm group-hover:scale-105 transition-transform border-2 border-white">
-                                {user?.username?.charAt(0).toUpperCase() || 'U'}
-                            </div>
-                            <div className="hidden lg:flex flex-col">
-                                <span className="text-sm font-bold text-gray-800 leading-none">{user?.username}</span>
-                            </div>
+                    <div className="flex items-center gap-2">
+                        <Link to="/login" className="px-4 py-2 text-sm font-bold text-gray-600 hover:text-[#f26c0d] transition-colors">
+                            Login
+                        </Link>
+                        <Link to="/register" className="px-4 py-2 text-sm font-bold text-gray-600 hover:text-[#f26c0d] transition-colors">
+                            Register
                         </Link>
                     </div>
                 </div>
@@ -80,4 +75,4 @@ const NavbarBidder = () => {
     );
 };
 
-export default NavbarBidder;
+export default Navbar;
