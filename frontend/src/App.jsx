@@ -27,6 +27,7 @@ function App() {
                             <Route path="/" element={<HomePage />} />
                             <Route path="/auction/:id" element={<AuctionDetailPage />} />
                             <Route path="/support" element={<SupportPage />} />
+                            <Route path="/auction-list" element={<AuctionListPage />} />
 
                             {/* Protected routes */}
                             <Route path="/create-auction" element={
@@ -42,11 +43,6 @@ function App() {
                             <Route path="/profile" element={
                                 <PrivateRoute>
                                     <ProfilePage />
-                                </PrivateRoute>
-                            } />
-                            <Route path="/auction-list" element={
-                                <PrivateRoute>
-                                    <AuctionListPage />
                                 </PrivateRoute>
                             } />
                             <Route path="/auction-community" element={
