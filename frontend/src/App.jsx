@@ -15,11 +15,11 @@ import { SupportPage } from './components/support';
 
 const MainContainer = ({ children }) => {
     const location = useLocation();
-    const isHomePage = location.pathname === '/';
+    const isFullWidthPage = location.pathname === '/' || location.pathname === '/auction-list';
 
     return (
         <div
-            className={isHomePage ? "w-full" : "container mx-auto px-4"}
+            className={isFullWidthPage ? "w-full" : "container mx-auto px-4"}
             style={{ minHeight: 'calc(100vh - 80px)' }}
         >
             {children}
