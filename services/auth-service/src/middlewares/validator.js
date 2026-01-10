@@ -24,12 +24,7 @@ const validate = (req, res, next) => {
  * Validation rules cho đăng ký
  */
 const registerValidation = [
-    body('username')
-        .trim()
-        .isLength({ min: 3, max: 50 })
-        .withMessage('Username phải có từ 3-50 ký tự')
-        .matches(/^[a-zA-Z0-9_]+$/)
-        .withMessage('Username chỉ chứa chữ cái, số và dấu gạch dưới'),
+
 
     body('email')
         .trim()

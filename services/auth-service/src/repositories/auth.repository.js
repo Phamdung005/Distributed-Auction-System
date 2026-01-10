@@ -25,14 +25,7 @@ class AuthRepository {
         return await User.findOne({ email }).select('+password');
     }
 
-    /**
-     * Tìm user theo username
-     * @param {string} username
-     * @returns {Promise<User|null>}
-     */
-    async findByUsername(username) {
-        return await User.findOne({ username });
-    }
+
 
     /**
      * Tìm user theo ID

@@ -15,7 +15,7 @@ import { SupportPage } from './components/support';
 
 const MainContainer = ({ children }) => {
     const location = useLocation();
-    const isFullWidthPage = location.pathname === '/' || location.pathname === '/auction-list' || location.pathname.startsWith('/search');
+    const isFullWidthPage = location.pathname === '/' || location.pathname === '/auction-list' || location.pathname.startsWith('/search') || location.pathname === '/login' || location.pathname === '/register';
 
     return (
         <div

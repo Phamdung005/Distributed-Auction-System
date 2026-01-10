@@ -12,7 +12,7 @@ class AuthService {
      * @returns {Promise<Object>}
      */
     async register(userData) {
-        const { username, email, password, fullName, phone } = userData;
+        const { email, password, fullName, phone } = userData;
 
         // Kiểm tra email đã tồn tại
         const existingEmail = await authRepository.findByEmail(email);
@@ -20,15 +20,11 @@ class AuthService {
             throw new Error('Email đã được sử dụng');
         }
 
-        // Kiểm tra username đã tồn tại
-        const existingUsername = await authRepository.findByUsername(username);
-        if (existingUsername) {
-            throw new Error('Username đã được sử dụng');
-        }
+
 
         // Tạo user mới
         const user = await authRepository.createUser({
-            username,
+
             email,
             password,
             fullName,
@@ -50,7 +46,7 @@ class AuthService {
         return {
             user: {
                 id: user._id,
-                username: user.username,
+
                 email: user.email,
                 fullName: user.fullName,
                 role: user.role
@@ -99,7 +95,7 @@ class AuthService {
         return {
             user: {
                 id: user._id,
-                username: user.username,
+
                 email: user.email,
                 fullName: user.fullName,
                 role: user.role,
@@ -180,7 +176,7 @@ class AuthService {
 
         return {
             id: user._id,
-            username: user.username,
+
             email: user.email,
             fullName: user.fullName,
             phone: user.phone,

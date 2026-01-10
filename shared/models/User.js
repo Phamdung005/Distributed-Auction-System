@@ -5,14 +5,7 @@ const bcrypt = require('bcryptjs');
  * Schema cho User
  */
 const userSchema = new mongoose.Schema({
-    username: {
-        type: String,
-        required: [true, 'Username là bắt buộc'],
-        unique: true,
-        trim: true,
-        minlength: [3, 'Username phải có ít nhất 3 ký tự'],
-        maxlength: [50, 'Username không được vượt quá 50 ký tự']
-    },
+
     email: {
         type: String,
         required: [true, 'Email là bắt buộc'],
