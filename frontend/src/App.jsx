@@ -1,5 +1,5 @@
 import React from 'react';
-import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
+import { BrowserRouter as Router, Routes, Route, Navigate, useLocation } from 'react-router-dom';
 import { ToastContainer } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
 
@@ -13,13 +13,27 @@ import { HomePage, AuctionDetailPage, ProfilePage, AuctionListPage, AuctionCommu
 import { CreateAuctionPage, MyAuctionsPage } from './pages/SellerPage';
 import { SupportPage } from './components/support';
 
+const MainContainer = ({ children }) => {
+    const location = useLocation();
+    const isHomePage = location.pathname === '/';
+
+    return (
+        <div
+            className={isHomePage ? "w-full" : "container mx-auto px-4"}
+            style={{ minHeight: 'calc(100vh - 80px)' }}
+        >
+            {children}
+        </div>
+    );
+};
+
 function App() {
     return (
         <AuthProvider>
             <Router future={{ v7_startTransition: true, v7_relativeSplatPath: true }}>
                 <div className="webapp">
                     <NavbarSelector />
-                    <div className="container" style={{minHeight: 'calc(100vh - 80px)' }}>
+                    <MainContainer>
                         <Routes>
                             {/* Public routes */}
                             <Route path="/login" element={<LoginPage />} />
@@ -59,7 +73,7 @@ function App() {
                             {/* Redirect */}
                             <Route path="*" element={<Navigate to="/" replace />} />
                         </Routes>
-                    </div>
+                    </MainContainer>
 
                     <ToastContainer
                         position="top-right"
