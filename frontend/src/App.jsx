@@ -9,13 +9,13 @@ import { NavbarSelector } from './components/layout/Navbar';
 
 // Pages
 import { LoginPage, RegisterPage } from './pages/AuthPage';
-import { HomePage, AuctionDetailPage, ProfilePage, AuctionListPage, AuctionCommunityPage, BidderNotification } from './pages/BidderPage';
+import { HomePage, AuctionDetailPage, ProfilePage, AuctionListPage, AuctionCommunityPage, BidderNotification, SearchResultPage } from './pages/BidderPage';
 import { CreateAuctionPage, MyAuctionsPage } from './pages/SellerPage';
 import { SupportPage } from './components/support';
 
 const MainContainer = ({ children }) => {
     const location = useLocation();
-    const isFullWidthPage = location.pathname === '/' || location.pathname === '/auction-list';
+    const isFullWidthPage = location.pathname === '/' || location.pathname === '/auction-list' || location.pathname.startsWith('/search');
 
     return (
         <div
@@ -42,6 +42,7 @@ function App() {
                             <Route path="/auction/:id" element={<AuctionDetailPage />} />
                             <Route path="/support" element={<SupportPage />} />
                             <Route path="/auction-list" element={<AuctionListPage />} />
+                            <Route path="/search" element={<SearchResultPage />} />
 
                             {/* Protected routes */}
                             <Route path="/create-auction" element={

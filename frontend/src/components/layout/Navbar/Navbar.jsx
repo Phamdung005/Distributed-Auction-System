@@ -1,4 +1,4 @@
-import React, {useState} from 'react';
+import React, { useState } from 'react';
 import { Link, useNavigate, NavLink as RouterNavLink } from 'react-router-dom';
 import { useAuth } from '../../../contexts/AuthContext';
 import { Gavel, Bell, LogOut, User, Search } from 'lucide-react';
@@ -27,7 +27,7 @@ const Navbar = () => {
     const handleSearch = (e) => {
         e.preventDefault();
         if (searchKeyword.trim()) {
-            navigate(`/auction-list?search=${encodeURIComponent(searchKeyword)}`);
+            navigate(`/search?q=${encodeURIComponent(searchKeyword)}`);
         }
     };
 
