@@ -73,6 +73,12 @@ export const authAPI = {
     // Lấy thông tin profile
     getProfile: () => api.get(`${AUTH_BASE_URL}/me`),
 
+    // Cập nhật profile
+    updateProfile: (data) => api.put(`${AUTH_BASE_URL}/me`, data),
+
+    // Đổi mật khẩu
+    changePassword: (data) => api.post(`${AUTH_BASE_URL}/change-password`, data),
+
     // Đăng xuất
     logout: (refreshToken) => api.post(`${AUTH_BASE_URL}/logout`, { refreshToken }),
 

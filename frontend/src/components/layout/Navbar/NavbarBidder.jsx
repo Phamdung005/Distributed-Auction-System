@@ -67,10 +67,10 @@ const NavbarBidder = () => {
                     <div className="flex items-center gap-3">
                         <Link to="/profile" className="flex items-center gap-2 pl-1 pr-3 py-1 hover:bg-gray-50 rounded-full border border-transparent hover:border-gray-100 transition-all group">
                             <div className="w-10 h-10 rounded-full bg-gradient-to-tr from-orange-500 to-orange-400 text-white flex items-center justify-center font-bold text-sm shadow-sm group-hover:scale-105 transition-transform border-2 border-white">
-                                {user?.username?.charAt(0).toUpperCase() || 'U'}
+                                {user?.fullName?.charAt(0).toUpperCase() || 'U'}
                             </div>
                             <div className="hidden lg:flex flex-col">
-                                <span className="text-sm font-bold text-gray-800 leading-none">{user?.username}</span>
+                                <span className="text-sm font-bold text-gray-800 leading-none">{user?.fullName}</span>
                             </div>
                         </Link>
                     </div>

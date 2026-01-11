@@ -1,231 +1,507 @@
 import React, { useState, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
-import { useForm } from 'react-hook-form';
-import { toast } from 'react-toastify';
 import { useAuth } from '../../contexts/AuthContext';
-import { authAPI } from '../../services/api';
-import './ProfilePage.css';
+import { authAPI, auctionAPI } from '../../services/api'; // Assuming auctionAPI has getMyAuctions
+import { toast } from 'react-toastify';
+import {
+    User,
+    Lock,
+    History,
+    LogOut,
+    Camera,
+    BadgeCheck,
+    ShieldCheck,
+    Gavel,
+    Trophy,
+    X,
+    Clock,
+    ChevronRight,
+    MapPin,
+    Mail,
+    Phone,
+    Calendar
+} from 'lucide-react';
+import { useNavigate } from 'react-router-dom';
 
 const ProfilePage = () => {
-    const { user, logout } = useAuth();
-    const { register, handleSubmit, formState: { errors }, setValue } = useForm();
+    const { user, logout, refreshProfile } = useAuth();
     const navigate = useNavigate();
-    const [loading, setLoading] = useState(false);
-    const [activeTab, setActiveTab] = useState('profile');
 
+    // State for tabs
+    const [activeTab, setActiveTab] = useState('general'); // general, security, history
+
+    // State for form data
+    const [formData, setFormData] = useState({
+        fullName: '',
+        email: '',
+        phone: '',
+        address: '', // Note: User model might not have address yet, we'll handle gracefully
+        dob: ''
+    });
+
+    // State for password change
+    const [passwordData, setPasswordData] = useState({
+        currentPassword: '',
+        newPassword: '',
+        confirmPassword: ''
+    });
+
+    // State for auctions
+    const [myAuctions, setMyAuctions] = useState([]);
+    const [loadingAuctions, setLoadingAuctions] = useState(false);
+
+    // State for UI
+    const [isLoading, setIsLoading] = useState(false);
+    const [isEditing, setIsEditing] = useState(false); // For future use if we want read-only mode first
+
+    // Initialize data
     useEffect(() => {
         if (user) {
-            setValue('username', user.username);
-            setValue('email', user.email);
-            setValue('fullName', user.fullName);
-            setValue('phone', user.phone || '');
+            setFormData({
+                fullName: user.fullName || '',
+                email: user.email || '',
+                phone: user.phone || '',
+                address: user.address || '',
+                dob: user.dob ? new Date(user.dob).toISOString().split('T')[0] : ''
+            });
         }
-    }, [user, setValue]);
+    }, [user]);
 
-    const onUpdateProfile = async (data) => {
-        setLoading(true);
+    // Fetch auctions when tab changes to history
+    useEffect(() => {
+        if (activeTab === 'history') {
+            fetchMyAuctions();
+        }
+    }, [activeTab]);
+
+    const fetchMyAuctions = async () => {
+        setLoadingAuctions(true);
         try {
-            const { username, email, ...updateData } = data; // Không cho phép đổi username/email
-            await authAPI.updateProfile(updateData);
-            toast.success('Cập nhật thông tin thành công! 🎉');
+            // Adjust API call based on your actual API service
+            // This is a guess based on standard patterns, verification needed
+            const response = await auctionAPI.getMyAuctions();
+            setMyAuctions(response.data.data || []);
         } catch (error) {
-            toast.error('Cập nhật thất bại');
+            console.error("Failed to fetch auctions", error);
+            // Optionally toast.error("Không thể tải lịch sử đấu giá");
         } finally {
-            setLoading(false);
+            setLoadingAuctions(false);
         }
     };
 
-    const onChangePassword = async (data) => {
-        setLoading(true);
+    const handleInputChange = (e) => {
+        const { name, value } = e.target;
+        setFormData(prev => ({ ...prev, [name]: value }));
+    };
+
+    const handlePasswordChange = (e) => {
+        const { name, value } = e.target;
+        setPasswordData(prev => ({ ...prev, [name]: value }));
+    };
+
+    const handleUpdateProfile = async (e) => {
+        e.preventDefault();
+        setIsLoading(true);
+        try {
+            // Exclude email/username if they are immutable in backend
+            const { email, ...updatePayload } = formData;
+            await authAPI.updateProfile(updatePayload); // You might need to update auth context here
+
+            // Refresh user data in context
+            await refreshProfile();
+
+            toast.success("Cập nhật thông tin thành công!");
+            // Optionally refresh user data here
+        } catch (error) {
+            console.error(error);
+            toast.error(error.response?.data?.message || "Cập nhật thất bại");
+        } finally {
+            setIsLoading(false);
+        }
+    };
+
+    const handleChangePassword = async () => {
+        if (passwordData.newPassword !== passwordData.confirmPassword) {
+            toast.error("Mật khẩu mới không khớp!");
+            return;
+        }
+        if (passwordData.newPassword.length < 6) {
+            toast.error("Mật khẩu phải có ít nhất 6 ký tự");
+            return;
+        }
+
+        setIsLoading(true);
         try {
             await authAPI.changePassword({
-                currentPassword: data.currentPassword,
-                newPassword: data.newPassword
+                currentPassword: passwordData.currentPassword,
+                newPassword: passwordData.newPassword
             });
-            toast.success('Đổi mật khẩu thành công! 🎉');
-            setValue('currentPassword', '');
-            setValue('newPassword', '');
-            setValue('confirmPassword', '');
+            toast.success("Đổi mật khẩu thành công!");
+            setPasswordData({ currentPassword: '', newPassword: '', confirmPassword: '' });
         } catch (error) {
-            toast.error(error.response?.data?.message || 'Đổi mật khẩu thất bại');
+            console.error(error);
+            toast.error(error.response?.data?.message || "Đổi mật khẩu thất bại");
         } finally {
-            setLoading(false);
+            setIsLoading(false);
         }
     };
 
-    const handleLogout = () => {
-        logout();
+    const handleLogout = async () => {
+        await logout();
         navigate('/login');
     };
 
-    if (!user) {
-        return <div className="flex-center" style={{ minHeight: '50vh' }}>Loading...</div>;
-    }
+    if (!user) return null; // Or loading spinner
 
     return (
-        <div className="profile-page">
-            <div className="profile-container">
-                <h1 className="page-title">👤 Thông Tin Cá Nhân</h1>
-
-                <div className="profile-tabs">
-                    <button
-                        className={`tab-btn ${activeTab === 'profile' ? 'active' : ''}`}
-                        onClick={() => setActiveTab('profile')}
-                    >
-                        Hồ sơ
-                    </button>
-                    <button
-                        className={`tab-btn ${activeTab === 'password' ? 'active' : ''}`}
-                        onClick={() => setActiveTab('password')}
-                    >
-                        Đổi mật khẩu
-                    </button>
+        <div className="min-h-screen bg-[#f8f7f5] font-sans pb-12">
+            {/* Page Header */}
+            <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+                <div className="mb-8">
+                    <h1 className="text-3xl font-bold text-slate-900">Hồ sơ của bạn</h1>
+                    <p className="text-slate-500 mt-1">Quản lý thông tin cá nhân, bảo mật và xem lại lịch sử đấu giá.</p>
                 </div>
 
-                <div className="profile-content">
-                    {activeTab === 'profile' && (
-                        <form onSubmit={handleSubmit(onUpdateProfile)} className="profile-form">
-                            <div className="user-info-card">
-                                <div className="user-avatar">
-                                    <div className="avatar-circle">
-                                        {user.username.charAt(0).toUpperCase()}
+                <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
+                    {/* Left Sidebar */}
+                    <aside className="lg:col-span-4 xl:col-span-3 space-y-6">
+                        {/* Profile Card */}
+                        <div className="bg-white rounded-xl p-6 border border-gray-100 shadow-sm text-center relative overflow-hidden">
+                            <div className="relative inline-block group">
+                                <div className="w-32 h-32 mx-auto rounded-full bg-gray-100 mb-4 bg-cover bg-center border-4 border-white shadow-md flex items-center justify-center text-4xl font-bold text-gray-400">
+                                    {/* Placeholder Avatar if no image */}
+                                    {user.username?.charAt(0).toUpperCase()}
+                                </div>
+                                <button className="absolute bottom-4 right-0 bg-[#f26c0d] hover:bg-[#d55a0b] text-white p-2 rounded-full shadow-lg transition-transform hover:scale-105" title="Thay đổi ảnh đại diện">
+                                    <Camera size={18} />
+                                </button>
+                            </div>
+                            <h2 className="text-xl font-bold text-slate-900">{user.fullName || user.username}</h2>
+                            <p className="text-sm text-gray-500 mb-4">Thành viên từ {new Date().getFullYear()} • Việt Nam</p>
+
+                            {/* Mini Stats */}
+                            <div className="grid grid-cols-2 gap-2 border-t border-gray-100 pt-4 mt-4">
+                                <div className="text-center">
+                                    <span className="block text-lg font-bold text-slate-900">{user.auctionsParticipated || 0}</span>
+                                    <span className="text-xs text-gray-500 uppercase tracking-wide">Đấu giá</span>
+                                </div>
+                                <div className="text-center">
+                                    <span className="block text-lg font-bold text-[#f26c0d]">{user.auctionsWon || 0}</span>
+                                    <span className="text-xs text-gray-500 uppercase tracking-wide">Thắng</span>
+                                </div>
+                            </div>
+                        </div>
+
+                        {/* Navigation Links */}
+                        <nav className="bg-white rounded-xl border border-gray-100 shadow-sm overflow-hidden">
+                            <div className="flex flex-col">
+                                <button
+                                    onClick={() => setActiveTab('general')}
+                                    className={`flex items-center gap-3 px-5 py-4 transition-colors text-left ${activeTab === 'general' ? 'bg-[#f26c0d]/10 border-l-4 border-[#f26c0d] text-[#f26c0d] font-medium' : 'text-slate-600 hover:bg-gray-50 border-l-4 border-transparent'}`}
+                                >
+                                    <User size={20} />
+                                    Thông tin chung
+                                </button>
+                                <button
+                                    onClick={() => setActiveTab('security')}
+                                    className={`flex items-center gap-3 px-5 py-4 transition-colors text-left ${activeTab === 'security' ? 'bg-[#f26c0d]/10 border-l-4 border-[#f26c0d] text-[#f26c0d] font-medium' : 'text-slate-600 hover:bg-gray-50 border-l-4 border-transparent'}`}
+                                >
+                                    <Lock size={20} />
+                                    Bảo mật & Mật khẩu
+                                </button>
+                                <button
+                                    onClick={() => setActiveTab('history')}
+                                    className={`flex items-center gap-3 px-5 py-4 transition-colors text-left ${activeTab === 'history' ? 'bg-[#f26c0d]/10 border-l-4 border-[#f26c0d] text-[#f26c0d] font-medium' : 'text-slate-600 hover:bg-gray-50 border-l-4 border-transparent'}`}
+                                >
+                                    <History size={20} />
+                                    Lịch sử đấu giá
+                                </button>
+                                <button
+                                    onClick={handleLogout}
+                                    className="flex items-center gap-3 px-5 py-4 text-slate-600 hover:bg-gray-50 border-l-4 border-transparent transition-colors border-t border-gray-100 w-full text-left"
+                                >
+                                    <LogOut size={20} />
+                                    Đăng xuất
+                                </button>
+                            </div>
+                        </nav>
+                    </aside>
+
+                    {/* Right Content Area */}
+                    <div className="lg:col-span-8 xl:col-span-9 space-y-8">
+
+                        {/* Section 1: General Info */}
+                        {activeTab === 'general' && (
+                            <section className="bg-white rounded-xl border border-gray-100 shadow-sm overflow-hidden animate-fade-in">
+                                <div className="p-6 border-b border-gray-100 flex justify-between items-center">
+                                    <h3 className="text-lg font-bold text-slate-900 flex items-center gap-2">
+                                        <BadgeCheck className="text-[#f26c0d]" size={24} />
+                                        Thông tin cá nhân
+                                    </h3>
+                                </div>
+                                <div className="p-6">
+                                    <form onSubmit={handleUpdateProfile} className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                                        <div className="col-span-2 md:col-span-1">
+                                            <label className="block text-sm font-medium text-slate-700 mb-2">Họ và tên</label>
+                                            <div className="relative">
+                                                <input
+                                                    name="fullName"
+                                                    value={formData.fullName}
+                                                    onChange={handleInputChange}
+                                                    className="w-full rounded-lg border-gray-200 focus:border-[#f26c0d] focus:ring-[#f26c0d] text-slate-900 shadow-sm pl-12 py-3"
+                                                    type="text"
+                                                />
+                                                <User className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400" size={20} />
+                                            </div>
+                                        </div>
+                                        <div className="col-span-2 md:col-span-1">
+                                            <label className="block text-sm font-medium text-slate-700 mb-2">Email</label>
+                                            <div className="relative">
+                                                <input
+                                                    name="email" // Read-only usually
+                                                    value={formData.email}
+                                                    disabled
+                                                    className="w-full rounded-lg border-gray-200 bg-gray-50 text-slate-500 shadow-sm pl-12 py-3 cursor-not-allowed"
+                                                    type="email"
+                                                />
+                                                <Mail className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400" size={20} />
+                                            </div>
+                                        </div>
+                                        <div className="col-span-2 md:col-span-1">
+                                            <label className="block text-sm font-medium text-slate-700 mb-2">Số điện thoại</label>
+                                            <div className="relative">
+                                                <input
+                                                    name="phone"
+                                                    value={formData.phone}
+                                                    onChange={handleInputChange}
+                                                    className="w-full rounded-lg border-gray-200 focus:border-[#f26c0d] focus:ring-[#f26c0d] text-slate-900 shadow-sm pl-12 py-3"
+                                                    type="tel"
+                                                />
+                                                <Phone className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400" size={20} />
+                                            </div>
+                                        </div>
+                                        <div className="col-span-2 md:col-span-1">
+                                            <label className="block text-sm font-medium text-slate-700 mb-2">Ngày sinh</label>
+                                            <div className="relative">
+                                                <input
+                                                    name="dob"
+                                                    value={formData.dob}
+                                                    onChange={handleInputChange}
+                                                    className="w-full rounded-lg border-gray-200 focus:border-[#f26c0d] focus:ring-[#f26c0d] text-slate-900 shadow-sm pl-12 py-3"
+                                                    type="date"
+                                                />
+                                                <Calendar className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400" size={20} />
+                                            </div>
+                                        </div>
+                                        <div className="col-span-2">
+                                            <label className="block text-sm font-medium text-slate-700 mb-2">Địa chỉ nhận hàng</label>
+                                            <div className="relative">
+                                                <textarea
+                                                    name="address"
+                                                    value={formData.address}
+                                                    onChange={handleInputChange}
+                                                    className="w-full rounded-lg border-gray-200 focus:border-[#f26c0d] focus:ring-[#f26c0d] text-slate-900 shadow-sm resize-none pl-12 py-3"
+                                                    rows="2"
+                                                ></textarea>
+                                                <MapPin className="absolute left-4 top-3 text-gray-400" size={20} />
+                                            </div>
+                                        </div>
+                                        <div className="col-span-2 flex justify-end gap-3 mt-2">
+                                            <button
+                                                type="button"
+                                                onClick={() => setFormData({
+                                                    fullName: user.fullName || '',
+                                                    email: user.email || '',
+                                                    phone: user.phone || '',
+                                                    address: user.address || '',
+                                                    dob: user.dob ? new Date(user.dob).toISOString().split('T')[0] : ''
+                                                })}
+                                                className="px-4 py-2 text-sm font-medium text-slate-600 bg-gray-100 hover:bg-gray-200 rounded-lg transition-colors"
+                                            >
+                                                Hủy
+                                            </button>
+                                            <button
+                                                type="submit"
+                                                disabled={isLoading}
+                                                className="px-6 py-2 text-sm font-medium text-white bg-[#f26c0d] hover:bg-[#d55a0b] rounded-lg shadow-md hover:shadow-lg transition-all disabled:opacity-70 flex items-center gap-2"
+                                            >
+                                                {isLoading && <span className="animate-spin h-4 w-4 border-2 border-white border-t-transparent rounded-full"></span>}
+                                                Lưu thay đổi
+                                            </button>
+                                        </div>
+                                    </form>
+                                </div>
+                            </section>
+                        )}
+
+                        {/* Section 2: Security */}
+                        {activeTab === 'security' && (
+                            <section className="bg-white rounded-xl border border-gray-100 shadow-sm overflow-hidden animate-fade-in">
+                                <div className="p-6 border-b border-gray-100">
+                                    <h3 className="text-lg font-bold text-slate-900 flex items-center gap-2">
+                                        <ShieldCheck className="text-[#f26c0d]" size={24} />
+                                        Bảo mật
+                                    </h3>
+                                </div>
+                                <div className="p-6 space-y-6">
+                                    {/* Password Change */}
+                                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6 pb-6 border-b border-gray-100">
+                                        <div className="col-span-2">
+                                            <h4 className="text-base font-semibold text-slate-900 mb-1">Đổi mật khẩu</h4>
+                                            <p className="text-sm text-gray-500">Nên sử dụng mật khẩu mạnh để bảo vệ tài khoản.</p>
+                                        </div>
+                                        <div className="col-span-2 md:col-span-1">
+                                            <label className="block text-sm font-medium text-slate-700 mb-2">Mật khẩu hiện tại</label>
+                                            <input
+                                                type="password"
+                                                name="currentPassword"
+                                                value={passwordData.currentPassword}
+                                                onChange={handlePasswordChange}
+                                                className="w-full rounded-lg border-gray-200 focus:border-[#f26c0d] focus:ring-[#f26c0d] shadow-sm py-3"
+                                                placeholder="••••••••"
+                                            />
+                                        </div>
+                                        <div className="col-span-2 md:col-span-1">
+                                            <label className="block text-sm font-medium text-slate-700 mb-2">Mật khẩu mới</label>
+                                            <input
+                                                type="password"
+                                                name="newPassword"
+                                                value={passwordData.newPassword}
+                                                onChange={handlePasswordChange}
+                                                className="w-full rounded-lg border-gray-200 focus:border-[#f26c0d] focus:ring-[#f26c0d] shadow-sm py-3"
+                                                placeholder="••••••••"
+                                            />
+                                        </div>
+                                        <div className="col-span-2 md:col-span-1">
+                                            <label className="block text-sm font-medium text-slate-700 mb-2">Xác nhận mật khẩu</label>
+                                            <input
+                                                type="password"
+                                                name="confirmPassword"
+                                                value={passwordData.confirmPassword}
+                                                onChange={handlePasswordChange}
+                                                className="w-full rounded-lg border-gray-200 focus:border-[#f26c0d] focus:ring-[#f26c0d] shadow-sm py-3"
+                                                placeholder="••••••••"
+                                            />
+                                        </div>
+                                        <div className="col-span-2 flex justify-end">
+                                            <button
+                                                onClick={handleChangePassword}
+                                                disabled={isLoading}
+                                                className="px-4 py-2 text-sm font-medium text-[#f26c0d] border border-[#f26c0d] hover:bg-[#f26c0d]/5 rounded-lg transition-colors disabled:opacity-50"
+                                            >
+                                                {isLoading ? 'Đang cập nhật...' : 'Cập nhật mật khẩu'}
+                                            </button>
+                                        </div>
+                                    </div>
+
+                                    {/* 2FA (Mockup mostly) */}
+                                    <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 opacity-70 pointer-events-none">
+                                        <div>
+                                            <h4 className="text-base font-semibold text-slate-900 flex items-center gap-2">
+                                                Xác thực 2 bước (2FA)
+                                                <span className="px-2 py-0.5 rounded-full bg-green-100 text-green-700 text-[10px] font-bold uppercase tracking-wider">Sắp ra mắt</span>
+                                            </h4>
+                                            <p className="text-sm text-gray-500 mt-1">Tăng cường bảo mật bằng mã xác nhận qua tin nhắn hoặc ứng dụng.</p>
+                                        </div>
+                                        {/* Toggle Switch */}
+                                        <div className="relative inline-block w-12 mr-2 align-middle select-none transition duration-200 ease-in">
+                                            <input type="checkbox" name="toggle" id="toggle" className="toggle-checkbox absolute block w-6 h-6 rounded-full bg-white border-4 appearance-none cursor-pointer border-[#f26c0d] checked:border-[#f26c0d] transition-all duration-300" />
+                                            <label htmlFor="toggle" className="toggle-label block overflow-hidden h-6 rounded-full bg-[#f26c0d]/30 cursor-pointer transition-colors duration-300"></label>
+                                        </div>
                                     </div>
                                 </div>
-                                <div className="user-stats">
-                                    <div className="stat-item">
-                                        <span className="stat-label">Số dư</span>
-                                        <span className="stat-value">
-                                            {user.balance?.toLocaleString('vi-VN') || 0} ₫
-                                        </span>
-                                    </div>
-                                    <div className="stat-item">
-                                        <span className="stat-label">Đấu giá tham gia</span>
-                                        <span className="stat-value">{user.auctionsParticipated || 0}</span>
-                                    </div>
-                                    <div className="stat-item">
-                                        <span className="stat-label">Đấu giá thắng</span>
-                                        <span className="stat-value">{user.auctionsWon || 0}</span>
+                            </section>
+                        )}
+
+                        {/* Section 3: Auction History */}
+                        {activeTab === 'history' && (
+                            <section className="bg-white rounded-xl border border-gray-100 shadow-sm overflow-hidden animate-fade-in">
+                                <div className="p-6 border-b border-gray-100 flex flex-wrap justify-between items-center gap-4">
+                                    <h3 className="text-lg font-bold text-slate-900 flex items-center gap-2">
+                                        <Gavel className="text-[#f26c0d]" size={24} />
+                                        Lịch sử đấu giá
+                                    </h3>
+                                    <div className="flex items-center gap-2">
+                                        <select className="text-sm border-gray-200 rounded-lg focus:ring-[#f26c0d] focus:border-[#f26c0d] py-1.5">
+                                            <option>Tất cả trạng thái</option>
+                                            <option>Chiến thắng</option>
+                                            <option>Thất bại</option>
+                                            <option>Đang diễn ra</option>
+                                        </select>
                                     </div>
                                 </div>
-                            </div>
+                                <div className="overflow-x-auto">
+                                    <table className="w-full text-sm text-left">
+                                        <thead className="text-xs text-gray-500 uppercase bg-gray-50 border-b border-gray-100">
+                                            <tr>
+                                                <th scope="col" className="px-6 py-3 font-medium">Sản phẩm</th>
+                                                <th scope="col" className="px-6 py-3 font-medium">Ngày đấu</th>
+                                                <th scope="col" className="px-6 py-3 font-medium">Giá chốt</th>
+                                                <th scope="col" className="px-6 py-3 font-medium text-center">Trạng thái</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody className="divide-y divide-gray-100">
+                                            {loadingAuctions ? (
+                                                <tr>
+                                                    <td colSpan="4" className="px-6 py-8 text-center text-gray-500">Đang tải...</td>
+                                                </tr>
+                                            ) : myAuctions.length === 0 ? (
+                                                <tr>
+                                                    <td colSpan="4" className="px-6 py-8 text-center text-gray-500">Chưa có lịch sử đấu giá nào</td>
+                                                </tr>
+                                            ) : (
+                                                myAuctions.map(item => (
+                                                    <tr key={item._id} className="bg-white hover:bg-gray-50 transition-colors">
+                                                        <td className="px-6 py-4">
+                                                            <div className="flex items-center gap-3">
+                                                                <div className="w-10 h-10 rounded-lg bg-gray-100 shrink-0 overflow-hidden">
+                                                                    {item.image ? (
+                                                                        <img src={item.image} alt="" className="w-full h-full object-cover" />
+                                                                    ) : (
+                                                                        <div className="w-full h-full bg-slate-200 flex items-center justify-center text-slate-400">
+                                                                            <Gavel size={16} />
+                                                                        </div>
+                                                                    )}
+                                                                </div>
+                                                                <div>
+                                                                    <p className="font-semibold text-slate-900 line-clamp-1">{item.title || "Sản phẩm ẩn"}</p>
+                                                                    <p className="text-xs text-gray-500">Mã: #{item._id.slice(-6).toUpperCase()}</p>
+                                                                </div>
+                                                            </div>
+                                                        </td>
+                                                        <td className="px-6 py-4 text-gray-600">
+                                                            {new Date(item.createdAt).toLocaleDateString('vi-VN')}
+                                                        </td>
+                                                        <td className="px-6 py-4 font-bold text-slate-900">
+                                                            {item.finalPrice?.toLocaleString('vi-VN') || 0} đ
+                                                        </td>
+                                                        <td className="px-6 py-4 text-center">
+                                                            <span className={`inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-medium ${item.status === 'won' ? 'bg-green-100 text-green-800' :
+                                                                item.status === 'lost' ? 'bg-gray-100 text-gray-600' :
+                                                                    'bg-orange-100 text-orange-800 border border-orange-200'
+                                                                }`}>
+                                                                {item.status === 'won' && <Trophy size={14} />}
+                                                                {item.status === 'lost' && <X size={14} />}
+                                                                {item.status === 'active' && <Gavel size={14} className="animate-pulse" />}
 
-                            <div className="form-group">
-                                <label className="form-label">Tên đăng nhập</label>
-                                <input
-                                    type="text"
-                                    className="form-input"
-                                    disabled
-                                    {...register('username')}
-                                />
-                            </div>
-
-                            <div className="form-group">
-                                <label className="form-label">Email</label>
-                                <input
-                                    type="email"
-                                    className="form-input"
-                                    disabled
-                                    {...register('email')}
-                                />
-                            </div>
-
-                            <div className="form-group">
-                                <label className="form-label">Họ tên *</label>
-                                <input
-                                    type="text"
-                                    className="form-input"
-                                    {...register('fullName', { required: 'Họ tên là bắt buộc' })}
-                                />
-                                {errors.fullName && <p className="form-error">{errors.fullName.message}</p>}
-                            </div>
-
-                            <div className="form-group">
-                                <label className="form-label">Số điện thoại</label>
-                                <input
-                                    type="text"
-                                    className="form-input"
-                                    {...register('phone', {
-                                        pattern: {
-                                            value: /^[0-9]{10,11}$/,
-                                            message: 'Số điện thoại không hợp lệ'
-                                        }
-                                    })}
-                                />
-                                {errors.phone && <p className="form-error">{errors.phone.message}</p>}
-                            </div>
-
-                            <div className="form-actions">
-                                <button type="submit" className="btn btn-primary" disabled={loading}>
-                                    {loading ? 'Đang cập nhật...' : '✅ Cập nhật'}
-                                </button>
-                                <button type="button" className="btn btn-danger" onClick={handleLogout}>
-                                    🚪 Đăng xuất
-                                </button>
-                            </div>
-                        </form>
-                    )}
-
-                    {activeTab === 'password' && (
-                        <form onSubmit={handleSubmit(onChangePassword)} className="profile-form">
-                            <div className="form-group">
-                                <label className="form-label">Mật khẩu hiện tại *</label>
-                                <input
-                                    type="password"
-                                    className="form-input"
-                                    {...register('currentPassword', {
-                                        required: 'Mật khẩu hiện tại là bắt buộc'
-                                    })}
-                                />
-                                {errors.currentPassword && (
-                                    <p className="form-error">{errors.currentPassword.message}</p>
-                                )}
-                            </div>
-
-                            <div className="form-group">
-                                <label className="form-label">Mật khẩu mới *</label>
-                                <input
-                                    type="password"
-                                    className="form-input"
-                                    {...register('newPassword', {
-                                        required: 'Mật khẩu mới là bắt buộc',
-                                        minLength: {
-                                            value: 6,
-                                            message: 'Mật khẩu phải có ít nhất 6 ký tự'
-                                        },
-                                        pattern: {
-                                            value: /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)/,
-                                            message: 'Mật khẩu phải chứa chữ hoa, chữ thường và số'
-                                        }
-                                    })}
-                                />
-                                {errors.newPassword && (
-                                    <p className="form-error">{errors.newPassword.message}</p>
-                                )}
-                            </div>
-
-                            <div className="form-group">
-                                <label className="form-label">Xác nhận mật khẩu mới *</label>
-                                <input
-                                    type="password"
-                                    className="form-input"
-                                    {...register('confirmPassword', {
-                                        required: 'Vui lòng xác nhận mật khẩu',
-                                        validate: (value, formValues) =>
-                                            value === formValues.newPassword || 'Mật khẩu không khớp'
-                                    })}
-                                />
-                                {errors.confirmPassword && (
-                                    <p className="form-error">{errors.confirmPassword.message}</p>
-                                )}
-                            </div>
-
-                            <div className="form-actions">
-                                <button type="submit" className="btn btn-success" disabled={loading}>
-                                    {loading ? 'Đang đổi...' : '🔒 Đổi mật khẩu'}
-                                </button>
-                            </div>
-                        </form>
-                    )}
+                                                                {item.status === 'won' ? 'Thắng' :
+                                                                    item.status === 'lost' ? 'Thua' : 'Đang đấu'}
+                                                            </span>
+                                                        </td>
+                                                    </tr>
+                                                ))
+                                            )}
+                                        </tbody>
+                                    </table>
+                                </div>
+                                <div className="p-4 border-t border-gray-100 bg-gray-50/50 flex justify-center">
+                                    <button className="text-sm font-medium text-[#f26c0d] hover:text-[#d55a0b] transition-colors flex items-center gap-1">
+                                        Xem tất cả lịch sử
+                                        <ChevronRight size={16} />
+                                    </button>
+                                </div>
+                            </section>
+                        )}
+                    </div>
                 </div>
             </div>
         </div>

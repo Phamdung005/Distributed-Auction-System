@@ -47,6 +47,20 @@ router.post('/logout-all', authenticate, authController.logoutAll);
 router.get('/me', authenticate, authController.getProfile);
 
 /**
+ * @route   PUT /api/auth/me
+ * @desc    Cập nhật thông tin user hiện tại
+ * @access  Private
+ */
+router.put('/me', authenticate, authController.updateProfile);
+
+/**
+ * @route   POST /api/auth/change-password
+ * @desc    Đổi mật khẩu
+ * @access  Private
+ */
+router.post('/change-password', authenticate, authController.changePassword);
+
+/**
  * @route   POST /api/auth/verify
  * @desc    Verify token (Internal use)
  * @access  Public (Internal)

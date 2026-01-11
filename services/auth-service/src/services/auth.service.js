@@ -210,6 +210,62 @@ class AuthService {
             throw new Error('Token không hợp lệ');
         }
     }
+
+    /**
+     * Cập nhật thông tin profile
+     * @param {string} userId
+     * @param {Object} updateData
+     * @returns {Promise<Object>}
+     */
+    async updateUserProfile(userId, updateData) {
+        // Không cho phép update email, password, role qua API này
+        delete updateData.email;
+        delete updateData.password;
+        delete updateData.role;
+        delete updateData.balance;
+
+        const user = await authRepository.updateUser(userId, updateData);
+        if (!user) {
+            throw new Error('User không tồn tại');
+        }
+
+        return {
+            id: user._id,
+            email: user.email,
+            fullName: user.fullName,
+            phone: user.phone,
+            balance: user.balance,
+            role: user.role,
+            avatar: user.avatar,
+            createdAt: user.createdAt,
+            city: user.city,
+            district: user.district,
+            address: user.address,
+            dob: user.dob
+        };
+    }
+
+    /**
+     * Đổi mật khẩu
+     * @param {string} userId
+     * @param {string} currentPassword
+     * @param {string} newPassword
+     * @returns {Promise<void>}
+     */
+    async changePassword(userId, currentPassword, newPassword) {
+        const user = await authRepository.findByIdWithPassword(userId);
+        if (!user) {
+            throw new Error('User không tồn tại');
+        }
+
+        const isPasswordValid = await user.comparePassword(currentPassword);
+        if (!isPasswordValid) {
+            throw new Error('Mật khẩu hiện tại không đúng');
+        }
+
+        user.password = newPassword;
+        await user.save();
+    }
 }
 
 module.exports = new AuthService();

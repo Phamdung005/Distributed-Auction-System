@@ -37,6 +37,15 @@ class AuthRepository {
     }
 
     /**
+     * Tìm user theo ID (bao gồm password)
+     * @param {string} userId
+     * @returns {Promise<User|null>}
+     */
+    async findByIdWithPassword(userId) {
+        return await User.findById(userId).select('+password');
+    }
+
+    /**
      * Cập nhật user
      * @param {string} userId
      * @param {Object} updateData
