@@ -64,6 +64,9 @@ class AuctionService {
             throw new Error('Auction không tồn tại');
         }
 
+        // Auto-update status based on time
+        await this._updateAuctionStatus(auction);
+
         // Tăng view count
         if (incrementView) {
             await auctionRepository.incrementViewCount(auctionId);
@@ -214,6 +217,33 @@ class AuctionService {
         });
 
         return this._formatAuction(updated);
+    }
+
+    /**
+     * Auto-update auction status based on current time
+     * @private
+     */
+    async _updateAuctionStatus(auction) {
+        const now = new Date();
+        const startTime = new Date(auction.startTime);
+        const endTime = new Date(auction.endTime);
+        let newStatus = auction.status;
+
+        // Check if pending auction should become active
+        if (auction.status === 'pending' && now >= startTime) {
+            newStatus = 'active';
+        }
+
+        // Check if active auction should end
+        if (auction.status === 'active' && now >= endTime) {
+            newStatus = 'ended';
+        }
+
+        // Update status if changed
+        if (newStatus !== auction.status) {
+            await auctionRepository.updateAuction(auction._id, { status: newStatus });
+            auction.status = newStatus;
+        }
     }
 
     /**
