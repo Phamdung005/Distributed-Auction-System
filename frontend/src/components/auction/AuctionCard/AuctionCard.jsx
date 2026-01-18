@@ -6,6 +6,7 @@ import { vi } from 'date-fns/locale';
 const AuctionCard = ({ auction }) => {
     const isLive = auction.status === 'active';
     const isUpcoming = auction.status === 'pending';
+    const isEnded = auction.status === 'ended';
 
     const formatPrice = (price) => {
         return price?.toLocaleString('vi-VN') + ' đ';
@@ -23,7 +24,8 @@ const AuctionCard = ({ auction }) => {
     return (
         <div className="group flex flex-col overflow-hidden rounded-xl border border-gray-200 bg-white shadow-sm hover:shadow-xl transition-all h-full">
             <div className="relative aspect-[4/3] w-full overflow-hidden bg-gray-100">
-                <div className={`absolute top-3 left-3 z-10 flex items-center gap-1 rounded-full px-3 py-1 text-[10px] font-bold text-white uppercase tracking-wider shadow-sm ${isLive ? 'bg-emerald-500' : 'bg-blue-500'}`}>
+                <div className={`absolute top-3 left-3 z-10 flex items-center gap-1 rounded-full px-3 py-1 text-[10px] font-bold text-white uppercase tracking-wider shadow-sm ${isLive ? 'bg-emerald-500' : isEnded ? 'bg-gray-500' : 'bg-blue-500'
+                    }`}>
                     {isLive ? (
                         <>
                             <span className="relative flex h-2 w-2">
@@ -32,7 +34,7 @@ const AuctionCard = ({ auction }) => {
                             </span>
                             LIVE
                         </>
-                    ) : 'UPCOMING'}
+                    ) : isEnded ? 'ĐÃ KẾT THÚC' : 'SẮP DIỄN RA'}
                 </div>
 
                 <img

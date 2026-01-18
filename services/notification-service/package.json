@@ -1,0 +1,32 @@
+{
+    "name": "notification-service",
+    "version": "1.0.0",
+    "description": "Notification Service for Auction System",
+    "main": "src/index.js",
+    "scripts": {
+        "start": "node src/index.js",
+        "dev": "nodemon src/index.js"
+    },
+    "keywords": [
+        "notification",
+        "websocket",
+        "redis",
+        "auction"
+    ],
+    "author": "",
+    "license": "ISC",
+    "dependencies": {
+        "express": "^4.18.2",
+        "socket.io": "^4.6.1",
+        "mongoose": "^7.0.3",
+        "redis": "^4.6.5",
+        "node-cron": "^3.0.2",
+        "jsonwebtoken": "^9.0.0",
+        "dotenv": "^16.0.3",
+        "cors": "^2.8.5",
+        "axios": "^1.4.0"
+    },
+    "devDependencies": {
+        "nodemon": "^2.0.22"
+    }
+}

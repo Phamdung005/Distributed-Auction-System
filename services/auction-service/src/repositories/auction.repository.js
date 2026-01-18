@@ -44,13 +44,29 @@ class AuctionRepository {
 
         const skip = (page - 1) * limit;
 
+        // Add time-based filtering based on status to prevent expired auctions from showing
+        const now = new Date();
+        const enhancedFilter = { ...filter };
+
+        if (filter.status === 'active') {
+            // For active auctions, ensure they haven't expired
+            enhancedFilter.startTime = { $lte: now };
+            enhancedFilter.endTime = { $gt: now };
+        } else if (filter.status === 'pending') {
+            // For pending auctions, ensure they haven't started yet
+            enhancedFilter.startTime = { $gt: now };
+        } else if (filter.status === 'ended') {
+            // For ended auctions, ensure they have actually ended
+            enhancedFilter.endTime = { $lte: now };
+        }
+
         const [auctions, total] = await Promise.all([
-            Auction.find(filter)
+            Auction.find(enhancedFilter)
                 .populate('seller', 'username fullName')
                 .sort(sort)
                 .skip(skip)
                 .limit(limit),
-            Auction.countDocuments(filter)
+            Auction.countDocuments(enhancedFilter)
         ]);
 
         return {

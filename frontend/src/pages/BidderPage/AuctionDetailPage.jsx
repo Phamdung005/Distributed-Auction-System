@@ -31,7 +31,7 @@ import {
 const AuctionDetailPage = () => {
   const { id } = useParams();
   const navigate = useNavigate();
-  const { isAuthenticated, getAccessToken } = useAuth();
+  const { isAuthenticated, getAccessToken, user } = useAuth();
 
   const [auction, setAuction] = useState(null);
   const [loading, setLoading] = useState(true);
@@ -448,19 +448,30 @@ const AuctionDetailPage = () => {
                       <div className="max-h-48 overflow-y-auto">
                         <table className="w-full text-sm text-left">
                           <tbody className="divide-y divide-[#e5ded9]">
-                            {auction.recentBids.slice(0, 5).map((bid, idx) => (
-                              <tr key={idx} className="bg-white hover:bg-gray-50 transition-colors">
-                                <td className="px-4 py-3 text-[#9c6c49] font-mono text-xs">
-                                  {format(new Date(bid.timestamp), 'HH:mm:ss', { locale: vi })}
-                                </td>
-                                <td className="px-4 py-3 font-medium text-[#1c130d]">
-                                  {bid.bidder?.fullName || 'Ẩn danh'}
-                                </td>
-                                <td className="px-4 py-3 text-right font-bold text-[#1c130d]">
-                                  {bid.amount?.toLocaleString('vi-VN')} ₫
-                                </td>
-                              </tr>
-                            ))}
+                            {auction.recentBids.slice(0, 5).map((bid, idx) => {
+                              // Check if this bid is from the current user
+                              const isCurrentUserBid = user && bid.bidder &&
+                                (bid.bidder._id === user.id || bid.bidder.id === user.id ||
+                                  bid.bidder._id === user._id || bid.bidder.id === user._id);
+
+                              return (
+                                <tr key={idx} className="bg-white hover:bg-gray-50 transition-colors">
+                                  <td className="px-4 py-3 text-[#9c6c49] font-mono text-xs">
+                                    {format(new Date(bid.timestamp), 'HH:mm:ss', { locale: vi })}
+                                  </td>
+                                  <td className="px-4 py-3 font-medium text-[#1c130d]">
+                                    {isCurrentUserBid ? (
+                                      <span className="font-bold text-[#f26c0d]">Bạn</span>
+                                    ) : (
+                                      bid.bidder?.fullName || 'Ẩn danh'
+                                    )}
+                                  </td>
+                                  <td className="px-4 py-3 text-right font-bold text-[#1c130d]">
+                                    {bid.amount?.toLocaleString('vi-VN')} ₫
+                                  </td>
+                                </tr>
+                              );
+                            })}
                           </tbody>
                         </table>
                       </div>
