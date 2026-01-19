@@ -140,6 +140,35 @@ services:
     networks:
       - auction-network
 
+  # Payment Service - Wallet & MoMo Integration
+  payment-service:
+    build:
+      context: .
+      dockerfile: ./services/payment-service/Dockerfile
+    container_name: payment-service
+    restart: always
+    ports:
+      - "3006:3006"
+    environment:
+      - NODE_ENV=production
+      - PORT=3006
+      - MONGODB_URI=mongodb://mongodb:27017/auction_db
+      - REDIS_URL=redis://:redis123@redis:6379
+      - JWT_SECRET=your-super-secret-jwt-key-change-in-production
+      - CORS_ORIGIN=http://localhost:3000
+      - MOMO_PARTNER_CODE=MOMO_TEST_PARTNER
+      - MOMO_ACCESS_KEY=test_access_key
+      - MOMO_SECRET_KEY=test_secret_key
+      - MOMO_ENDPOINT=https://test-payment.momo.vn/v2/gateway/api/create
+      - MOMO_RETURN_URL=http://localhost:3000/payment/result
+      - MOMO_NOTIFY_URL=http://localhost:3006/api/payment/momo/callback
+    depends_on:
+      - mongodb
+      - redis
+      - auth-service
+    networks:
+      - auction-network
+
 networks:
   auction-network:
     driver: bridge
