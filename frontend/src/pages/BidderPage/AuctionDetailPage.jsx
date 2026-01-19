@@ -45,6 +45,7 @@ const AuctionDetailPage = () => {
 
   const [isRegistered, setIsRegistered] = useState(false);
   const [checkingRegistration, setCheckingRegistration] = useState(true);
+  const [showDepositModal, setShowDepositModal] = useState(false);
 
   // Update current time every second for live countdown
   useEffect(() => {
@@ -133,15 +134,19 @@ const AuctionDetailPage = () => {
     }
   };
 
-  const handleRegister = async () => {
+  const handleShowDepositModal = () => {
     if (!isAuthenticated) {
       toast.warning('Vui lòng đăng nhập để đăng ký');
       navigate('/login');
       return;
     }
+    setShowDepositModal(true);
+  };
 
+  const handleRegister = async () => {
     try {
       setBidding(true);
+      setShowDepositModal(false);
       await auctionAPI.registerForAuction(id);
       toast.success('Đăng ký tham gia thành công! Bạn có thể bắt đầu đặt giá.');
       setIsRegistered(true);
@@ -416,9 +421,42 @@ const AuctionDetailPage = () => {
                     </div>
                   </div>
 
+                  {/* Deposit Policy Modal */}
+                  {showDepositModal && (
+                    <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
+                      <div className="bg-white rounded-xl max-w-md w-full p-6 shadow-2xl">
+                        <h3 className="text-xl font-bold text-[#1c130d] mb-4">Chính sách đặt cọc</h3>
+                        <div className="space-y-3 text-sm text-[#5c4536] mb-6">
+                          <p>Để tham gia đấu giá, bạn cần đặt cọc:</p>
+                          <ul className="list-disc list-inside space-y-2 ml-2">
+                            <li>Số tiền cọc: <strong>{auction.minDeposit ? auction.minDeposit.toLocaleString('vi-VN') : (auction.startPrice * 0.1).toLocaleString('vi-VN')} ₫</strong> (10% giá khởi điểm)</li>
+                            <li>Tiền cọc sẽ được <strong>tạm giữ</strong> trong ví của bạn</li>
+                            <li>Nếu <strong>thắng đấu giá</strong>: Tiền cọc sẽ được trừ vào tổng thanh toán</li>
+                            <li>Nếu <strong>không thắng</strong>: Tiền cọc sẽ được hoàn trả đầy đủ</li>
+                            <li>Nếu <strong>vi phạm</strong> (đặt giá rồi không thanh toán): Tiền cọc sẽ bị tịch thu</li>
+                          </ul>
+                        </div>
+                        <div className="flex gap-3">
+                          <button
+                            onClick={() => setShowDepositModal(false)}
+                            className="flex-1 h-12 border-2 border-[#e5ded9] text-[#5c4536] font-semibold rounded-lg hover:bg-gray-50 transition-all"
+                          >
+                            Hủy
+                          </button>
+                          <button
+                            onClick={handleRegister}
+                            disabled={bidding}
+                            className="flex-1 h-12 bg-[#f26c0d] hover:bg-[#d95d08] disabled:opacity-50 text-white font-bold rounded-lg transition-all"
+                          >
+                            {bidding ? 'Đang xử lý...' : 'Đồng ý & Đăng ký'}
+                          </button>
+                        </div>
+                      </div>
+                    </div>
+                  )}
+
                   {/* Controls */}
-                  {/* Controls */}
-                  {isActive && (
+                  {(isActive || isPending) && (
                     <div className="flex flex-col gap-3">
                       {!isAuthenticated ? (
                         <div className="flex flex-col gap-3">
@@ -434,7 +472,7 @@ const AuctionDetailPage = () => {
                       ) : !isRegistered ? (
                         <div className="flex flex-col gap-3">
                           <button
-                            onClick={handleRegister}
+                            onClick={handleShowDepositModal}
                             disabled={bidding}
                             className="w-full h-14 bg-[#f26c0d] hover:bg-[#d95d08] active:scale-[0.99] disabled:opacity-50 text-white text-lg font-bold rounded-lg shadow-lg shadow-orange-500/30 transition-all flex items-center justify-center gap-2"
                           >
@@ -442,10 +480,10 @@ const AuctionDetailPage = () => {
                             <CheckCircle size={20} />
                           </button>
                           <p className="text-center text-xs text-[#9c6c49]">
-                            Bạn cần đăng ký trước khi có thể đặt giá cho sản phẩm này.
+                            {isPending ? 'Đăng ký sớm để sẵn sàng khi đấu giá bắt đầu' : 'Bạn cần đăng ký trước khi có thể đặt giá'}
                           </p>
                         </div>
-                      ) : (
+                      ) : isActive ? (
                         <form onSubmit={handlePlaceBid} className="flex flex-col gap-3">
                           <div className="relative">
                             <span className="absolute left-4 top-1/2 -translate-y-1/2 text-[#9c6c49] font-semibold">₫</span>
@@ -493,6 +531,16 @@ const AuctionDetailPage = () => {
                             <Gavel size={20} />
                           </button>
                         </form>
+                      ) : (
+                        <div className="text-center py-4">
+                          <div className="inline-flex items-center gap-2 bg-green-50 text-green-700 px-4 py-2 rounded-lg">
+                            <CheckCircle size={20} />
+                            <span className="font-semibold">Đã đăng ký thành công</span>
+                          </div>
+                          <p className="text-sm text-[#9c6c49] mt-2">
+                            Bạn sẽ có thể đặt giá khi phiên đấu giá bắt đầu
+                          </p>
+                        </div>
                       )}
 
                       {!connected && isAuthenticated && isRegistered && (
@@ -505,7 +553,7 @@ const AuctionDetailPage = () => {
                     </div>
                   )}
 
-                  {!isActive && (
+                  {!isActive && !isPending && (
                     <div className="text-center py-4">
                       <p className="text-lg font-bold text-[#9c6c49]">Phiên đấu giá đã kết thúc</p>
                     </div>
