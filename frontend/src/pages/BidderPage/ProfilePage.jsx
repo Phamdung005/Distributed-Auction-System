@@ -18,16 +18,18 @@ import {
     MapPin,
     Mail,
     Phone,
-    Calendar
+    Calendar,
+    Wallet
 } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
+import walletApi from '../../services/walletApi';
 
 const ProfilePage = () => {
     const { user, logout, refreshProfile } = useAuth();
     const navigate = useNavigate();
 
     // State for tabs
-    const [activeTab, setActiveTab] = useState('general'); // general, security, history
+    const [activeTab, setActiveTab] = useState('general'); // general, security, history, wallet
 
     // State for form data
     const [formData, setFormData] = useState({
@@ -48,6 +50,11 @@ const ProfilePage = () => {
     // State for auctions
     const [myAuctions, setMyAuctions] = useState([]);
     const [loadingAuctions, setLoadingAuctions] = useState(false);
+
+    // State for wallet
+    const [walletInfo, setWalletInfo] = useState(null);
+    const [walletTransactions, setWalletTransactions] = useState([]);
+    const [loadingWallet, setLoadingWallet] = useState(false);
 
     // State for UI
     const [isLoading, setIsLoading] = useState(false);
@@ -71,6 +78,9 @@ const ProfilePage = () => {
         if (activeTab === 'history') {
             fetchMyAuctions();
         }
+        if (activeTab === 'wallet') {
+            fetchWalletInfo();
+        }
     }, [activeTab]);
 
     const fetchMyAuctions = async () => {
@@ -85,6 +95,39 @@ const ProfilePage = () => {
             // Optionally toast.error("Không thể tải lịch sử đấu giá");
         } finally {
             setLoadingAuctions(false);
+        }
+    };
+
+    const fetchWalletInfo = async () => {
+        setLoadingWallet(true);
+        try {
+            console.log('🔄 Fetching wallet info...');
+            const [balanceResponse, transactionsResponse] = await Promise.all([
+                walletApi.getWalletBalance(),
+                walletApi.getTransactionHistory({}, 1, 5)
+            ]);
+
+            console.log('✅ Balance response:', balanceResponse);
+            console.log('✅ Transactions response:', transactionsResponse);
+
+            if (balanceResponse.success) {
+                setWalletInfo(balanceResponse.data);
+            } else {
+                console.error('❌ Balance fetch failed:', balanceResponse.message);
+                toast.error(balanceResponse.message || 'Không thể tải số dư ví');
+            }
+            if (transactionsResponse.success) {
+                setWalletTransactions(transactionsResponse.data.transactions);
+            } else {
+                console.error('❌ Transactions fetch failed:', transactionsResponse.message);
+            }
+        } catch (error) {
+            console.error("❌ Failed to fetch wallet info", error);
+            console.error("Error response:", error.response?.data);
+            console.error("Error status:", error.response?.status);
+            toast.error(error.response?.data?.message || error.message || 'Không thể tải thông tin ví');
+        } finally {
+            setLoadingWallet(false);
         }
     };
 
@@ -153,7 +196,7 @@ const ProfilePage = () => {
     if (!user) return null; // Or loading spinner
 
     return (
-        <div className="min-h-screen bg-[#f8f7f5] font-sans pb-12">
+        <div className="min-h-screen bg-white font-sans pb-12">
             {/* Page Header */}
             <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
                 <div className="mb-8">
@@ -214,6 +257,13 @@ const ProfilePage = () => {
                                 >
                                     <History size={20} />
                                     Lịch sử đấu giá
+                                </button>
+                                <button
+                                    onClick={() => setActiveTab('wallet')}
+                                    className={`flex items-center gap-3 px-5 py-4 transition-colors text-left ${activeTab === 'wallet' ? 'bg-[#f26c0d]/10 border-l-4 border-[#f26c0d] text-[#f26c0d] font-medium' : 'text-slate-600 hover:bg-gray-50 border-l-4 border-transparent'}`}
+                                >
+                                    <Wallet size={20} />
+                                    Ví của tôi
                                 </button>
                                 <button
                                     onClick={handleLogout}
@@ -412,7 +462,103 @@ const ProfilePage = () => {
                             </section>
                         )}
 
-                        {/* Section 3: Auction History */}
+                        {/* Section 3: Wallet */}
+                        {activeTab === 'wallet' && (
+                            <section className="bg-white rounded-xl border border-gray-100 shadow-sm overflow-hidden animate-fade-in">
+                                <div className="p-6 border-b border-gray-100">
+                                    <h3 className="text-lg font-bold text-slate-900 flex items-center gap-2">
+                                        <Wallet className="text-[#f26c0d]" size={24} />
+                                        Ví của tôi
+                                    </h3>
+                                </div>
+                                <div className="p-6 space-y-6">
+                                    {loadingWallet ? (
+                                        <div className="flex items-center justify-center py-12">
+                                            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-[#f26c0d]"></div>
+                                        </div>
+                                    ) : (
+                                        <>
+                                            {/* Balance Cards */}
+                                            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                                <div className="bg-gradient-to-br from-green-50 to-emerald-50 rounded-xl p-6 border border-green-100">
+                                                    <div className="flex items-center gap-3 mb-3">
+                                                        <div className="p-2 bg-green-100 rounded-lg">
+                                                            <Wallet className="text-green-600" size={20} />
+                                                        </div>
+                                                        <span className="text-sm font-medium text-green-900">Số dư khả dụng</span>
+                                                    </div>
+                                                    <p className="text-3xl font-bold text-green-900">
+                                                        {walletInfo ? new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(walletInfo.balance) : '0 ₫'}
+                                                    </p>
+                                                </div>
+                                                <div className="bg-gradient-to-br from-orange-50 to-amber-50 rounded-xl p-6 border border-orange-100">
+                                                    <div className="flex items-center gap-3 mb-3">
+                                                        <div className="p-2 bg-orange-100 rounded-lg">
+                                                            <Lock className="text-orange-600" size={20} />
+                                                        </div>
+                                                        <span className="text-sm font-medium text-orange-900">Số tiền tạm giữ</span>
+                                                    </div>
+                                                    <p className="text-3xl font-bold text-orange-900">
+                                                        {walletInfo ? new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(walletInfo.frozenFunds) : '0 ₫'}
+                                                    </p>
+                                                </div>
+                                            </div>
+
+                                            {/* Quick Actions */}
+                                            <div className="flex gap-3">
+                                                <button
+                                                    onClick={() => navigate('/wallet')}
+                                                    className="flex-1 px-4 py-3 bg-[#f26c0d] hover:bg-[#d55a0b] text-white font-medium rounded-lg transition-colors flex items-center justify-center gap-2"
+                                                >
+                                                    <Wallet size={18} />
+                                                    Xem chi tiết ví
+                                                </button>
+                                            </div>
+
+                                            {/* Recent Transactions */}
+                                            <div>
+                                                <h4 className="text-base font-semibold text-slate-900 mb-3">Giao dịch gần đây</h4>
+                                                {walletTransactions.length === 0 ? (
+                                                    <p className="text-center text-gray-500 py-8">Chưa có giao dịch nào</p>
+                                                ) : (
+                                                    <div className="space-y-2">
+                                                        {walletTransactions.map((transaction) => {
+                                                            const isPositive = ['deposit', 'bid_refund', 'seller_payout'].includes(transaction.type);
+                                                            return (
+                                                                <div key={transaction._id} className="flex items-center justify-between p-3 bg-gray-50 rounded-lg hover:bg-gray-100 transition-colors">
+                                                                    <div className="flex items-center gap-3">
+                                                                        <div className={`p-2 rounded-lg ${isPositive ? 'bg-green-100' : 'bg-gray-200'}`}>
+                                                                            <Wallet className={isPositive ? 'text-green-600' : 'text-gray-600'} size={16} />
+                                                                        </div>
+                                                                        <div>
+                                                                            <p className="text-sm font-medium text-slate-900">
+                                                                                {transaction.type === 'deposit' ? 'Nạp tiền' :
+                                                                                    transaction.type === 'withdraw' ? 'Rút tiền' :
+                                                                                        transaction.type === 'bid_deposit' ? 'Đặt cọc' :
+                                                                                            transaction.type === 'bid_refund' ? 'Hoàn cọc' :
+                                                                                                transaction.type === 'auction_payment' ? 'Thanh toán' : 'Giao dịch'}
+                                                                            </p>
+                                                                            <p className="text-xs text-gray-500">
+                                                                                {new Date(transaction.createdAt).toLocaleString('vi-VN')}
+                                                                            </p>
+                                                                        </div>
+                                                                    </div>
+                                                                    <p className={`text-sm font-bold ${isPositive ? 'text-green-600' : 'text-gray-900'}`}>
+                                                                        {isPositive ? '+' : '-'}{new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(transaction.amount)}
+                                                                    </p>
+                                                                </div>
+                                                            );
+                                                        })}
+                                                    </div>
+                                                )}
+                                            </div>
+                                        </>
+                                    )}
+                                </div>
+                            </section>
+                        )}
+
+                        {/* Section 4: Auction History */}
                         {activeTab === 'history' && (
                             <section className="bg-white rounded-xl border border-gray-100 shadow-sm overflow-hidden animate-fade-in">
                                 <div className="p-6 border-b border-gray-100 flex flex-wrap justify-between items-center gap-4">

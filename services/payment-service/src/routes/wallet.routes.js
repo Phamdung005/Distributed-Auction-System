@@ -1,14 +1,27 @@
 const express = require('express');
 const router = express.Router();
 const { authMiddleware } = require('../middlewares/auth.middleware');
+const walletController = require('../controllers/walletController');
 
-// Wallet routes - TO BE IMPLEMENTED
-router.get('/balance', authMiddleware, (req, res) => {
-    res.status(501).json({ success: false, message: 'Not implemented yet' });
-});
+/**
+ * @route   GET /api/wallet/balance
+ * @desc    Get wallet balance and frozen funds
+ * @access  Private
+ */
+router.get('/balance', authMiddleware, walletController.getBalance);
 
-router.get('/transactions', authMiddleware, (req, res) => {
-    res.status(501).json({ success: false, message: 'Not implemented yet' });
-});
+/**
+ * @route   POST /api/wallet/deposit
+ * @desc    Deposit funds to wallet
+ * @access  Private
+ */
+router.post('/deposit', authMiddleware, walletController.deposit);
+
+/**
+ * @route   POST /api/wallet/withdraw
+ * @desc    Withdraw funds from wallet
+ * @access  Private
+ */
+router.post('/withdraw', authMiddleware, walletController.withdraw);
 
 module.exports = router;
