@@ -70,7 +70,7 @@ const auctionSchema = new mongoose.Schema({
     // Trạng thái
     status: {
         type: String,
-        enum: ['pending', 'active', 'ended', 'cancelled'],
+        enum: ['pending', 'active', 'ended', 'completed', 'cancelled', 'archived'],
         default: 'pending'
     },
     // Người tham gia
@@ -98,10 +98,39 @@ const auctionSchema = new mongoose.Schema({
         default: 0
     },
     // Điều kiện tham gia
+    requiresRegistration: {
+        type: Boolean,
+        default: true
+    },
+    depositPercentage: {
+        type: Number,
+        default: 10,
+        min: [0, 'Phần trăm đặt cọc không thể âm'],
+        max: [100, 'Phần trăm đặt cọc không thể vượt quá 100']
+    },
     minDeposit: {
         type: Number,
         default: 0,
         min: [0, 'Tiền đặt cọc không thể âm']
+    },
+    // Auto-archive configuration
+    autoArchiveAfterHours: {
+        type: Number,
+        default: 24,
+        min: [1, 'Thời gian archive phải ít nhất 1 giờ']
+    },
+    scheduledArchiveAt: {
+        type: Date,
+        default: null
+    },
+    archivedAt: {
+        type: Date,
+        default: null
+    },
+    archiveReason: {
+        type: String,
+        enum: ['completed', 'cancelled', 'no_bids', 'expired', null],
+        default: null
     },
     // Metadata
     metadata: {
@@ -169,6 +198,35 @@ auctionSchema.methods.updateCurrentPrice = async function (newPrice, bidderId) {
 auctionSchema.methods.endAuction = async function (winnerId = null) {
     this.status = 'ended';
     this.winner = winnerId;
+
+    // Schedule auto-archive after configured hours
+    const archiveDelay = this.autoArchiveAfterHours * 60 * 60 * 1000; // Convert to milliseconds
+    this.scheduledArchiveAt = new Date(Date.now() + archiveDelay);
+
+    await this.save();
+};
+
+/**
+ * Method: Đánh dấu auction là completed (giao dịch hoàn tất)
+ */
+auctionSchema.methods.markCompleted = async function () {
+    this.status = 'completed';
+
+    // Schedule archive
+    const archiveDelay = this.autoArchiveAfterHours * 60 * 60 * 1000;
+    this.scheduledArchiveAt = new Date(Date.now() + archiveDelay);
+
+    await this.save();
+};
+
+/**
+ * Method: Archive auction
+ * @param {string} reason - Lý do archive
+ */
+auctionSchema.methods.archive = async function (reason = 'completed') {
+    this.status = 'archived';
+    this.archivedAt = new Date();
+    this.archiveReason = reason;
     await this.save();
 };
 
