@@ -43,6 +43,9 @@ const AuctionDetailPage = () => {
   const [selectedImage, setSelectedImage] = useState(0);
   const [currentTime, setCurrentTime] = useState(new Date());
 
+  const [isRegistered, setIsRegistered] = useState(false);
+  const [checkingRegistration, setCheckingRegistration] = useState(true);
+
   // Update current time every second for live countdown
   useEffect(() => {
     const timer = setInterval(() => {
@@ -54,6 +57,11 @@ const AuctionDetailPage = () => {
 
   useEffect(() => {
     fetchAuctionDetails();
+    if (isAuthenticated) {
+      checkRegistration();
+    } else {
+      setCheckingRegistration(false);
+    }
 
     if (isAuthenticated) {
       const token = getAccessToken();
@@ -103,12 +111,44 @@ const AuctionDetailPage = () => {
       const response = await auctionAPI.getAuctionById(id);
       const data = response.data.data;
       setAuction(data);
-      setBidAmount(data.currentPrice + data.minBidIncrement);
+      if (data) {
+        setBidAmount(data.currentPrice + data.minBidIncrement);
+      }
     } catch (error) {
       toast.error('Không thể tải thông tin đấu giá');
       navigate('/');
     } finally {
       setLoading(false);
+    }
+  };
+
+  const checkRegistration = async () => {
+    try {
+      const response = await auctionAPI.checkRegistrationStatus(id);
+      setIsRegistered(response.data.isRegistered);
+    } catch (error) {
+      console.error('Error checking registration:', error);
+    } finally {
+      setCheckingRegistration(false);
+    }
+  };
+
+  const handleRegister = async () => {
+    if (!isAuthenticated) {
+      toast.warning('Vui lòng đăng nhập để đăng ký');
+      navigate('/login');
+      return;
+    }
+
+    try {
+      setBidding(true);
+      await auctionAPI.registerForAuction(id);
+      toast.success('Đăng ký tham gia thành công! Bạn có thể bắt đầu đặt giá.');
+      setIsRegistered(true);
+    } catch (error) {
+      toast.error(error.response?.data?.message || 'Đăng ký thất bại');
+    } finally {
+      setBidding(false);
     }
   };
 
@@ -118,6 +158,11 @@ const AuctionDetailPage = () => {
     if (!isAuthenticated) {
       toast.warning('Vui lòng đăng nhập để đặt giá');
       navigate('/login');
+      return;
+    }
+
+    if (!isRegistered) {
+      toast.error('Bạn cần đăng ký tham gia phiên đấu giá này trước');
       return;
     }
 
@@ -372,57 +417,85 @@ const AuctionDetailPage = () => {
                   </div>
 
                   {/* Controls */}
+                  {/* Controls */}
                   {isActive && (
                     <div className="flex flex-col gap-3">
-                      <form onSubmit={handlePlaceBid} className="flex flex-col gap-3">
-                        <div className="relative">
-                          <span className="absolute left-4 top-1/2 -translate-y-1/2 text-[#9c6c49] font-semibold">₫</span>
-                          <input
-                            className="w-full h-12 rounded-lg border border-[#e5ded9] bg-[#fcfaf8] pl-8 pr-4 text-lg font-bold text-[#1c130d] focus:ring-2 focus:ring-[#f26c0d] focus:border-[#f26c0d] transition-all placeholder:font-normal"
-                            placeholder="Nhập số tiền đặt giá"
-                            type="number"
-                            value={bidAmount}
-                            onChange={(e) => setBidAmount(e.target.value)}
-                            min={auction.currentPrice + auction.minBidIncrement}
-                            step={auction.minBidIncrement}
-                          />
-                        </div>
-
-                        <div className="grid grid-cols-3 gap-2">
+                      {!isAuthenticated ? (
+                        <div className="flex flex-col gap-3">
                           <button
-                            type="button"
-                            onClick={() => quickBid(auction.minBidIncrement)}
-                            className="h-10 rounded border border-[#e5ded9] hover:border-[#f26c0d] hover:text-[#f26c0d] hover:bg-[#f26c0d]/5 text-sm font-semibold text-[#5c4536] transition-all"
+                            onClick={() => navigate('/login')}
+                            className="w-full h-12 bg-white border-2 border-[#f26c0d] text-[#f26c0d] font-bold rounded-lg hover:bg-orange-50 transition-all"
                           >
-                            +{(auction.minBidIncrement / 1000).toFixed(0)}k
-                          </button>
-                          <button
-                            type="button"
-                            onClick={() => quickBid(auction.minBidIncrement * 5)}
-                            className="h-10 rounded border border-[#e5ded9] hover:border-[#f26c0d] hover:text-[#f26c0d] hover:bg-[#f26c0d]/5 text-sm font-semibold text-[#5c4536] transition-all"
-                          >
-                            +{(auction.minBidIncrement * 5 / 1000).toFixed(0)}k
-                          </button>
-                          <button
-                            type="button"
-                            onClick={() => quickBid(auction.minBidIncrement * 10)}
-                            className="h-10 rounded border border-[#e5ded9] hover:border-[#f26c0d] hover:text-[#f26c0d] hover:bg-[#f26c0d]/5 text-sm font-semibold text-[#5c4536] transition-all"
-                          >
-                            +{(auction.minBidIncrement * 10 / 1000).toFixed(0)}k
+                            Đăng nhập để tham gia đấu giá
                           </button>
                         </div>
+                      ) : checkingRegistration ? (
+                        <div className="text-center text-[#9c6c49] py-4">Đang kiểm tra trạng thái...</div>
+                      ) : !isRegistered ? (
+                        <div className="flex flex-col gap-3">
+                          <button
+                            onClick={handleRegister}
+                            disabled={bidding}
+                            className="w-full h-14 bg-[#f26c0d] hover:bg-[#d95d08] active:scale-[0.99] disabled:opacity-50 text-white text-lg font-bold rounded-lg shadow-lg shadow-orange-500/30 transition-all flex items-center justify-center gap-2"
+                          >
+                            <span>{bidding ? 'Đang xử lý...' : 'Đăng ký tham gia đấu giá'}</span>
+                            <CheckCircle size={20} />
+                          </button>
+                          <p className="text-center text-xs text-[#9c6c49]">
+                            Bạn cần đăng ký trước khi có thể đặt giá cho sản phẩm này.
+                          </p>
+                        </div>
+                      ) : (
+                        <form onSubmit={handlePlaceBid} className="flex flex-col gap-3">
+                          <div className="relative">
+                            <span className="absolute left-4 top-1/2 -translate-y-1/2 text-[#9c6c49] font-semibold">₫</span>
+                            <input
+                              className="w-full h-12 rounded-lg border border-[#e5ded9] bg-[#fcfaf8] pl-8 pr-4 text-lg font-bold text-[#1c130d] focus:ring-2 focus:ring-[#f26c0d] focus:border-[#f26c0d] transition-all placeholder:font-normal"
+                              placeholder="Nhập số tiền đặt giá"
+                              type="number"
+                              value={bidAmount}
+                              onChange={(e) => setBidAmount(e.target.value)}
+                              min={auction.currentPrice + auction.minBidIncrement}
+                              step={auction.minBidIncrement}
+                            />
+                          </div>
 
-                        <button
-                          type="submit"
-                          disabled={bidding || !connected}
-                          className="w-full h-14 bg-[#f26c0d] hover:bg-[#d95d08] active:scale-[0.99] disabled:opacity-50 disabled:cursor-not-allowed text-white text-lg font-bold rounded-lg shadow-lg shadow-orange-500/30 transition-all flex items-center justify-center gap-2"
-                        >
-                          <span>{bidding ? 'Đang đặt giá...' : 'Đặt giá'}</span>
-                          <Gavel size={20} />
-                        </button>
-                      </form>
+                          <div className="grid grid-cols-3 gap-2">
+                            <button
+                              type="button"
+                              onClick={() => quickBid(auction.minBidIncrement)}
+                              className="h-10 rounded border border-[#e5ded9] hover:border-[#f26c0d] hover:text-[#f26c0d] hover:bg-[#f26c0d]/5 text-sm font-semibold text-[#5c4536] transition-all"
+                            >
+                              +{(auction.minBidIncrement / 1000).toFixed(0)}k
+                            </button>
+                            <button
+                              type="button"
+                              onClick={() => quickBid(auction.minBidIncrement * 5)}
+                              className="h-10 rounded border border-[#e5ded9] hover:border-[#f26c0d] hover:text-[#f26c0d] hover:bg-[#f26c0d]/5 text-sm font-semibold text-[#5c4536] transition-all"
+                            >
+                              +{(auction.minBidIncrement * 5 / 1000).toFixed(0)}k
+                            </button>
+                            <button
+                              type="button"
+                              onClick={() => quickBid(auction.minBidIncrement * 10)}
+                              className="h-10 rounded border border-[#e5ded9] hover:border-[#f26c0d] hover:text-[#f26c0d] hover:bg-[#f26c0d]/5 text-sm font-semibold text-[#5c4536] transition-all"
+                            >
+                              +{(auction.minBidIncrement * 10 / 1000).toFixed(0)}k
+                            </button>
+                          </div>
 
-                      {!connected && isAuthenticated && (
+                          <button
+                            type="submit"
+                            disabled={bidding || !connected}
+                            className="w-full h-14 bg-[#f26c0d] hover:bg-[#d95d08] active:scale-[0.99] disabled:opacity-50 disabled:cursor-not-allowed text-white text-lg font-bold rounded-lg shadow-lg shadow-orange-500/30 transition-all flex items-center justify-center gap-2"
+                          >
+                            <span>{bidding ? 'Đang đặt giá...' : 'Đặt giá'}</span>
+                            <Gavel size={20} />
+                          </button>
+                        </form>
+                      )}
+
+                      {!connected && isAuthenticated && isRegistered && (
                         <p className="text-center text-xs text-[#9c6c49]">⚠️ Đang kết nối đến server...</p>
                       )}
 

@@ -24,10 +24,12 @@ class WalletRepository {
      * @returns {Promise<number>} - Tổng số tiền frozen
      */
     async getUserFrozenFunds(userId) {
+        const mongoose = require('mongoose');
+
         const result = await Escrow.aggregate([
             {
                 $match: {
-                    user_id: userId,
+                    user_id: new mongoose.Types.ObjectId(userId), // Convert string to ObjectId
                     status: 'frozen' // Chỉ tính escrow đang frozen
                 }
             },
@@ -69,17 +71,15 @@ class WalletRepository {
     }
 
     /**
-     * Kiểm tra user có đủ balance không
+     * Kiểm tra user có đủ balance không (tính cả frozen funds)
      * @param {string} userId - ID của user
      * @param {number} amount - Số tiền cần kiểm tra
      * @returns {Promise<boolean>}
      */
     async hasEnoughBalance(userId, amount) {
-        const user = await User.findById(userId).select('balance');
-        if (!user) {
-            throw new Error('User không tồn tại');
-        }
-        return user.balance >= amount;
+        const walletInfo = await this.getWalletInfo(userId);
+        // Check available balance (balance - frozen funds)
+        return walletInfo.availableBalance >= amount;
     }
 
     /**

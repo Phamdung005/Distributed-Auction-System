@@ -73,9 +73,26 @@ const AuctionCard = ({ auction }) => {
                         </div>
                     </div>
 
-                    <Link to={`/auction/${auction.id}`} className="block w-full text-center bg-orange-600 hover:bg-orange-700 text-white rounded-lg py-2 text-sm font-bold transition-all shadow-md shadow-orange-200">
-                        {isLive ? 'Đấu giá ngay' : 'Xem chi tiết'}
-                    </Link>
+                    <div className="flex gap-2">
+                        <Link
+                            to={`/auction/${auction.id}`}
+                            className={`flex-1 flex items-center justify-center rounded-lg py-2 text-sm font-bold transition-all border ${(isLive || isUpcoming)
+                                    ? 'bg-white text-orange-600 border-orange-600 hover:bg-orange-50'
+                                    : 'bg-orange-600 hover:bg-orange-700 text-white border-transparent w-full'
+                                }`}
+                        >
+                            Xem chi tiết
+                        </Link>
+
+                        {(isLive || isUpcoming) && (
+                            <Link
+                                to={`/auction/${auction.id}`}
+                                className="flex-1 flex items-center justify-center bg-orange-600 hover:bg-orange-700 text-white rounded-lg py-2 text-sm font-bold transition-all shadow-md shadow-orange-200"
+                            >
+                                Đăng ký phiên
+                            </Link>
+                        )}
+                    </div>
                 </div>
             </div>
         </div>

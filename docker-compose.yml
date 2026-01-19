@@ -57,12 +57,16 @@ services:
     restart: always
     ports:
       - "3002:3002"
+    volumes:
+      - ./services/auction-service/src:/app/src
+      - ./shared:/app/shared
     environment:
       - NODE_ENV=production
       - PORT=3002
       - MONGODB_URI=mongodb://mongodb:27017/auction_db
       - REDIS_URL=redis://:redis123@redis:6379
       - AUTH_SERVICE_URL=http://auth-service:3001
+      - PAYMENT_SERVICE_URL=http://payment-service:3006
     depends_on:
       - mongodb
       - redis

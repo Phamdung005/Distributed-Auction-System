@@ -112,6 +112,12 @@ export const auctionAPI = {
 
     // Hủy auction
     cancelAuction: (id) => api.post(`${AUCTION_BASE_URL}/${id}/cancel`),
+
+    // Đăng ký tham gia đấu giá
+    registerForAuction: (id) => api.post(`${AUCTION_BASE_URL}/${id}/register`),
+
+    // Kiểm tra trạng thái đăng ký
+    checkRegistrationStatus: (id) => api.get(`${AUCTION_BASE_URL}/${id}/registration-status`),
 };
 
 // ==================== BIDDING SERVICE ====================

@@ -25,8 +25,7 @@ class AuctionRepository {
     async getAuctionById(auctionId) {
         return await Auction.findById(auctionId)
             .populate('seller', 'username fullName email')
-            .populate('winner', 'username fullName')
-            .populate('recentBids.bidder', 'username fullName');
+            .populate('winner', 'username fullName');
     }
 
     /**

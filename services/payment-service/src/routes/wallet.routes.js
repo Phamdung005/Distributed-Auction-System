@@ -24,4 +24,25 @@ router.post('/deposit', authMiddleware, walletController.deposit);
  */
 router.post('/withdraw', authMiddleware, walletController.withdraw);
 
+/**
+ * @route   POST /api/wallet/freeze
+ * @desc    Freeze funds for auction deposit
+ * @access  Private
+ */
+router.post('/freeze', authMiddleware, walletController.freezeFunds);
+
+/**
+ * @route   POST /api/wallet/unfreeze
+ * @desc    Unfreeze funds (refund deposit)
+ * @access  Private
+ */
+router.post('/unfreeze', authMiddleware, walletController.unfreezeFunds);
+
+/**
+ * @route   POST /api/wallet/pay-auction
+ * @desc    Pay for won auction (final price - deposit)
+ * @access  Private
+ */
+router.post('/pay-auction', authMiddleware, walletController.payAuction);
+
 module.exports = router;

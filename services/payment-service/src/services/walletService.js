@@ -168,6 +168,7 @@ class WalletService {
         }
     }
 
+
     /**
      * Freeze funds (đặt cọc cho auction)
      * @param {string} userId - ID của user
@@ -178,6 +179,9 @@ class WalletService {
     async freezeFunds(userId, amount, auctionId) {
         // Removed transaction for standalone MongoDB support
         try {
+            // Import Escrow model
+            const Escrow = require('shared/models/Escrow');
+
             // Validate amount
             if (amount <= 0) {
                 throw new Error('Số tiền đặt cọc phải lớn hơn 0');
@@ -210,11 +214,25 @@ class WalletService {
 
             const transaction = await transactionRepository.createTransaction(transactionData);
 
+            // Create Escrow record
+            const escrowData = {
+                user_id: userId,
+                auction_id: auctionId,
+                amount: amount,
+                status: 'frozen',
+                frozenAt: new Date(),
+                relatedTransaction_id: transaction._id,
+                notes: 'Đặt cọc tham gia đấu giá'
+            };
+
+            const escrow = await Escrow.create(escrowData);
+
             return {
                 success: true,
                 message: 'Đặt cọc thành công',
                 data: {
                     transactionId: transaction._id,
+                    escrowId: escrow._id,
                     amount: amount
                 }
             };
@@ -237,6 +255,15 @@ class WalletService {
     async unfreezeFunds(userId, amount, auctionId) {
         // Removed transaction for standalone MongoDB support
         try {
+            // Import Escrow model
+            const Escrow = require('shared/models/Escrow');
+
+            // Find the frozen escrow
+            const escrow = await Escrow.findUserAuctionEscrow(userId, auctionId);
+            if (!escrow) {
+                throw new Error('Không tìm thấy escrow để hoàn cọc');
+            }
+
             // Get current balance
             const user = await walletRepository.getUserBalance(userId);
             const balanceBefore = user.balance;
@@ -258,11 +285,15 @@ class WalletService {
 
             const transaction = await transactionRepository.createTransaction(transactionData);
 
+            // Update escrow status to refunded
+            await escrow.refund(transaction._id);
+
             return {
                 success: true,
                 message: 'Hoàn cọc thành công',
                 data: {
                     transactionId: transaction._id,
+                    escrowId: escrow._id,
                     amount: amount
                 }
             };
@@ -271,6 +302,89 @@ class WalletService {
             return {
                 success: false,
                 message: error.message || 'Lỗi khi hoàn cọc'
+            };
+        }
+    }
+
+    /**
+     * Thanh toán cho người thắng đấu giá
+     * @param {string} userId - ID của user
+     * @param {string} auctionId - ID của auction
+     * @param {number} finalPrice - Giá cuối cùng của auction
+     * @returns {Promise<Object>}
+     */
+    async payAuctionWinner(userId, auctionId, finalPrice) {
+        try {
+            // Import Escrow model
+            const Escrow = require('shared/models/Escrow');
+
+            // 1. Find deposit escrow
+            const escrow = await Escrow.findUserAuctionEscrow(userId, auctionId);
+            if (!escrow) {
+                throw new Error('Không tìm thấy tiền cọc');
+            }
+
+            // 2. Calculate remaining payment
+            const depositAmount = escrow.amount;
+            const remainingPayment = finalPrice - depositAmount;
+
+            if (remainingPayment < 0) {
+                throw new Error('Giá cuối cùng không thể nhỏ hơn tiền cọc');
+            }
+
+            // 3. Check available balance for remaining payment
+            const walletInfo = await walletRepository.getWalletInfo(userId);
+            if (walletInfo.availableBalance < remainingPayment) {
+                throw new Error(`Số dư khả dụng không đủ. Cần: ${remainingPayment.toLocaleString('vi-VN')} VND, Có: ${walletInfo.availableBalance.toLocaleString('vi-VN')} VND`);
+            }
+
+            // 4. Deduct remaining payment from balance
+            const user = await walletRepository.getUserBalance(userId);
+            const balanceBefore = user.balance;
+            const balanceAfter = balanceBefore - remainingPayment;
+
+            await walletRepository.updateBalance(userId, -remainingPayment);
+
+            // 5. Create transaction for full payment
+            const transactionData = {
+                user_id: userId,
+                type: 'auction_payment',
+                amount: finalPrice,
+                balanceBefore: balanceBefore,
+                balanceAfter: balanceAfter,
+                status: 'completed',
+                paymentMethod: 'wallet',
+                relatedAuction_id: auctionId,
+                description: `Thanh toán đấu giá (Tổng: ${finalPrice.toLocaleString('vi-VN')}, Cọc: ${depositAmount.toLocaleString('vi-VN')}, Thanh toán thêm: ${remainingPayment.toLocaleString('vi-VN')})`,
+                completedAt: new Date(),
+                metadata: {
+                    depositAmount: depositAmount,
+                    additionalPayment: remainingPayment
+                }
+            };
+
+            const transaction = await transactionRepository.createTransaction(transactionData);
+
+            // 6. Release escrow (mark as used for payment)
+            await escrow.release(transaction._id);
+
+            return {
+                success: true,
+                message: 'Thanh toán thành công',
+                data: {
+                    finalPrice: finalPrice,
+                    depositUsed: depositAmount,
+                    additionalPayment: remainingPayment,
+                    transactionId: transaction._id,
+                    escrowId: escrow._id,
+                    newBalance: balanceAfter
+                }
+            };
+        } catch (error) {
+            console.error('Error paying auction winner:', error);
+            return {
+                success: false,
+                message: error.message || 'Lỗi khi thanh toán đấu giá'
             };
         }
     }
