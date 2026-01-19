@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { Link } from 'react-router-dom';
 import { useAuth } from '../../contexts/AuthContext';
 import walletApi from '../../services/walletApi';
 import { toast } from 'react-toastify';
@@ -19,7 +20,8 @@ const WalletPage = () => {
 
     // Filter state
     const [activeFilter, setActiveFilter] = useState('all');
-
+    const [depositModalOpen, setDepositModalOpen] = useState(false);
+    const [withdrawModalOpen, setWithdrawModalOpen] = useState(false);
     // Load wallet info
     useEffect(() => {
         loadWalletInfo();
@@ -65,6 +67,26 @@ const WalletPage = () => {
             toast.error('Không thể tải lịch sử giao dịch');
         } finally {
             setTransactionsLoading(false);
+        }
+    };
+
+    const handleTestDeposit = async () => {
+        try {
+            setLoading(true);
+            const amount = 1000000000; 
+            const response = await walletApi.depositFunds(amount, 'wallet', { description: 'Test deposit 1 billion' });
+
+            if (response.success) {
+                toast.success('Đã nạp 1 tỷ VND vào tài khoản (Test)');
+                await Promise.all([loadWalletInfo(), loadTransactions()]);
+            } else {
+                toast.error(response.message);
+            }
+        } catch (err) {
+            console.error(err);
+            toast.error('Lỗi khi nạp tiền test');
+        } finally {
+            setLoading(false);
         }
     };
 
@@ -167,20 +189,23 @@ const WalletPage = () => {
     }
 
     return (
-        <div className="min-h-screen bg-white">
-            {/* Header */}
-            <header className="bg-white border-b border-gray-200 px-8 py-6">
-                <div className="max-w-6xl mx-auto">
-                    <h1 className="text-3xl font-black tracking-tight text-gray-900">
-                        Ví của tôi
-                    </h1>
-                    <p className="mt-1 text-sm text-gray-600">
-                        Quản lý số dư và lịch sử giao dịch an toàn.
-                    </p>
-                </div>
-            </header>
+        <div className="w-full min-h-screen bg-[#f8f7f5] text-[#1c130d] px-4 md:px-8 py-6">
+            {/* Breadcrumbs */}
+            <div className="flex flex-wrap items-center gap-2 mb-4 text-sm max-w-[1920px] mx-auto">
+                <Link to="/" className="text-gray-500 hover:text-orange-600">Trang chủ</Link>
+                <span className="text-gray-400">/</span>
+                <span className="text-gray-900 font-bold">Ví của tôi</span>
+            </div>
 
-            <div className="max-w-6xl mx-auto px-6 py-8">
+            {/* Page Heading */}
+            <div className="mb-8 flex flex-col md:flex-row md:items-end justify-between gap-4 max-w-[1920px] mx-auto">
+                <div className="flex flex-col gap-2">
+                    <h1 className="text-3xl md:text-4xl font-black leading-tight tracking-tight text-gray-900">Ví của tôi</h1>
+                    <p className="text-gray-500 text-base">Quản lý số dư và lịch sử giao dịch an toàn.</p>
+                </div>
+            </div>
+
+            <div className="max-w-[1920px] mx-auto">
                 {/* Stats & Actions Grid */}
                 <div className="grid grid-cols-1 gap-6 mb-8 lg:grid-cols-3">
                     {/* Balance Card */}
@@ -223,7 +248,10 @@ const WalletPage = () => {
 
                     {/* Quick Actions */}
                     <div className="flex flex-col justify-center gap-3 rounded-xl border border-gray-200 p-6 shadow-sm">
-                        <button className="flex w-full items-center justify-center gap-2 rounded-lg bg-primary py-3 text-sm font-bold shadow-md hover:bg-primary/90 transition-all active:scale-[0.98]">
+                        <button
+                            onClick={handleTestDeposit}
+                            className="flex w-full items-center justify-center gap-2 rounded-lg bg-orange-600 py-3 text-sm font-bold text-white shadow-md hover:bg-orange-700 transition-all active:scale-[0.98]"
+                        >
                             <span className="material-symbols-outlined">add_card</span>
                             Nạp tiền ngay
                         </button>

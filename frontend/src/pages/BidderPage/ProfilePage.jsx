@@ -21,7 +21,7 @@ import {
     Calendar,
     Wallet
 } from 'lucide-react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, Link } from 'react-router-dom';
 import walletApi from '../../services/walletApi';
 
 const ProfilePage = () => {
@@ -196,14 +196,23 @@ const ProfilePage = () => {
     if (!user) return null; // Or loading spinner
 
     return (
-        <div className="min-h-screen bg-white font-sans pb-12">
-            {/* Page Header */}
-            <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-                <div className="mb-8">
-                    <h1 className="text-3xl font-bold text-slate-900">Hồ sơ của bạn</h1>
-                    <p className="text-slate-500 mt-1">Quản lý thông tin cá nhân, bảo mật và xem lại lịch sử đấu giá.</p>
-                </div>
+        <div className="w-full min-h-screen bg-[#f8f7f5] text-[#1c130d] px-4 md:px-8 py-6">
+            {/* Breadcrumbs */}
+            <div className="flex flex-wrap items-center gap-2 mb-4 text-sm max-w-[1920px] mx-auto">
+                <Link to="/" className="text-gray-500 hover:text-orange-600">Trang chủ</Link>
+                <span className="text-gray-400">/</span>
+                <span className="text-gray-900 font-bold">Hồ sơ của bạn</span>
+            </div>
 
+            {/* Page Header */}
+            <div className="mb-8 flex flex-col md:flex-row md:items-end justify-between gap-4 max-w-[1920px] mx-auto">
+                <div className="flex flex-col gap-2">
+                    <h1 className="text-3xl md:text-4xl font-black leading-tight tracking-tight text-gray-900">Hồ sơ của bạn</h1>
+                    <p className="text-gray-500 text-base">Quản lý thông tin cá nhân, bảo mật và xem lại lịch sử đấu giá.</p>
+                </div>
+            </div>
+
+            <div className="max-w-[1920px] mx-auto">
                 <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
                     {/* Left Sidebar */}
                     <aside className="lg:col-span-4 xl:col-span-3 space-y-6">

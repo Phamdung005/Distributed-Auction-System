@@ -35,10 +35,16 @@ class WalletService {
      * @param {Object} metadata - Metadata bổ sung
      * @returns {Promise<Object>}
      */
+    /**
+     * Nạp tiền vào ví
+     * @param {string} userId - ID của user
+     * @param {number} amount - Số tiền nạp
+     * @param {string} paymentMethod - Phương thức thanh toán (wallet, momo)
+     * @param {Object} metadata - Metadata bổ sung
+     * @returns {Promise<Object>}
+     */
     async deposit(userId, amount, paymentMethod = 'wallet', metadata = {}) {
-        const session = await mongoose.startSession();
-        session.startTransaction();
-
+        // Removed transaction for standalone MongoDB support
         try {
             // Validate amount
             if (amount <= 0) {
@@ -63,10 +69,10 @@ class WalletService {
                 metadata: metadata
             };
 
-            const transaction = await transactionRepository.createTransaction(transactionData, session);
+            const transaction = await transactionRepository.createTransaction(transactionData);
 
             // Update user balance
-            await walletRepository.updateBalance(userId, amount, session);
+            await walletRepository.updateBalance(userId, amount);
 
             // Mark transaction as completed
             await transactionRepository.updateTransactionStatus(
@@ -74,8 +80,6 @@ class WalletService {
                 'completed',
                 { completedAt: new Date() }
             );
-
-            await session.commitTransaction();
 
             return {
                 success: true,
@@ -87,14 +91,11 @@ class WalletService {
                 }
             };
         } catch (error) {
-            await session.abortTransaction();
             console.error('Error depositing funds:', error);
             return {
                 success: false,
                 message: error.message || 'Lỗi khi nạp tiền'
             };
-        } finally {
-            session.endSession();
         }
     }
 
@@ -106,9 +107,7 @@ class WalletService {
      * @returns {Promise<Object>}
      */
     async withdraw(userId, amount, metadata = {}) {
-        const session = await mongoose.startSession();
-        session.startTransaction();
-
+        // Removed transaction for standalone MongoDB support
         try {
             // Validate amount
             if (amount <= 0) {
@@ -139,10 +138,10 @@ class WalletService {
                 metadata: metadata
             };
 
-            const transaction = await transactionRepository.createTransaction(transactionData, session);
+            const transaction = await transactionRepository.createTransaction(transactionData);
 
             // Update user balance
-            await walletRepository.updateBalance(userId, -amount, session);
+            await walletRepository.updateBalance(userId, -amount);
 
             // Mark transaction as completed
             await transactionRepository.updateTransactionStatus(
@@ -150,8 +149,6 @@ class WalletService {
                 'completed',
                 { completedAt: new Date() }
             );
-
-            await session.commitTransaction();
 
             return {
                 success: true,
@@ -163,14 +160,11 @@ class WalletService {
                 }
             };
         } catch (error) {
-            await session.abortTransaction();
             console.error('Error withdrawing funds:', error);
             return {
                 success: false,
                 message: error.message || 'Lỗi khi rút tiền'
             };
-        } finally {
-            session.endSession();
         }
     }
 
@@ -182,9 +176,7 @@ class WalletService {
      * @returns {Promise<Object>}
      */
     async freezeFunds(userId, amount, auctionId) {
-        const session = await mongoose.startSession();
-        session.startTransaction();
-
+        // Removed transaction for standalone MongoDB support
         try {
             // Validate amount
             if (amount <= 0) {
@@ -216,9 +208,7 @@ class WalletService {
                 completedAt: new Date()
             };
 
-            const transaction = await transactionRepository.createTransaction(transactionData, session);
-
-            await session.commitTransaction();
+            const transaction = await transactionRepository.createTransaction(transactionData);
 
             return {
                 success: true,
@@ -229,14 +219,11 @@ class WalletService {
                 }
             };
         } catch (error) {
-            await session.abortTransaction();
             console.error('Error freezing funds:', error);
             return {
                 success: false,
                 message: error.message || 'Lỗi khi đặt cọc'
             };
-        } finally {
-            session.endSession();
         }
     }
 
@@ -248,9 +235,7 @@ class WalletService {
      * @returns {Promise<Object>}
      */
     async unfreezeFunds(userId, amount, auctionId) {
-        const session = await mongoose.startSession();
-        session.startTransaction();
-
+        // Removed transaction for standalone MongoDB support
         try {
             // Get current balance
             const user = await walletRepository.getUserBalance(userId);
@@ -271,9 +256,7 @@ class WalletService {
                 completedAt: new Date()
             };
 
-            const transaction = await transactionRepository.createTransaction(transactionData, session);
-
-            await session.commitTransaction();
+            const transaction = await transactionRepository.createTransaction(transactionData);
 
             return {
                 success: true,
@@ -284,14 +267,11 @@ class WalletService {
                 }
             };
         } catch (error) {
-            await session.abortTransaction();
             console.error('Error unfreezing funds:', error);
             return {
                 success: false,
                 message: error.message || 'Lỗi khi hoàn cọc'
             };
-        } finally {
-            session.endSession();
         }
     }
 }

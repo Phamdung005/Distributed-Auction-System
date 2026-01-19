@@ -96,10 +96,6 @@ const AuctionListPage = () => {
                     <h1 className="text-3xl md:text-4xl font-black leading-tight tracking-tight text-gray-900">Danh Sách Sản Phẩm</h1>
                     <p className="text-gray-500 text-base">Khám phá và tham gia đấu giá các sản phẩm đang diễn ra và sắp tới.</p>
                 </div>
-                <div className="flex items-center gap-2 text-sm font-medium text-orange-600">
-                    <span className="material-symbols-outlined text-sm">update</span>
-                    Cập nhật thời gian thực
-                </div>
             </div>
 
             <div className="flex flex-col lg:flex-row gap-8 max-w-[1920px] mx-auto">
@@ -155,8 +151,8 @@ const AuctionListPage = () => {
                                                 key={cat.id}
                                                 onClick={() => handleCategoryChange(cat.id)}
                                                 className={`flex items-center gap-3 px-3 py-2 rounded-lg text-sm transition-colors w-full text-left ${filters.category === cat.id
-                                                        ? 'bg-orange-50 text-orange-600 font-bold'
-                                                        : 'hover:bg-gray-100 text-gray-700'
+                                                    ? 'bg-orange-50 text-orange-600 font-bold'
+                                                    : 'hover:bg-gray-100 text-gray-700'
                                                     }`}
                                             >
                                                 <span className="material-symbols-outlined text-lg">{cat.icon}</span>
