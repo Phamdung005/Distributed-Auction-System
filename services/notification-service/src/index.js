@@ -5,8 +5,8 @@ const http = require('http');
 const { Server } = require('socket.io');
 
 // Shared database connections
-const connectDB = require('../../shared/database/mongodb');
-const { createRedisClient } = require('../../shared/database/redis');
+const connectDB = require('shared/database/mongodb');
+const { createRedisClient } = require('shared/database/redis');
 
 // Routes
 const notificationRoutes = require('./routes/notification.routes');

@@ -117,6 +117,29 @@ services:
     networks:
       - auction-network
 
+  # Community Service - Posts and Comments
+  community-service:
+    build:
+      context: .
+      dockerfile: ./services/community-service/Dockerfile
+    container_name: community-service
+    restart: always
+    ports:
+      - "3005:3005"
+    environment:
+      - NODE_ENV=production
+      - PORT=3005
+      - MONGODB_URI=mongodb://mongodb:27017/auction_db
+      - REDIS_URL=redis://:redis123@redis:6379
+      - JWT_SECRET=your-super-secret-jwt-key-change-in-production
+      - CORS_ORIGIN=http://localhost:3000
+    depends_on:
+      - mongodb
+      - redis
+      - auth-service
+    networks:
+      - auction-network
+
 networks:
   auction-network:
     driver: bridge

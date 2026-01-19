@@ -97,18 +97,6 @@ const auctionSchema = new mongoose.Schema({
         type: Number,
         default: 0
     },
-    // Các bid (lưu các bid gần nhất)
-    recentBids: [{
-        bidder: {
-            type: mongoose.Schema.Types.ObjectId,
-            ref: 'User'
-        },
-        amount: Number,
-        timestamp: {
-            type: Date,
-            default: Date.now
-        }
-    }],
     // Điều kiện tham gia
     minDeposit: {
         type: Number,
@@ -162,21 +150,14 @@ auctionSchema.virtual('timeRemaining').get(function () {
  * Method: Cập nhật giá hiện tại
  * @param {number} newPrice - Giá mới
  * @param {string} bidderId - ID người đặt giá
+ * Note: Bid history is now stored in separate Bid model
  */
 auctionSchema.methods.updateCurrentPrice = async function (newPrice, bidderId) {
     this.currentPrice = newPrice;
     this.totalBids += 1;
 
-    // Thêm vào recent bids (giữ tối đa 10 bid gần nhất)
-    this.recentBids.unshift({
-        bidder: bidderId,
-        amount: newPrice,
-        timestamp: new Date()
-    });
-
-    if (this.recentBids.length > 10) {
-        this.recentBids = this.recentBids.slice(0, 10);
-    }
+    // Update winner to latest bidder
+    this.winner = bidderId;
 
     await this.save();
 };
