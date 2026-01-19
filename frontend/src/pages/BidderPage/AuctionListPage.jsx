@@ -16,6 +16,7 @@ const AuctionListPage = () => {
         limit: 12
     });
     const [totalAuctions, setTotalAuctions] = useState(0);
+    const [viewMode, setViewMode] = useState('grid'); // 'grid' or 'list'
 
     const categories = [
         { id: 'all', label: 'Tất cả sản phẩm', icon: 'grid_view' },
@@ -41,13 +42,53 @@ const AuctionListPage = () => {
                 params.category = filters.category;
             }
 
-            if (filters.status.length === 1) {
-                params.status = filters.status[0];
+            // Send multiple statuses as comma-separated string or array
+            if (filters.status.length > 0 && filters.status.length < 3) {
+                params.status = filters.status.join(',');
+            }
+
+            // Add price range
+            if (filters.minPrice > 0) {
+                params.minPrice = filters.minPrice;
+            }
+            if (filters.maxPrice < 10000000000) {
+                params.maxPrice = filters.maxPrice;
+            }
+
+            // Add sort
+            if (filters.sortBy) {
+                params.sortBy = filters.sortBy;
             }
 
             const response = await auctionAPI.getAuctions(params);
-            setAuctions(response.data?.data?.auctions || []);
-            setTotalAuctions(response.data?.data?.total || 0);
+            let fetchedAuctions = response.data?.data?.auctions || [];
+
+            // Client-side filtering for status if multiple selected
+            if (filters.status.length > 0 && filters.status.length < 3) {
+                fetchedAuctions = fetchedAuctions.filter(auction =>
+                    filters.status.includes(auction.status)
+                );
+            }
+
+            // Client-side price filtering
+            fetchedAuctions = fetchedAuctions.filter(auction => {
+                const price = auction.currentPrice || auction.startPrice;
+                return price >= filters.minPrice && price <= filters.maxPrice;
+            });
+
+            // Client-side sorting
+            if (filters.sortBy === 'price_asc') {
+                fetchedAuctions.sort((a, b) => (a.currentPrice || a.startPrice) - (b.currentPrice || b.startPrice));
+            } else if (filters.sortBy === 'price_desc') {
+                fetchedAuctions.sort((a, b) => (b.currentPrice || b.startPrice) - (a.currentPrice || a.startPrice));
+            } else if (filters.sortBy === 'ending_soon') {
+                fetchedAuctions.sort((a, b) => new Date(a.endTime) - new Date(b.endTime));
+            } else if (filters.sortBy === 'newest') {
+                fetchedAuctions.sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
+            }
+
+            setAuctions(fetchedAuctions);
+            setTotalAuctions(response.data?.data?.total || fetchedAuctions.length);
 
         } catch (error) {
             console.error('Error fetching auctions:', error);
@@ -182,9 +223,6 @@ const AuctionListPage = () => {
                                     </div>
                                 </div>
 
-                                <button className="w-full py-3 bg-orange-600 text-white rounded-lg font-bold hover:bg-orange-700 transition-all shadow-md shadow-orange-200">
-                                    Áp dụng bộ lọc
-                                </button>
                                 <button
                                     onClick={() => setFilters({ status: ['active', 'pending'], category: 'all', minPrice: 0, maxPrice: 1000000000, sortBy: 'ending_soon', page: 1, limit: 12 })}
                                     className="w-full py-2 text-sm font-medium text-gray-500 hover:text-orange-600 transition-colors"
@@ -201,7 +239,7 @@ const AuctionListPage = () => {
                     {/* Grid Header / Sorting */}
                     <div className="mb-6 flex flex-col sm:flex-row items-center justify-between gap-4 rounded-xl border border-gray-200 bg-white p-4 shadow-sm">
                         <p className="text-sm font-medium text-gray-700">
-                            Hiển thị <span className="font-bold">{auctions.length}</span> trên <span className="font-bold">{totalAuctions}</span> sản phẩm
+                            Hiển thị <span className="font-bold">{Math.min((filters.page - 1) * filters.limit + 1, totalAuctions)}-{Math.min(filters.page * filters.limit, totalAuctions)}</span> trên <span className="font-bold">{totalAuctions}</span> sản phẩm
                         </p>
                         <div className="flex items-center gap-4 w-full sm:w-auto justify-between sm:justify-end">
                             <label className="flex items-center gap-2 text-sm font-medium text-gray-700">
@@ -218,26 +256,89 @@ const AuctionListPage = () => {
                                 </select>
                             </label>
                             <div className="flex gap-1 border-l border-gray-200 pl-4">
-                                <button className="p-1.5 rounded bg-orange-50 text-orange-600">
+                                <button
+                                    onClick={() => setViewMode('grid')}
+                                    className={`p-1.5 rounded ${viewMode === 'grid' ? 'bg-orange-50 text-orange-600' : 'hover:bg-gray-100 text-gray-500'}`}
+                                >
                                     <span className="material-symbols-outlined text-lg">grid_view</span>
                                 </button>
-                                <button className="p-1.5 rounded hover:bg-gray-100 text-gray-500">
+                                <button
+                                    onClick={() => setViewMode('list')}
+                                    className={`p-1.5 rounded ${viewMode === 'list' ? 'bg-orange-50 text-orange-600' : 'hover:bg-gray-100 text-gray-500'}`}
+                                >
                                     <span className="material-symbols-outlined text-lg">format_list_bulleted</span>
                                 </button>
                             </div>
                         </div>
                     </div>
 
-                    {/* Products Grid */}
-                    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-5 gap-6">
+                    {/* Products Grid/List */}
+                    <div className={viewMode === 'grid'
+                        ? "grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-5 gap-6"
+                        : "flex flex-col gap-4"
+                    }>
                         {loading ? (
                             [1, 2, 3, 4, 5, 6, 7, 8].map(i => (
                                 <div key={i} className="animate-pulse bg-gray-200 h-[380px] rounded-xl"></div>
                             ))
                         ) : auctions.length > 0 ? (
-                            auctions.map(auction => (
-                                <AuctionCard key={auction.id} auction={auction} />
-                            ))
+                            viewMode === 'grid' ? (
+                                auctions.map(auction => (
+                                    <AuctionCard key={auction.id} auction={auction} />
+                                ))
+                            ) : (
+                                auctions.map(auction => (
+                                    <Link
+                                        key={auction.id}
+                                        to={`/auction/${auction.id}`}
+                                        className="flex gap-4 bg-white rounded-xl border border-gray-200 hover:border-orange-300 hover:shadow-md transition-all p-4"
+                                    >
+                                        {/* Image - Left */}
+                                        <div className="w-48 h-32 flex-shrink-0 rounded-lg overflow-hidden bg-gray-100">
+                                            <img
+                                                src={auction.images?.[0] || 'https://via.placeholder.com/300x200'}
+                                                alt={auction.title}
+                                                className="w-full h-full object-cover"
+                                            />
+                                        </div>
+
+                                        {/* Content - Right */}
+                                        <div className="flex-1 flex flex-col justify-between min-w-0">
+                                            <div>
+                                                <div className="flex items-start justify-between gap-2 mb-2">
+                                                    <h3 className="font-bold text-lg text-gray-900 line-clamp-1">{auction.title}</h3>
+                                                    <span className={`px-2 py-1 rounded text-xs font-semibold whitespace-nowrap ${auction.status === 'active' ? 'bg-green-100 text-green-700' :
+                                                        auction.status === 'pending' ? 'bg-yellow-100 text-yellow-700' :
+                                                            'bg-gray-100 text-gray-700'
+                                                        }`}>
+                                                        {auction.status === 'active' ? 'Đang diễn ra' :
+                                                            auction.status === 'pending' ? 'Sắp bắt đầu' : 'Đã kết thúc'}
+                                                    </span>
+                                                </div>
+                                                <p className="text-sm text-gray-600 line-clamp-2 mb-3">{auction.description}</p>
+                                            </div>
+
+                                            <div className="flex items-center justify-between">
+                                                <div>
+                                                    <p className="text-xs text-gray-500 mb-1">Giá hiện tại</p>
+                                                    <p className="text-2xl font-black text-orange-600">
+                                                        {(auction.currentPrice || auction.startPrice)?.toLocaleString('vi-VN')} ₫
+                                                    </p>
+                                                </div>
+                                                <div className="flex items-center gap-3">
+                                                    <div className="text-right">
+                                                        <p className="text-xs text-gray-500">Lượt đặt giá</p>
+                                                        <p className="text-sm font-bold text-gray-900">{auction.totalBids || 0}</p>
+                                                    </div>
+                                                    <button className="px-6 py-2 bg-orange-600 hover:bg-orange-700 text-white font-bold rounded-lg transition-all">
+                                                        Xem chi tiết
+                                                    </button>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </Link>
+                                ))
+                            )
                         ) : (
                             <div className="col-span-full py-20 bg-white rounded-xl border border-gray-200 flex flex-col items-center justify-center text-center">
                                 <span className="material-symbols-outlined text-6xl text-gray-300">search_off</span>
