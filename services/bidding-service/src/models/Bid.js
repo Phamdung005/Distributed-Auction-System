@@ -3,20 +3,19 @@ const mongoose = require('mongoose');
 /**
  * Schema cho Bid (Lượt đặt giá)
  * Lưu trữ tất cả lịch sử bidding, tách biệt khỏi Auction model
+ * Updated for distributed architecture: auction_id and bidder_id use String
  */
 const bidSchema = new mongoose.Schema({
-    // Reference đến auction
+    // Reference đến auction - Changed to String for cross-service reference
     auction_id: {
-        type: mongoose.Schema.Types.ObjectId,
-        ref: 'Auction',
+        type: String, // Auction ID from Auction Service
         required: [true, 'Auction ID là bắt buộc'],
         index: true
     },
 
-    // Reference đến người đặt giá
+    // Reference đến người đặt giá - Changed to String for cross-service reference
     bidder_id: {
-        type: mongoose.Schema.Types.ObjectId,
-        ref: 'User',
+        type: String, // User ID from Auth Service
         required: [true, 'Bidder ID là bắt buộc'],
         index: true
     },
@@ -73,8 +72,8 @@ bidSchema.statics.getHighestBid = function (auctionId) {
         auction_id: auctionId,
         isValid: true
     })
-        .sort({ bidAmount: -1 })
-        .populate('bidder_id', 'username fullName');
+        .sort({ bidAmount: -1 });
+    // No populate - bidder_id is String from Auth Service
 };
 
 /**
@@ -89,8 +88,8 @@ bidSchema.statics.getAuctionBids = function (auctionId, limit = 50) {
         isValid: true
     })
         .sort({ timestamp: -1 })
-        .limit(limit)
-        .populate('bidder_id', 'username fullName');
+        .limit(limit);
+    // No populate - bidder_id is String from Auth Service
 };
 
 /**
@@ -105,8 +104,8 @@ bidSchema.statics.getUserBids = function (userId, limit = 50) {
         isValid: true
     })
         .sort({ timestamp: -1 })
-        .limit(limit)
-        .populate('auction_id', 'title currentPrice status');
+        .limit(limit);
+    // No populate - auction_id is String from Auction Service
 };
 
 /**
@@ -130,7 +129,7 @@ bidSchema.statics.countUniqueBidders = async function (auctionId) {
     const result = await this.aggregate([
         {
             $match: {
-                auction_id: new mongoose.Types.ObjectId(auctionId),
+                auction_id: auctionId,
                 isValid: true
             }
         },

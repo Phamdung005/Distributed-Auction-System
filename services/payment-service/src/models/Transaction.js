@@ -4,12 +4,12 @@ const mongoose = require('mongoose');
 /**
  * Schema cho Transaction (Giao dịch tài chính)
  * Lưu trữ tất cả lịch sử giao dịch cho audit trail và reconciliation
+ * Updated for distributed architecture: user_id and related IDs use String
  */
 const transactionSchema = new mongoose.Schema({
-    // User thực hiện giao dịch
+    // User thực hiện giao dịch - Changed to String for cross-service reference
     user_id: {
-        type: mongoose.Schema.Types.ObjectId,
-        ref: 'User',
+        type: String, // User ID from Auth Service
         required: [true, 'User ID là bắt buộc'],
         index: true
     },
@@ -56,17 +56,15 @@ const transactionSchema = new mongoose.Schema({
         index: true
     },
 
-    // References đến các entities liên quan
+    // References đến các entities liên quan - Changed to String for cross-service
     relatedAuction_id: {
-        type: mongoose.Schema.Types.ObjectId,
-        ref: 'Auction',
+        type: String, // Auction ID from Auction Service
         default: null,
         index: true
     },
 
     relatedBid_id: {
-        type: mongoose.Schema.Types.ObjectId,
-        ref: 'Bid',
+        type: String, // Bid ID from Bidding Service
         default: null
     },
 
@@ -143,9 +141,8 @@ transactionSchema.statics.getUserTransactions = function (userId, limit = 50, sk
     return this.find({ user_id: userId })
         .sort({ createdAt: -1 })
         .skip(skip)
-        .limit(limit)
-        .populate('relatedAuction_id', 'title status')
-        .populate('relatedBid_id', 'bidAmount');
+        .limit(limit);
+    // No populate - relatedAuction_id and relatedBid_id are Strings
 };
 
 /**
@@ -159,7 +156,7 @@ transactionSchema.statics.getTotalByType = async function (userId, type, status 
     const result = await this.aggregate([
         {
             $match: {
-                user_id: new mongoose.Types.ObjectId(userId),
+                user_id: userId,
                 type: type,
                 status: status
             }

@@ -1,7 +1,7 @@
 const mongoose = require('mongoose');
-const AuctionRegistration = require('shared/models/AuctionRegistration');
-const Auction = require('shared/models/Auction');
-const Escrow = require('shared/models/Escrow');
+const AuctionRegistration = require('../models/AuctionRegistration');
+const Auction = require('../models/Auction');
+// Note: Escrow is in Payment Service, should use Payment Service API
 const axios = require('axios');
 
 const PAYMENT_SERVICE_URL = process.env.PAYMENT_SERVICE_URL || 'http://payment-service:3006';

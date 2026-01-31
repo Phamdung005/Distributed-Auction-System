@@ -1,4 +1,4 @@
-const Transaction = require('shared/models/Transaction');
+const Transaction = require('../models/Transaction');
 const mongoose = require('mongoose');
 
 /**

@@ -7,12 +7,9 @@ require('dotenv').config();
 const connectDB = require('shared/database/mongodb');
 const { createRedisClient } = require('shared/database/redis');
 
-// Import models ngay lập tức để register schema
-require('shared/models/User');
-require('shared/models/Auction');
-require('shared/models/Transaction');
-require('shared/models/Escrow');
-require('shared/models/Bid');
+// Import local models to register schemas
+require('./models/Transaction');
+require('./models/Escrow');
 
 const walletRoutes = require('./routes/wallet.routes');
 const paymentRoutes = require('./routes/payment.routes');

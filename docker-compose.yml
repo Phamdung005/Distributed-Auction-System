@@ -1,15 +1,80 @@
 services:
-  # MongoDB Database
-  mongodb:
+  # MongoDB Databases - Separate for each service
+  mongodb-auth:
     image: mongo:7.0
-    container_name: auction-mongodb
+    container_name: mongodb-auth
+    restart: always
+    ports:
+      - "27017:27017"
+    environment:
+      MONGO_INITDB_DATABASE: auth_db
+    volumes:
+      - mongodb_auth_data:/data/db
+    networks:
+      - auction-network
+
+  mongodb-auction:
+    image: mongo:7.0
+    container_name: mongodb-auction
     restart: always
     ports:
       - "27018:27017"
     environment:
       MONGO_INITDB_DATABASE: auction_db
     volumes:
-      - mongodb_data:/data/db
+      - mongodb_auction_data:/data/db
+    networks:
+      - auction-network
+
+  mongodb-bidding:
+    image: mongo:7.0
+    container_name: mongodb-bidding
+    restart: always
+    ports:
+      - "27019:27017"
+    environment:
+      MONGO_INITDB_DATABASE: bidding_db
+    volumes:
+      - mongodb_bidding_data:/data/db
+    networks:
+      - auction-network
+
+  mongodb-payment:
+    image: mongo:7.0
+    container_name: mongodb-payment
+    restart: always
+    ports:
+      - "27020:27017"
+    environment:
+      MONGO_INITDB_DATABASE: payment_db
+    volumes:
+      - mongodb_payment_data:/data/db
+    networks:
+      - auction-network
+
+  mongodb-notification:
+    image: mongo:7.0
+    container_name: mongodb-notification
+    restart: always
+    ports:
+      - "27021:27017"
+    environment:
+      MONGO_INITDB_DATABASE: notification_db
+    volumes:
+      - mongodb_notification_data:/data/db
+    networks:
+      - auction-network
+
+  mongodb-community:
+    image: mongo:7.0
+    container_name: mongodb-community
+    restart: always
+    ports:
+      - "27022:27017"
+    environment:
+      MONGO_INITDB_DATABASE: community_db
+    volumes:
+      - mongodb_community_data:/data/db
     networks:
       - auction-network
 
@@ -38,12 +103,12 @@ services:
     environment:
       - NODE_ENV=production
       - PORT=3001
-      - MONGODB_URI=mongodb://mongodb:27017/auction_db
+      - MONGODB_URI=mongodb://mongodb-auth:27017/auth_db
       - REDIS_URL=redis://:redis123@redis:6379
       - JWT_SECRET=your-super-secret-jwt-key-change-in-production
       - JWT_EXPIRE=7d
     depends_on:
-      - mongodb
+      - mongodb-auth
       - redis
     networks:
       - auction-network
@@ -63,12 +128,12 @@ services:
     environment:
       - NODE_ENV=production
       - PORT=3002
-      - MONGODB_URI=mongodb://mongodb:27017/auction_db
+      - MONGODB_URI=mongodb://mongodb-auction:27017/auction_db
       - REDIS_URL=redis://:redis123@redis:6379
       - AUTH_SERVICE_URL=http://auth-service:3001
       - PAYMENT_SERVICE_URL=http://payment-service:3006
     depends_on:
-      - mongodb
+      - mongodb-auction
       - redis
       - auth-service
     networks:
@@ -86,12 +151,12 @@ services:
     environment:
       - NODE_ENV=production
       - PORT=3003
-      - MONGODB_URI=mongodb://mongodb:27017/auction_db
+      - MONGODB_URI=mongodb://mongodb-bidding:27017/bidding_db
       - REDIS_URL=redis://:redis123@redis:6379
       - AUTH_SERVICE_URL=http://auth-service:3001
       - AUCTION_SERVICE_URL=http://auction-service:3002
     depends_on:
-      - mongodb
+      - mongodb-bidding
       - redis
       - auth-service
       - auction-service
@@ -110,12 +175,12 @@ services:
     environment:
       - NODE_ENV=production
       - PORT=3004
-      - MONGODB_URI=mongodb://mongodb:27017/auction_db
+      - MONGODB_URI=mongodb://mongodb-notification:27017/notification_db
       - REDIS_URL=redis://:redis123@redis:6379
       - AUTH_SERVICE_URL=http://auth-service:3001
       - JWT_SECRET=your-super-secret-jwt-key-change-in-production
     depends_on:
-      - mongodb
+      - mongodb-notification
       - redis
       - auth-service
     networks:
@@ -133,12 +198,12 @@ services:
     environment:
       - NODE_ENV=production
       - PORT=3005
-      - MONGODB_URI=mongodb://mongodb:27017/auction_db
+      - MONGODB_URI=mongodb://mongodb-community:27017/community_db
       - REDIS_URL=redis://:redis123@redis:6379
       - JWT_SECRET=your-super-secret-jwt-key-change-in-production
       - CORS_ORIGIN=http://localhost:3000
     depends_on:
-      - mongodb
+      - mongodb-community
       - redis
       - auth-service
     networks:
@@ -156,7 +221,7 @@ services:
     environment:
       - NODE_ENV=production
       - PORT=3006
-      - MONGODB_URI=mongodb://mongodb:27017/auction_db
+      - MONGODB_URI=mongodb://mongodb-payment:27017/payment_db
       - REDIS_URL=redis://:redis123@redis:6379
       - JWT_SECRET=your-super-secret-jwt-key-change-in-production
       - CORS_ORIGIN=http://localhost:3000
@@ -167,7 +232,7 @@ services:
       - MOMO_RETURN_URL=http://localhost:3000/payment/result
       - MOMO_NOTIFY_URL=http://localhost:3006/api/payment/momo/callback
     depends_on:
-      - mongodb
+      - mongodb-payment
       - redis
       - auth-service
     networks:
@@ -178,5 +243,10 @@ networks:
     driver: bridge
 
 volumes:
-  mongodb_data:
+  mongodb_auth_data:
+  mongodb_auction_data:
+  mongodb_bidding_data:
+  mongodb_payment_data:
+  mongodb_notification_data:
+  mongodb_community_data:
   redis_data:

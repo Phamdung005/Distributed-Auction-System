@@ -3,9 +3,10 @@ const mongoose = require('mongoose');
 /**
  * Schema cho Comment (Bình luận)
  * Comments trên các posts trong community
+ * Updated for distributed architecture: author_id uses String, post_id keeps ObjectId (internal)
  */
 const commentSchema = new mongoose.Schema({
-    // Reference đến post
+    // Reference đến post - Internal reference (same service)
     post_id: {
         type: mongoose.Schema.Types.ObjectId,
         ref: 'Post',
@@ -13,10 +14,9 @@ const commentSchema = new mongoose.Schema({
         index: true
     },
 
-    // Tác giả của comment
+    // Tác giả của comment - Changed to String for cross-service reference
     author_id: {
-        type: mongoose.Schema.Types.ObjectId,
-        ref: 'User',
+        type: String, // User ID from Auth Service
         required: [true, 'Author ID là bắt buộc'],
         index: true
     },
@@ -35,7 +35,7 @@ const commentSchema = new mongoose.Schema({
         default: 'active'
     },
 
-    // Parent comment (để support nested comments/replies)
+    // Parent comment (để support nested comments/replies) - Internal reference
     parentComment_id: {
         type: mongoose.Schema.Types.ObjectId,
         ref: 'Comment',
@@ -62,7 +62,7 @@ commentSchema.index({ status: 1 });
  */
 commentSchema.virtual('isAuthor').get(function () {
     return function (userId) {
-        return this.author_id.toString() === userId.toString();
+        return this.author_id === userId;
     };
 });
 
@@ -81,8 +81,8 @@ commentSchema.statics.getPostComments = function (postId, limit = 50, skip = 0) 
     })
         .sort({ createdAt: -1 })
         .skip(skip)
-        .limit(limit)
-        .populate('author_id', 'username fullName');
+        .limit(limit);
+    // No populate - author_id is String from Auth Service
 };
 
 /**
@@ -95,8 +95,8 @@ commentSchema.statics.getCommentReplies = function (commentId) {
         parentComment_id: commentId,
         status: 'active'
     })
-        .sort({ createdAt: 1 })
-        .populate('author_id', 'username fullName');
+        .sort({ createdAt: 1 });
+    // No populate - author_id is String from Auth Service
 };
 
 /**
@@ -112,7 +112,7 @@ commentSchema.statics.getUserComments = function (userId, limit = 50) {
     })
         .sort({ createdAt: -1 })
         .limit(limit)
-        .populate('post_id', 'title');
+        .populate('post_id', 'title'); // Can populate post_id (internal reference)
 };
 
 /**

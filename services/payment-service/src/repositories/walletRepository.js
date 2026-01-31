@@ -1,5 +1,6 @@
-const User = require('shared/models/User');
-const Escrow = require('shared/models/Escrow');
+const Escrow = require('../models/Escrow');
+// Note: User operations should ideally use Auth Service API
+// For now, we'll need to add User model or use API calls
 
 /**
  * Repository cho Wallet operations
@@ -24,12 +25,11 @@ class WalletRepository {
      * @returns {Promise<number>} - Tổng số tiền frozen
      */
     async getUserFrozenFunds(userId) {
-        const mongoose = require('mongoose');
-
+        // user_id is now String, not ObjectId
         const result = await Escrow.aggregate([
             {
                 $match: {
-                    user_id: new mongoose.Types.ObjectId(userId), // Convert string to ObjectId
+                    user_id: userId, // String comparison
                     status: 'frozen' // Chỉ tính escrow đang frozen
                 }
             },

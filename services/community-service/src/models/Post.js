@@ -3,12 +3,12 @@ const mongoose = require('mongoose');
 /**
  * Schema cho Post (Bài viết cộng đồng)
  * Cho phép users tạo discussions, reviews, hoặc chia sẻ về auctions
+ * Updated for distributed architecture: author_id and relatedAuction_id use String
  */
 const postSchema = new mongoose.Schema({
-    // Tác giả của post
+    // Tác giả của post - Changed to String for cross-service reference
     author_id: {
-        type: mongoose.Schema.Types.ObjectId,
-        ref: 'User',
+        type: String, // User ID from Auth Service
         required: [true, 'Author ID là bắt buộc'],
         index: true
     },
@@ -28,10 +28,9 @@ const postSchema = new mongoose.Schema({
         maxlength: [5000, 'Nội dung không được vượt quá 5000 ký tự']
     },
 
-    // Reference đến auction (optional - nếu post liên quan đến auction cụ thể)
+    // Reference đến auction (optional) - Changed to String for cross-service reference
     relatedAuction_id: {
-        type: mongoose.Schema.Types.ObjectId,
-        ref: 'Auction',
+        type: String, // Auction ID from Auction Service
         default: null,
         index: true
     },
@@ -76,7 +75,7 @@ postSchema.index({ status: 1, createdAt: -1 }); // Query active posts
  */
 postSchema.virtual('isAuthor').get(function () {
     return function (userId) {
-        return this.author_id.toString() === userId.toString();
+        return this.author_id === userId;
     };
 });
 
@@ -90,9 +89,8 @@ postSchema.statics.getRecentPosts = function (limit = 20, skip = 0) {
     return this.find({ status: 'active' })
         .sort({ createdAt: -1 })
         .skip(skip)
-        .limit(limit)
-        .populate('author_id', 'username fullName')
-        .populate('relatedAuction_id', 'title status');
+        .limit(limit);
+    // No populate - author_id and relatedAuction_id are Strings
 };
 
 /**
@@ -107,8 +105,8 @@ postSchema.statics.getUserPosts = function (userId, limit = 20) {
         status: { $ne: 'deleted' }
     })
         .sort({ createdAt: -1 })
-        .limit(limit)
-        .populate('relatedAuction_id', 'title status');
+        .limit(limit);
+    // No populate - relatedAuction_id is String
 };
 
 /**
@@ -123,8 +121,8 @@ postSchema.statics.getAuctionPosts = function (auctionId, limit = 20) {
         status: 'active'
     })
         .sort({ createdAt: -1 })
-        .limit(limit)
-        .populate('author_id', 'username fullName');
+        .limit(limit);
+    // No populate - author_id is String
 };
 
 /**
@@ -144,8 +142,8 @@ postSchema.statics.searchPosts = function (keyword, limit = 20) {
         ]
     })
         .sort({ createdAt: -1 })
-        .limit(limit)
-        .populate('author_id', 'username fullName');
+        .limit(limit);
+    // No populate - author_id is String
 };
 
 /**

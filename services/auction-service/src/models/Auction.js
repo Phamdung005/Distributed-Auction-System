@@ -2,6 +2,7 @@ const mongoose = require('mongoose');
 
 /**
  * Schema cho Auction (Phiên đấu giá)
+ * Updated for distributed architecture: seller and winner use String IDs
  */
 const auctionSchema = new mongoose.Schema({
     title: {
@@ -73,15 +74,14 @@ const auctionSchema = new mongoose.Schema({
         enum: ['pending', 'active', 'ended', 'completed', 'cancelled', 'archived'],
         default: 'pending'
     },
-    // Người tham gia
+    // Người tham gia - Changed to String for cross-service references
     seller: {
-        type: mongoose.Schema.Types.ObjectId,
-        ref: 'User',
-        required: [true, 'Người bán là bắt buộc']
+        type: String, // User ID from Auth Service
+        required: [true, 'Người bán là bắt buộc'],
+        index: true
     },
     winner: {
-        type: mongoose.Schema.Types.ObjectId,
-        ref: 'User',
+        type: String, // User ID from Auth Service
         default: null
     },
     // Thống kê

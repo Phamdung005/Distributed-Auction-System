@@ -3,9 +3,10 @@ const mongoose = require('mongoose');
 /**
  * Schema cho AuctionRegistration (Đăng ký tham gia đấu giá)
  * Bidder phải đăng ký và đặt cọc 10% trước khi bid
+ * Updated for distributed architecture: bidder_id uses String
  */
 const auctionRegistrationSchema = new mongoose.Schema({
-    // Auction liên quan
+    // Auction liên quan - Internal reference (same service)
     auction_id: {
         type: mongoose.Schema.Types.ObjectId,
         ref: 'Auction',
@@ -13,10 +14,9 @@ const auctionRegistrationSchema = new mongoose.Schema({
         index: true
     },
 
-    // Bidder đăng ký
+    // Bidder đăng ký - Changed to String for cross-service reference
     bidder_id: {
-        type: mongoose.Schema.Types.ObjectId,
-        ref: 'User',
+        type: String, // User ID from Auth Service
         required: [true, 'Bidder ID là bắt buộc'],
         index: true
     },
@@ -41,16 +41,14 @@ const auctionRegistrationSchema = new mongoose.Schema({
         default: false
     },
 
-    // References đến Escrow và Transaction
+    // References đến Escrow và Transaction - Changed to String for cross-service
     depositEscrow_id: {
-        type: mongoose.Schema.Types.ObjectId,
-        ref: 'Escrow',
+        type: String, // Escrow ID from Payment Service
         default: null
     },
 
     depositTransaction_id: {
-        type: mongoose.Schema.Types.ObjectId,
-        ref: 'Transaction',
+        type: String, // Transaction ID from Payment Service
         default: null
     },
 
@@ -142,9 +140,8 @@ auctionRegistrationSchema.statics.getAuctionRegistrations = function (auctionId,
     const query = { auction_id: auctionId };
     if (status) query.status = status;
 
-    return this.find(query)
-        .populate('bidder_id', 'email fullName')
-        .sort({ createdAt: -1 });
+    // Note: No populate for bidder_id since it's a String reference to Auth Service
+    return this.find(query).sort({ createdAt: -1 });
 };
 
 /**

@@ -22,13 +22,9 @@ const initializeApp = async () => {
     try {
         await connectDB(process.env.MONGODB_URI);
 
-        // Import models sau khi kết nối DB
-        require('shared/models/User');
-        require('shared/models/Auction');
-        require('shared/models/Bid');
-        require('shared/models/Escrow');
-        require('shared/models/Transaction');
-        require('shared/models/AuctionRegistration');
+        // Import local models after DB connection
+        require('./models/Auction');
+        require('./models/AuctionRegistration');
 
         redisClient = await createRedisClient(process.env.REDIS_URL);
         app.locals.redis = redisClient;

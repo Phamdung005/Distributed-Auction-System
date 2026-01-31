@@ -1,4 +1,4 @@
-const Post = require('shared/models/Post');
+const Post = require('../models/Post');
 
 /**
  * Repository Layer cho Post

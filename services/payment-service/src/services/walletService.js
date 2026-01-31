@@ -180,7 +180,7 @@ class WalletService {
         // Removed transaction for standalone MongoDB support
         try {
             // Import Escrow model
-            const Escrow = require('shared/models/Escrow');
+            const Escrow = require('../models/Escrow');
 
             // Validate amount
             if (amount <= 0) {
@@ -256,7 +256,7 @@ class WalletService {
         // Removed transaction for standalone MongoDB support
         try {
             // Import Escrow model
-            const Escrow = require('shared/models/Escrow');
+            const Escrow = require('../models/Escrow');
 
             // Find the frozen escrow
             const escrow = await Escrow.findUserAuctionEscrow(userId, auctionId);
@@ -316,7 +316,7 @@ class WalletService {
     async payAuctionWinner(userId, auctionId, finalPrice) {
         try {
             // Import Escrow model
-            const Escrow = require('shared/models/Escrow');
+            const Escrow = require('../models/Escrow');
 
             // 1. Find deposit escrow
             const escrow = await Escrow.findUserAuctionEscrow(userId, auctionId);

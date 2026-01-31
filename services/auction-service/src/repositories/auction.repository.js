@@ -1,5 +1,5 @@
-const Auction = require('shared/models/Auction');
-const User = require('shared/models/User');
+const Auction = require('../models/Auction');
+const AuctionRegistration = require('../models/AuctionRegistration');
 
 /**
  * Repository Layer cho Auction
@@ -23,9 +23,8 @@ class AuctionRepository {
      * @returns {Promise<Auction|null>}
      */
     async getAuctionById(auctionId) {
-        return await Auction.findById(auctionId)
-            .populate('seller', 'username fullName email')
-            .populate('winner', 'username fullName');
+        // No populate - seller and winner are String IDs from Auth Service
+        return await Auction.findById(auctionId);
     }
 
     /**
@@ -61,7 +60,7 @@ class AuctionRepository {
 
         const [auctions, total] = await Promise.all([
             Auction.find(enhancedFilter)
-                .populate('seller', 'username fullName')
+                // No populate - seller is String ID from Auth Service
                 .sort(sort)
                 .skip(skip)
                 .limit(limit),

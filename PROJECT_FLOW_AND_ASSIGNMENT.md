@@ -196,17 +196,17 @@ Xây dựng hệ thống đấu giá trực tuyến Realtime sử dụng kiến 
 ```
 [Vào trang chủ] 
     ↓
-[Xem danh sách Live Auctions] ← LINH: Filter/Search UI
+[Xem danh sách Live Auctions]: Filter/Search UI
     ↓
 [Click vào sản phẩm]
     ↓
-[WebSocket connect to Room] ← HÙNG: Socket.io room join
+[WebSocket connect to Room]: Socket.io room join
     ↓
-[Xem giá hiện tại + Countdown] ← HÙNG: Realtime sync
+[Xem giá hiện tại + Countdown]: Realtime sync
     ↓
 [Nhập giá + Click "Đặt giá"]
     ↓
-[Backend: Validate + Atomic Update] ← HÙNG: Redis WATCH/EXEC
+[Backend: Validate + Atomic Update]: Redis WATCH/EXEC
     ↓
 ├─ [Thành công] → Broadcast "new_bid" → All users nhận update
 │   ↓
@@ -214,7 +214,7 @@ Xây dựng hệ thống đấu giá trực tuyến Realtime sử dụng kiến 
 │
 └─ [Thất bại] → "Giá không hợp lệ" → Quay lại bước nhập giá
     ↓
-[Có người bid cao hơn] ← HÙNG: Socket emit
+[Có người bid cao hơn]: Socket emit
     ↓
 [Nhận Toast "Bạn bị vượt mặt"] → Quay lại bid
     ↓
@@ -227,11 +227,11 @@ Xây dựng hệ thống đấu giá trực tuyến Realtime sử dụng kiến 
 ### 2️⃣ **SELLER FLOW** (Người Bán)
 
 ```
-[Đăng nhập] ← DŨNG: Auth Service
+[Đăng nhập]: Auth Service
     ↓
-[Xác minh tài khoản] ← DŨNG: Email verification
+[Xác minh tài khoản]: Email verification
     ↓
-[Tạo Auction mới] ← LINH: CreateAuctionPage
+[Tạo Auction mới]: CreateAuctionPage
     ↓
 [Upload ảnh, nhập thông tin]
     ↓
@@ -241,9 +241,9 @@ Xây dựng hệ thống đấu giá trực tuyến Realtime sử dụng kiến 
     ↓
 [Preview & Publish] → State: SCHEDULED
     ↓
-[Auction tự động bắt đầu] ← LINH: Auto-start job
+[Auction tự động bắt đầu]: Auto-start job
     ↓ State: ACTIVE
-[Theo dõi Dashboard Realtime] ← LINH: Seller stats
+[Theo dõi Dashboard Realtime]: Seller stats
     ↓
 [Xem số lượt bid, người xem]
     ↓
@@ -259,7 +259,7 @@ Xây dựng hệ thống đấu giá trực tuyến Realtime sử dụng kiến 
 ```
 [User places bid]
     ↓
-[Bidding Service nhận request] ← HÙNG
+[Bidding Service nhận request] 
     ↓
 [Redis: WATCH current_price] ← Atomic operation
     ↓
@@ -275,7 +275,7 @@ Xây dựng hệ thống đấu giá trực tuyến Realtime sử dụng kiến 
 │
 └─ Invalid → Return error
 
-[Background Timer Job] ← LINH: Auction Service
+[Background Timer Job]: Auction Service
     ↓
 [Redis Key Expiration / Cron]
     ↓

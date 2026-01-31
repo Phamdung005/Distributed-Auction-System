@@ -3,22 +3,27 @@ const mongoose = require('mongoose');
 /**
  * Schema cho Escrow (Ký quỹ/Đặt cọc)
  * Quản lý tiền đặt cọc khi tham gia đấu giá
+ * Updated for distributed architecture: user_id, auction_id use String
  */
 const escrowSchema = new mongoose.Schema({
-    // User đặt cọc
+    // User đặt cọc - Changed to String for cross-service reference
     user_id: {
-        type: mongoose.Schema.Types.ObjectId,
-        ref: 'User',
+        type: String, // User ID from Auth Service
         required: [true, 'User ID là bắt buộc'],
         index: true
     },
 
-    // Auction liên quan
+    // Auction liên quan - Changed to String for cross-service reference
     auction_id: {
-        type: mongoose.Schema.Types.ObjectId,
-        ref: 'Auction',
+        type: String, // Auction ID from Auction Service
         required: [true, 'Auction ID là bắt buộc'],
         index: true
+    },
+
+    // Registration liên quan (optional)
+    registration_id: {
+        type: String, // AuctionRegistration ID from Auction Service
+        default: null
     },
 
     // Số tiền đặt cọc
@@ -48,14 +53,14 @@ const escrowSchema = new mongoose.Schema({
         default: null
     },
 
-    // Transaction liên quan (khi freeze funds)
+    // Transaction liên quan (khi freeze funds) - Internal reference
     relatedTransaction_id: {
         type: mongoose.Schema.Types.ObjectId,
         ref: 'Transaction',
         required: true
     },
 
-    // Transaction khi release/refund
+    // Transaction khi release/refund - Internal reference
     releaseTransaction_id: {
         type: mongoose.Schema.Types.ObjectId,
         ref: 'Transaction',
@@ -99,7 +104,8 @@ escrowSchema.statics.getFrozenEscrows = function (auctionId) {
     return this.find({
         auction_id: auctionId,
         status: 'frozen'
-    }).populate('user_id', 'email fullName');
+    });
+    // No populate - user_id is String from Auth Service
 };
 
 /**
@@ -111,7 +117,7 @@ escrowSchema.statics.getTotalFrozenAmount = async function (userId) {
     const result = await this.aggregate([
         {
             $match: {
-                user_id: new mongoose.Types.ObjectId(userId),
+                user_id: userId,
                 status: 'frozen'
             }
         },

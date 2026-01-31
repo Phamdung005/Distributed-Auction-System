@@ -79,7 +79,7 @@ class BiddingService {
             }
 
             // Bước 7: Lưu bid vào MongoDB (Bid model)
-            const Bid = require('shared/models/Bid');
+            const Bid = require('../models/Bid');
 
             // Mark previous winning bid as not winning
             await Bid.updateMany(

@@ -1,4 +1,4 @@
-const Comment = require('shared/models/Comment');
+const Comment = require('../models/Comment');
 
 /**
  * Repository Layer cho Comment

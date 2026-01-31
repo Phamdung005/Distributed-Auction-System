@@ -1,63 +1,81 @@
-const Auction = require('shared/models/Auction');
+const Bid = require('../models/Bid');
 
 /**
  * Repository Layer cho Bidding
+ * Note: Auction data should be fetched via Auction Service API, not direct DB access
  */
 class BiddingRepository {
 
     /**
-     * Lấy thông tin auction theo ID
-     * @param {string} auctionId
-     * @returns {Promise<Auction|null>}
+     * Tạo bid mới
+     * @param {Object} bidData
+     * @returns {Promise<Bid>}
      */
-    async getAuctionById(auctionId) {
-        return await Auction.findById(auctionId);
+    async createBid(bidData) {
+        const bid = new Bid(bidData);
+        await bid.save();
+        return bid;
     }
 
     /**
-     * Lấy giá hiện tại của auction từ Redis hoặc MongoDB
-     * @param {Object} redis - Redis client
+     * Lấy bid cao nhất của auction
+     * @param {string} auctionId
+     * @returns {Promise<Bid|null>}
+     */
+    async getHighestBid(auctionId) {
+        return await Bid.getHighestBid(auctionId);
+    }
+
+    /**
+     * Lấy tất cả bids của một auction
+     * @param {string} auctionId
+     * @param {number} limit
+     * @returns {Promise<Array>}
+     */
+    async getAuctionBids(auctionId, limit = 50) {
+        return await Bid.getAuctionBids(auctionId, limit);
+    }
+
+    /**
+     * Lấy tất cả bids của một user
+     * @param {string} userId
+     * @param {number} limit
+     * @returns {Promise<Array>}
+     */
+    async getUserBids(userId, limit = 50) {
+        return await Bid.getUserBids(userId, limit);
+    }
+
+    /**
+     * Đếm số lượng bids của auction
      * @param {string} auctionId
      * @returns {Promise<number>}
      */
-    async getCurrentPrice(redis, auctionId) {
-        // Thử lấy từ Redis cache trước
-        const cachedPrice = await redis.get(`auction:${auctionId}:price`);
-
-        if (cachedPrice) {
-            return parseFloat(cachedPrice);
-        }
-
-        // Nếu không có trong Redis, lấy từ MongoDB
-        const auction = await Auction.findById(auctionId);
-        if (!auction) {
-            throw new Error('Auction không tồn tại');
-        }
-
-        // Cache vào Redis
-        await redis.set(`auction:${auctionId}:price`, auction.currentPrice, {
-            EX: 3600 // Expire sau 1 giờ
-        });
-
-        return auction.currentPrice;
+    async countAuctionBids(auctionId) {
+        return await Bid.countAuctionBids(auctionId);
     }
 
     /**
-     * Cập nhật giá hiện tại (trong MongoDB)
+     * Đếm số người tham gia đấu giá
      * @param {string} auctionId
-     * @param {number} newPrice
-     * @param {string} bidderId
-     * @returns {Promise<Auction>}
+     * @returns {Promise<number>}
      */
-    async updateCurrentPrice(auctionId, newPrice, bidderId) {
-        const auction = await Auction.findById(auctionId);
+    async countUniqueBidders(auctionId) {
+        return await Bid.countUniqueBidders(auctionId);
+    }
 
-        if (!auction) {
-            throw new Error('Auction không tồn tại');
+    /**
+     * Đánh dấu bid là winning
+     * @param {string} bidId
+     * @returns {Promise<Bid>}
+     */
+    async markBidAsWinning(bidId) {
+        const bid = await Bid.findById(bidId);
+        if (!bid) {
+            throw new Error('Bid không tồn tại');
         }
-
-        await auction.updateCurrentPrice(newPrice, bidderId);
-        return auction;
+        await bid.markAsWinning();
+        return bid;
     }
 
     /**
@@ -73,24 +91,14 @@ class BiddingRepository {
     }
 
     /**
-     * Lấy tất cả bids của một auction
+     * Lấy giá từ Redis cache
+     * @param {Object} redis
      * @param {string} auctionId
-     * @returns {Promise<Array>}
+     * @returns {Promise<number|null>}
      */
-    async getAuctionBids(auctionId) {
-        const auction = await Auction.findById(auctionId)
-            .select('recentBids')
-            .populate('recentBids.bidder', 'username fullName');
-
-        return auction ? auction.recentBids : [];
-    }
-
-    /**
-     * Lấy danh sách auctions đang active
-     * @returns {Promise<Array>}
-     */
-    async getActiveAuctions() {
-        return await Auction.findActiveAuctions();
+    async getCachedPrice(redis, auctionId) {
+        const cachedPrice = await redis.get(`auction:${auctionId}:price`);
+        return cachedPrice ? parseFloat(cachedPrice) : null;
     }
 }
 

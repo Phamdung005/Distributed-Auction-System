@@ -1,4 +1,4 @@
-const User = require('shared/models/User');
+const User = require('../models/User');
 
 /**
  * Repository Layer - Xử lý tương tác với Database
