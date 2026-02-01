@@ -10,13 +10,14 @@ const AuctionListPage = () => {
         status: ['active', 'pending', 'ended'],
         category: 'all',
         minPrice: 0,
-        maxPrice: 10000000000,
+        maxPrice: 100000000000, // 100 tỷ VNĐ
         sortBy: 'ending_soon',
         page: 1,
         limit: 12
     });
     const [totalAuctions, setTotalAuctions] = useState(0);
     const [viewMode, setViewMode] = useState('grid'); // 'grid' or 'list'
+    const [dynamicMaxPrice, setDynamicMaxPrice] = useState(100000000000); // Dynamic based on data
 
     const categories = [
         { id: 'all', label: 'Tất cả sản phẩm', icon: 'grid_view' },
@@ -29,6 +30,13 @@ const AuctionListPage = () => {
     useEffect(() => {
         fetchAuctions();
     }, [filters]);
+
+    // Sync maxPrice filter with dynamicMaxPrice khi có data mới
+    useEffect(() => {
+        if (filters.maxPrice === 100000000000 || filters.maxPrice > dynamicMaxPrice) {
+            setFilters(prev => ({ ...prev, maxPrice: dynamicMaxPrice }));
+        }
+    }, [dynamicMaxPrice]);
 
     const fetchAuctions = async () => {
         setLoading(true);
@@ -51,7 +59,7 @@ const AuctionListPage = () => {
             if (filters.minPrice > 0) {
                 params.minPrice = filters.minPrice;
             }
-            if (filters.maxPrice < 10000000000) {
+            if (filters.maxPrice < dynamicMaxPrice) {
                 params.maxPrice = filters.maxPrice;
             }
 
@@ -62,6 +70,16 @@ const AuctionListPage = () => {
 
             const response = await auctionAPI.getAuctions(params);
             let fetchedAuctions = response.data?.data?.auctions || [];
+
+            // Calculate dynamic max price từ TOÀN BỘ auctions (trước khi filter)
+            if (fetchedAuctions.length > 0) {
+                const maxPriceInData = Math.max(
+                    ...fetchedAuctions.map(a => a.currentPrice || a.startPrice || 0)
+                );
+                // Round up to nearest 10 million for cleaner slider
+                const roundedMax = Math.ceil(maxPriceInData / 10000000) * 10000000;
+                setDynamicMaxPrice(Math.max(roundedMax, 100000000)); // Minimum 100M
+            }
 
             // Client-side filtering for status if multiple selected
             if (filters.status.length > 0 && filters.status.length < 3) {
@@ -210,8 +228,8 @@ const AuctionListPage = () => {
                                         <input
                                             type="range"
                                             min="0"
-                                            max="10000000000"
-                                            step="1000000"
+                                            max={dynamicMaxPrice}
+                                            step="10000000"
                                             value={filters.maxPrice}
                                             onChange={handlePriceChange}
                                             className="w-full accent-orange-600"
@@ -224,7 +242,7 @@ const AuctionListPage = () => {
                                 </div>
 
                                 <button
-                                    onClick={() => setFilters({ status: ['active', 'pending'], category: 'all', minPrice: 0, maxPrice: 1000000000, sortBy: 'ending_soon', page: 1, limit: 12 })}
+                                    onClick={() => setFilters({ status: ['active', 'pending'], category: 'all', minPrice: 0, maxPrice: dynamicMaxPrice, sortBy: 'ending_soon', page: 1, limit: 12 })}
                                     className="w-full py-2 text-sm font-medium text-gray-500 hover:text-orange-600 transition-colors"
                                 >
                                     Xóa tất cả bộ lọc
@@ -344,7 +362,7 @@ const AuctionListPage = () => {
                                 <span className="material-symbols-outlined text-6xl text-gray-300">search_off</span>
                                 <p className="mt-4 text-gray-500 font-medium">Không tìm thấy sản phẩm nào</p>
                                 <button
-                                    onClick={() => setFilters({ status: ['active', 'pending'], category: 'all', minPrice: 0, maxPrice: 1000000000, sortBy: 'ending_soon', page: 1, limit: 12 })}
+                                    onClick={() => setFilters({ status: ['active', 'pending'], category: 'all', minPrice: 0, maxPrice: 100000000000, sortBy: 'ending_soon', page: 1, limit: 12 })}
                                     className="mt-4 text-orange-600 font-bold hover:underline"
                                 >
                                     Xóa bộ lọc
