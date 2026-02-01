@@ -4,6 +4,9 @@ const SOCKET_URL = 'http://localhost:3003';
 
 let socket = null;
 
+// Global tracking of joined auctions to prevent duplicates
+const joinedAuctions = new Set();
+
 /**
  * Kết nối Socket.io
  * @param {string} token - JWT access token
@@ -15,11 +18,20 @@ export const connectSocket = (token) => {
         return null;
     }
 
-    // Ngắt kết nối cũ nếu có
+    // If socket already exists and is connected, return it
     if (socket?.connected) {
-        socket.disconnect();
+        console.log('Socket already connected, reusing existing connection');
+        return socket;
     }
 
+    // If socket exists but disconnected, disconnect it fully first
+    if (socket) {
+        socket.removeAllListeners();
+        socket.disconnect();
+        socket = null;
+    }
+
+    // Create new socket connection
     socket = io(SOCKET_URL, {
         auth: { token },
         transports: ['websocket'],
@@ -35,6 +47,8 @@ export const connectSocket = (token) => {
 
     socket.on('disconnect', (reason) => {
         console.log('❌ Socket disconnected:', reason);
+        // Clear joined auctions on disconnect
+        joinedAuctions.clear();
     });
 
     socket.on('connect_error', (error) => {
@@ -48,9 +62,12 @@ export const connectSocket = (token) => {
  * Ngắt kết nối socket
  */
 export const disconnectSocket = () => {
-    if (socket?.connected) {
+    if (socket) {
+        socket.removeAllListeners();
         socket.disconnect();
         socket = null;
+        joinedAuctions.clear();
+        console.log('🔌 Socket disconnected and cleaned up');
     }
 };
 
@@ -64,23 +81,33 @@ export const getSocket = () => socket;
  * Join auction room
  * @param {string} auctionId
  * @param {Function} onJoined - Callback khi join thành công
+ * @returns {boolean} - true if joined, false if already joined
  */
 export const joinAuction = (auctionId, onJoined) => {
     if (!socket?.connected) {
         console.error('Socket not connected');
-        return;
+        return false;
+    }
+
+    // Check if already joined this auction
+    if (joinedAuctions.has(auctionId)) {
+        console.log(`Already joined auction ${auctionId}, skipping duplicate join`);
+        return false;
     }
 
     socket.emit('auction:join', { auctionId });
 
     socket.once('auction:joined', (data) => {
         console.log('✅ Joined auction:', data);
+        joinedAuctions.add(auctionId);
         if (onJoined) onJoined(data);
     });
 
     socket.on('error', (data) => {
         console.error('❌ Error:', data.message);
     });
+
+    return true;
 };
 
 /**
@@ -89,7 +116,10 @@ export const joinAuction = (auctionId, onJoined) => {
  */
 export const leaveAuction = (auctionId) => {
     if (!socket?.connected) return;
+
     socket.emit('auction:leave', { auctionId });
+    joinedAuctions.delete(auctionId);
+    console.log(`Left auction ${auctionId}`);
 };
 
 /**

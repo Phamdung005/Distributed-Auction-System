@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { toast } from 'react-toastify';
 import { format } from 'date-fns';
@@ -47,6 +47,9 @@ const AuctionDetailPage = () => {
   const [checkingRegistration, setCheckingRegistration] = useState(true);
   const [showDepositModal, setShowDepositModal] = useState(false);
 
+  // Track if we've already joined this auction to prevent duplicates
+  const hasJoinedRef = useRef(false);
+
   // Update current time every second for live countdown
   useEffect(() => {
     const timer = setInterval(() => {
@@ -69,15 +72,28 @@ const AuctionDetailPage = () => {
       const socket = connectSocket(token);
 
       if (socket) {
-        socket.on('connect', () => {
+        // Handle connect event (for reconnections)
+        const handleConnect = () => {
           setConnected(true);
-          joinAuction(id, (data) => {
-            setAuction(prev => ({ ...prev, ...data }));
-            setBidAmount(data.currentPrice + data.minBidIncrement);
-          });
-        });
+          if (!hasJoinedRef.current) {
+            hasJoinedRef.current = true;
+            joinAuction(id, (data) => {
+              setAuction(prev => ({ ...prev, ...data }));
+              setBidAmount(data.currentPrice + data.minBidIncrement);
+            });
+          }
+        };
 
-        onBidUpdate((data) => {
+        // Join auction immediately if already connected
+        if (socket.connected && !hasJoinedRef.current) {
+          handleConnect();
+        }
+
+        // Add connect listener
+        socket.on('connect', handleConnect);
+
+        // Add other listeners
+        const handleBidUpdate = (data) => {
           if (data.auctionId === id) {
             setAuction(prev => ({
               ...prev,
@@ -86,23 +102,41 @@ const AuctionDetailPage = () => {
             }));
             toast.info(`💰 Có bid mới: ${data.amount.toLocaleString('vi-VN')} ₫`);
           }
-        });
+        };
 
-        onUserJoined((data) => {
+        const handleUserJoined = (data) => {
           setParticipants(data.totalParticipants);
-        });
+        };
 
-        onUserLeft((data) => {
+        const handleUserLeft = (data) => {
           setParticipants(data.totalParticipants);
-        });
+        };
+
+        onBidUpdate(handleBidUpdate);
+        onUserJoined(handleUserJoined);
+        onUserLeft(handleUserLeft);
+
+        // Cleanup function
+        return () => {
+          // Remove connect handler
+          socket.off('connect', handleConnect);
+
+          // Leave auction if joined
+          if (hasJoinedRef.current) {
+            leaveAuction(id);
+            hasJoinedRef.current = false;
+          }
+
+          // Remove all other listeners
+          removeListeners();
+        };
       }
     }
 
     return () => {
-      if (isAuthenticated) {
-        leaveAuction(id);
-        removeListeners();
-        disconnectSocket();
+      // Cleanup if not authenticated
+      if (hasJoinedRef.current) {
+        hasJoinedRef.current = false;
       }
     };
   }, [id, isAuthenticated]);

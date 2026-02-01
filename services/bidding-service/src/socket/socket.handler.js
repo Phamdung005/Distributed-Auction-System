@@ -28,6 +28,9 @@ const initializeSocketHandlers = (io, redis) => {
     io.on('connection', (socket) => {
         console.log(`✅ Client connected: ${socket.id}, User: ${socket.user.userId}`);
 
+        // Track which auction rooms this socket has joined
+        socket.joinedAuctions = new Set();
+
         /**
          * Event: Join auction room
          * Client gửi: { auctionId: string }
@@ -43,23 +46,41 @@ const initializeSocketHandlers = (io, redis) => {
 
                 // Join vào room của auction
                 socket.join(`auction:${auctionId}`);
+                socket.joinedAuctions.add(auctionId);
 
-                // Lấy thông tin auction hiện tại
+                // Track socket for this user (1 user có thể có nhiều socket)
+                await redis.sAdd(
+                    `auction:${auctionId}:user:${socket.user.userId}:sockets`,
+                    socket.id
+                );
+
+                // Thêm user vào viewers SET - SADD trả về 1 nếu user MỚI, 0 nếu đã tồn tại
+                const isNewViewer = await redis.sAdd(
+                    `auction:${auctionId}:viewers`,
+                    socket.user.userId
+                );
+                const viewerCount = await redis.sCard(`auction:${auctionId}:viewers`);
+
+                // Lấy thông tin auction
                 const auctionDetails = await biddingService.getAuctionDetails(auctionId);
 
-                // Gửi thông tin auction cho client
+                // Luôn gửi thông tin cho chính socket này
                 socket.emit('auction:joined', {
                     auctionId,
-                    ...auctionDetails
+                    ...auctionDetails,
+                    totalParticipants: viewerCount
                 });
 
-                // Thông báo cho các clients khác
-                socket.to(`auction:${auctionId}`).emit('user:joined', {
-                    userId: socket.user.userId,
-                    totalParticipants: io.sockets.adapter.rooms.get(`auction:${auctionId}`)?.size || 0
-                });
-
-                console.log(`User ${socket.user.userId} joined auction ${auctionId}`);
+                // CHỈ broadcast khi user THỰC SỰ MỚI (refresh không tăng count)
+                if (isNewViewer === 1) {
+                    io.to(`auction:${auctionId}`).emit('user:joined', {
+                        userId: socket.user.userId,
+                        totalParticipants: viewerCount
+                    });
+                    console.log(`✅ NEW viewer: User ${socket.user.userId} joined auction ${auctionId}, total viewers: ${viewerCount}`);
+                } else {
+                    console.log(`🔄 User ${socket.user.userId} reconnected to auction ${auctionId}, viewers unchanged: ${viewerCount}`);
+                }
 
             } catch (error) {
                 console.error('Error joining auction:', error);
@@ -71,19 +92,40 @@ const initializeSocketHandlers = (io, redis) => {
          * Event: Leave auction room
          * Client gửi: { auctionId: string }
          */
-        socket.on('auction:leave', (data) => {
+        socket.on('auction:leave', async (data) => {
             const { auctionId } = data;
 
             if (auctionId) {
+                // Leave the room
                 socket.leave(`auction:${auctionId}`);
+                socket.joinedAuctions.delete(auctionId);
 
-                // Thông báo cho các clients khác
-                socket.to(`auction:${auctionId}`).emit('user:left', {
-                    userId: socket.user.userId,
-                    totalParticipants: io.sockets.adapter.rooms.get(`auction:${auctionId}`)?.size || 0
-                });
+                // Remove socket from user's socket set
+                await redis.sRem(
+                    `auction:${auctionId}:user:${socket.user.userId}:sockets`,
+                    socket.id
+                );
 
-                console.log(`User ${socket.user.userId} left auction ${auctionId}`);
+                // Check if user has any other sockets in this auction
+                const userSocketCount = await redis.sCard(
+                    `auction:${auctionId}:user:${socket.user.userId}:sockets`
+                );
+
+                // CHỈ remove user khi socket CUỐI CÙNG rời đi
+                if (userSocketCount === 0) {
+                    await redis.sRem(`auction:${auctionId}:viewers`, socket.user.userId);
+                    const viewerCount = await redis.sCard(`auction:${auctionId}:viewers`);
+
+                    // Broadcast user left
+                    io.to(`auction:${auctionId}`).emit('user:left', {
+                        userId: socket.user.userId,
+                        totalParticipants: viewerCount
+                    });
+
+                    console.log(`❌ User ${socket.user.userId} left auction ${auctionId}, viewers: ${viewerCount}`);
+                } else {
+                    console.log(`🔄 Socket ${socket.id} left but user ${socket.user.userId} still has ${userSocketCount} socket(s) in auction ${auctionId}`);
+                }
             }
         });
 
@@ -175,9 +217,47 @@ const initializeSocketHandlers = (io, redis) => {
 
         /**
          * Event: Disconnect
+         * Cleanup socket and remove user only if it's their last socket
          */
-        socket.on('disconnect', (reason) => {
-            console.log(`❌ Client disconnected: ${socket.id}, Reason: ${reason}`);
+        socket.on('disconnect', async (reason) => {
+            console.log(`❌ Socket disconnected: ${socket.id}, User: ${socket.user?.userId}, Reason: ${reason}`);
+
+            // Cleanup all joined auction rooms
+            if (socket.joinedAuctions && socket.joinedAuctions.size > 0) {
+                for (const auctionId of socket.joinedAuctions) {
+                    // Leave room
+                    socket.leave(`auction:${auctionId}`);
+
+                    // Remove THIS socket from user's socket set
+                    await redis.sRem(
+                        `auction:${auctionId}:user:${socket.user.userId}:sockets`,
+                        socket.id
+                    );
+
+                    // Check if user has any remaining sockets
+                    const userSocketCount = await redis.sCard(
+                        `auction:${auctionId}:user:${socket.user.userId}:sockets`
+                    );
+
+                    // CHỈ remove user khi đây là socket CUỐI CÙNG
+                    if (userSocketCount === 0) {
+                        await redis.sRem(`auction:${auctionId}:viewers`, socket.user.userId);
+                        const viewerCount = await redis.sCard(`auction:${auctionId}:viewers`);
+
+                        // Broadcast user left
+                        io.to(`auction:${auctionId}`).emit('user:left', {
+                            userId: socket.user.userId,
+                            totalParticipants: viewerCount
+                        });
+
+                        console.log(`👋 User ${socket.user.userId} fully disconnected from auction ${auctionId}, viewers: ${viewerCount}`);
+                    } else {
+                        console.log(`🔄 Socket ${socket.id} disconnected but user ${socket.user.userId} still has ${userSocketCount} socket(s) in auction ${auctionId}`);
+                    }
+                }
+
+                socket.joinedAuctions.clear();
+            }
         });
 
         /**
