@@ -1,5 +1,6 @@
 const authRepository = require('../repositories/auth.repository');
 const { generateAccessToken, generateRefreshToken, verifyToken } = require('../utils/jwt');
+const { syncUserToPaymentService } = require('../utils/serviceSync');
 
 /**
  * Service Layer - Business Logic
@@ -12,7 +13,7 @@ class AuthService {
      * @returns {Promise<Object>}
      */
     async register(userData) {
-        const { email, password, fullName, phone } = userData;
+        const { email, password, fullName, phone, role } = userData;
 
         // Kiểm tra email đã tồn tại
         const existingEmail = await authRepository.findByEmail(email);
@@ -28,7 +29,13 @@ class AuthService {
             email,
             password,
             fullName,
-            phone
+            phone,
+            role
+        });
+
+        // Sync user to Payment Service (non-blocking)
+        syncUserToPaymentService(user).catch(err => {
+            console.error('Failed to sync user to payment service:', err);
         });
 
         // Tạo tokens
