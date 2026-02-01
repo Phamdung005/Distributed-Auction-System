@@ -10,10 +10,12 @@ const { createRedisClient } = require('shared/database/redis');
 // Import local models to register schemas
 require('./models/Transaction');
 require('./models/Escrow');
+require('./models/User');
 
 const walletRoutes = require('./routes/wallet.routes');
 const paymentRoutes = require('./routes/payment.routes');
 const transactionRoutes = require('./routes/transaction.routes');
+const userRoutes = require('./routes/user.routes');
 const errorHandler = require('./middlewares/errorHandler');
 
 const app = express();
@@ -61,6 +63,7 @@ app.get('/health', (req, res) => {
 app.use('/api/wallet', walletRoutes);
 app.use('/api/payment', paymentRoutes);
 app.use('/api/transactions', transactionRoutes);
+app.use('/api/users', userRoutes);
 
 // 404 Handler
 app.use((req, res) => {

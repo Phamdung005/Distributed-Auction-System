@@ -1,4 +1,9 @@
 const Escrow = require('../models/Escrow');
+const User = require('../models/User');
+const axios = require('axios');
+
+const AUTH_SERVICE_URL = process.env.AUTH_SERVICE_URL || 'http://localhost:3001';
+
 // Note: User operations should ideally use Auth Service API
 // For now, we'll need to add User model or use API calls
 
@@ -12,10 +17,39 @@ class WalletRepository {
      * @returns {Promise<Object>} - User object với balance
      */
     async getUserBalance(userId) {
-        const user = await User.findById(userId).select('balance fullName email');
+        let user = await User.findById(userId).select('balance fullName email');
+
+        // If user doesn't exist in payment DB, try to fetch from auth service and create
         if (!user) {
-            throw new Error('User không tồn tại');
+            try {
+                console.log(`User ${userId} not found in payment DB, fetching from auth service...`);
+                const response = await axios.get(
+                    `${AUTH_SERVICE_URL}/api/auth/profile/${userId}`,
+                    { timeout: 5000 }
+                );
+
+                if (response.data && response.data.success) {
+                    const authUser = response.data.data;
+                    // Create user in payment DB
+                    user = await User.create({
+                        _id: userId,
+                        email: authUser.email,
+                        fullName: authUser.fullName,
+                        phone: authUser.phone,
+                        role: authUser.role || 'bidder',
+                        isActive: true,
+                        balance: 0
+                    });
+                    console.log(`✅ Created user ${userId} in payment DB`);
+                } else {
+                    throw new Error('User không tồn tại');
+                }
+            } catch (error) {
+                console.error('Error fetching user from auth service:', error.message);
+                throw new Error('User không tồn tại');
+            }
         }
+
         return user;
     }
 

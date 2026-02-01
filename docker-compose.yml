@@ -231,6 +231,7 @@ services:
       - MOMO_ENDPOINT=https://test-payment.momo.vn/v2/gateway/api/create
       - MOMO_RETURN_URL=http://localhost:3000/payment/result
       - MOMO_NOTIFY_URL=http://localhost:3006/api/payment/momo/callback
+      - AUTH_SERVICE_URL=http://auth-service:3001
     depends_on:
       - mongodb-payment
       - redis

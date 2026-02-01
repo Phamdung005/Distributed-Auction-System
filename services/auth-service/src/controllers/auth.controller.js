@@ -152,6 +152,24 @@ class AuthController {
     }
 
     /**
+     * Lấy thông tin user theo ID (Internal service calls)
+     * GET /api/auth/profile/:userId
+     */
+    async getProfileById(req, res, next) {
+        try {
+            const { userId } = req.params;
+            const profile = await authService.getUserProfile(userId);
+
+            res.status(200).json({
+                success: true,
+                data: profile
+            });
+        } catch (error) {
+            next(error);
+        }
+    }
+
+    /**
      * Cập nhật thông tin profile
      * PUT /api/auth/me
      */

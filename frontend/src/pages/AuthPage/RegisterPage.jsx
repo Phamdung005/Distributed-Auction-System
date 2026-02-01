@@ -115,6 +115,19 @@ const RegisterPage = () => {
             </div>
 
             <div className="form-group">
+              <label className="block text-sm font-medium text-gray-700 mb-1.5">Vai trò</label>
+              <select
+                className={`w-full px-4 py-2.5 rounded-xl border ${errors.role ? 'border-red-500 focus:border-red-500' : 'border-gray-200 focus:border-[#f26c0d]'} bg-[#f8f7f5] focus:bg-white outline-none transition-all cursor-pointer`}
+                {...register('role', { required: 'Vai trò là bắt buộc' })}
+                defaultValue="bidder"
+              >
+                <option value="bidder">Người mua (Bidder)</option>
+                <option value="seller">Người bán (Seller)</option>
+              </select>
+              {errors.role && <p className="mt-1 text-xs text-red-500">{errors.role.message}</p>}
+            </div>
+
+            <div className="form-group">
               <label className="block text-sm font-medium text-gray-700 mb-1.5">Mật khẩu</label>
               <input
                 type="password"

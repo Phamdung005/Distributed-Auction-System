@@ -67,4 +67,11 @@ router.post('/change-password', authenticate, authController.changePassword);
  */
 router.post('/verify', authController.verifyToken);
 
+/**
+ * @route   GET /api/auth/profile/:userId
+ * @desc    Get user profile by ID (Internal use)
+ * @access  Public (Internal)
+ */
+router.get('/profile/:userId', authController.getProfileById);
+
 module.exports = router;
