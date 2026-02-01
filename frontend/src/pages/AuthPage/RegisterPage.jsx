@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { useForm } from 'react-hook-form';
 import { useAuth } from '../../contexts/AuthContext';
-import { Gavel } from 'lucide-react';
+import { Gavel, Eye, EyeOff } from 'lucide-react';
 
 const RegisterPage = () => {
   const { register, handleSubmit, watch, formState: { errors } } = useForm();
@@ -10,6 +10,8 @@ const RegisterPage = () => {
   const navigate = useNavigate();
   const [loading, setLoading] = useState(false);
   const [registerError, setRegisterError] = useState('');
+  const [showPassword, setShowPassword] = useState(false);
+  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
 
   const password = watch('password');
 
@@ -129,30 +131,48 @@ const RegisterPage = () => {
 
             <div className="form-group">
               <label className="block text-sm font-medium text-gray-700 mb-1.5">Mật khẩu</label>
-              <input
-                type="password"
-                className={`w-full px-4 py-2.5 rounded-xl border ${errors.password ? 'border-red-500 focus:border-red-500' : 'border-gray-200 focus:border-[#f26c0d]'} bg-[#f8f7f5] focus:bg-white outline-none transition-all`}
-                placeholder="••••••••"
-                {...register('password', {
-                  required: 'Mật khẩu là bắt buộc',
-                  minLength: { value: 6, message: 'Tối thiểu 6 ký tự' },
-                  pattern: { value: /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)/, message: 'Cần 1 hoa, 1 thường, 1 số' }
-                })}
-              />
+              <div className="relative">
+                <input
+                  type={showPassword ? "text" : "password"}
+                  className={`w-full px-4 py-2.5 rounded-xl border ${errors.password ? 'border-red-500 focus:border-red-500' : 'border-gray-200 focus:border-[#f26c0d]'} bg-[#f8f7f5] focus:bg-white outline-none transition-all pr-12`}
+                  placeholder="••••••••"
+                  {...register('password', {
+                    required: 'Mật khẩu là bắt buộc',
+                    minLength: { value: 6, message: 'Tối thiểu 6 ký tự' },
+                    pattern: { value: /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)/, message: 'Cần 1 hoa, 1 thường, 1 số' }
+                  })}
+                />
+                <button
+                  type="button"
+                  onClick={() => setShowPassword(!showPassword)}
+                  className="absolute right-4 top-1/2 -translate-y-1/2 text-gray-500 hover:text-[#f26c0d] transition-colors focus:outline-none"
+                >
+                  {showPassword ? <EyeOff size={20} /> : <Eye size={20} />}
+                </button>
+              </div>
               {errors.password && <p className="mt-1 text-xs text-red-500">{errors.password.message}</p>}
             </div>
 
             <div className="form-group">
               <label className="block text-sm font-medium text-gray-700 mb-1.5">Xác nhận mật khẩu</label>
-              <input
-                type="password"
-                className={`w-full px-4 py-2.5 rounded-xl border ${errors.confirmPassword ? 'border-red-500 focus:border-red-500' : 'border-gray-200 focus:border-[#f26c0d]'} bg-[#f8f7f5] focus:bg-white outline-none transition-all`}
-                placeholder="••••••••"
-                {...register('confirmPassword', {
-                  required: 'Xác nhận mật khẩu',
-                  validate: value => value === password || 'Mật khẩu không khớp'
-                })}
-              />
+              <div className="relative">
+                <input
+                  type={showConfirmPassword ? "text" : "password"}
+                  className={`w-full px-4 py-2.5 rounded-xl border ${errors.confirmPassword ? 'border-red-500 focus:border-red-500' : 'border-gray-200 focus:border-[#f26c0d]'} bg-[#f8f7f5] focus:bg-white outline-none transition-all pr-12`}
+                  placeholder="••••••••"
+                  {...register('confirmPassword', {
+                    required: 'Xác nhận mật khẩu',
+                    validate: value => value === password || 'Mật khẩu không khớp'
+                  })}
+                />
+                <button
+                  type="button"
+                  onClick={() => setShowConfirmPassword(!showConfirmPassword)}
+                  className="absolute right-4 top-1/2 -translate-y-1/2 text-gray-500 hover:text-[#f26c0d] transition-colors focus:outline-none"
+                >
+                  {showConfirmPassword ? <EyeOff size={20} /> : <Eye size={20} />}
+                </button>
+              </div>
               {errors.confirmPassword && <p className="mt-1 text-xs text-red-500">{errors.confirmPassword.message}</p>}
             </div>
 

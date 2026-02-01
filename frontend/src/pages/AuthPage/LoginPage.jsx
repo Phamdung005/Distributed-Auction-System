@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { useForm } from 'react-hook-form';
 import { useAuth } from '../../contexts/AuthContext';
-import { Gavel } from 'lucide-react';
+import { Gavel, Eye, EyeOff } from 'lucide-react';
 
 const LoginPage = () => {
   const { register, handleSubmit, formState: { errors } } = useForm();
@@ -10,6 +10,7 @@ const LoginPage = () => {
   const navigate = useNavigate();
   const [loading, setLoading] = useState(false);
   const [loginError, setLoginError] = useState('');
+  const [showPassword, setShowPassword] = useState(false);
 
   const onSubmit = async (data) => {
     setLoading(true);
@@ -99,12 +100,21 @@ const LoginPage = () => {
                   Quên mật khẩu?
                 </a>
               </div>
-              <input
-                type="password"
-                className={`w-full px-4 py-3 rounded-xl border ${errors.password ? 'border-red-500 focus:border-red-500 focus:ring-red-200' : 'border-gray-200 focus:border-[#f26c0d] focus:ring-orange-100'} bg-[#f8f7f5] focus:bg-white outline-none transition-all duration-200`}
-                placeholder="••••••••"
-                {...register('password', { required: 'Vui lòng nhập mật khẩu' })}
-              />
+              <div className="relative">
+                <input
+                  type={showPassword ? "text" : "password"}
+                  className={`w-full px-4 py-3 rounded-xl border ${errors.password ? 'border-red-500 focus:border-red-500 focus:ring-red-200' : 'border-gray-200 focus:border-[#f26c0d] focus:ring-orange-100'} bg-[#f8f7f5] focus:bg-white outline-none transition-all duration-200 pr-12`}
+                  placeholder="••••••••"
+                  {...register('password', { required: 'Vui lòng nhập mật khẩu' })}
+                />
+                <button
+                  type="button"
+                  onClick={() => setShowPassword(!showPassword)}
+                  className="absolute right-4 top-1/2 -translate-y-1/2 text-gray-500 hover:text-[#f26c0d] transition-colors focus:outline-none"
+                >
+                  {showPassword ? <EyeOff size={20} /> : <Eye size={20} />}
+                </button>
+              </div>
               {errors.password && (
                 <p className="mt-1 text-sm text-red-500">{errors.password.message}</p>
               )}
