@@ -260,6 +260,27 @@ auctionSchema.pre('save', function (next) {
     next();
 });
 
+// Transform _id to id when converting to JSON
+auctionSchema.set('toJSON', {
+    virtuals: true,
+    versionKey: false,
+    transform: function (doc, ret) {
+        ret.id = ret._id.toString();
+        delete ret._id;
+        return ret;
+    }
+});
+
+auctionSchema.set('toObject', {
+    virtuals: true,
+    versionKey: false,
+    transform: function (doc, ret) {
+        ret.id = ret._id.toString();
+        delete ret._id;
+        return ret;
+    }
+});
+
 const Auction = mongoose.model('Auction', auctionSchema);
 
 module.exports = Auction;

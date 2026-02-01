@@ -19,19 +19,19 @@ const HomePage = () => {
         ]);
 
         const hot = hotRes.data?.data?.auctions || [];
+        const active = activeRes.data?.data?.auctions || [];
+        const upcoming = upcomingRes.data?.data?.auctions || [];
+
+
         setHotAuctions(hot);
         if (hot.length > 0) {
-          // Use the most viewed auction as Hero, or fallback.
           setHeroAuction(hot[0]);
         }
 
-        setActiveAuctions(activeRes.data?.data?.auctions || []);
-
-        if (upcomingRes.data?.data?.auctions) {
-          setUpcomingAuctions(upcomingRes.data.data.auctions);
-        }
+        setActiveAuctions(active);
+        setUpcomingAuctions(upcoming);
       } catch (error) {
-        console.error('Error fetching homepage data:', error);
+
       } finally {
         setLoading(false);
       }
@@ -100,7 +100,7 @@ const HomePage = () => {
               </div>
             </div>
             <div className="mt-8">
-              <Link to={`/auction/${heroAuction._id}`} className="bg-[#f26c0d] hover:bg-orange-600 text-white px-10 py-4 rounded-xl font-bold text-lg transition-all hover:shadow-lg hover:shadow-orange-500/30 transform hover:-translate-y-1 inline-block">
+              <Link to={`/auction/${heroAuction.id}`} className="bg-[#f26c0d] hover:bg-orange-600 text-white px-10 py-4 rounded-xl font-bold text-lg transition-all hover:shadow-lg hover:shadow-orange-500/30 transform hover:-translate-y-1 inline-block">
                 Place Your Bid
               </Link>
             </div>
@@ -123,7 +123,7 @@ const HomePage = () => {
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
           {hotAuctions.length > 0 ? (
             hotAuctions.map((auction) => (
-              <div key={auction._id} className="group bg-white rounded-xl overflow-hidden border border-[#e5e7eb] hover:shadow-xl hover:shadow-gray-200/50 transition-all duration-300 flex flex-col h-full transform hover:-translate-y-1">
+              <div key={auction.id} className="group bg-white rounded-xl overflow-hidden border border-[#e5e7eb] hover:shadow-xl hover:shadow-gray-200/50 transition-all duration-300 flex flex-col h-full transform hover:-translate-y-1">
                 <div className="relative aspect-[4/3] overflow-hidden bg-gray-100">
                   <div className="absolute top-3 left-3 z-10 flex gap-2">
                     <span className="bg-red-500 text-white text-[10px] font-bold px-2.5 py-1 rounded-md shadow-sm flex items-center gap-1">
@@ -151,7 +151,7 @@ const HomePage = () => {
                     </div>
                   </div>
 
-                  <Link to={`/auction/${auction._id}`} className="mt-auto block w-full bg-gray-50 hover:bg-[#1c130d] hover:text-white text-[#1c130d] text-center py-3 rounded-lg font-bold text-sm transition-all duration-300 border border-gray-200 hover:border-transparent">
+                  <Link to={`/auction/${auction.id}`} className="mt-auto block w-full bg-gray-50 hover:bg-[#1c130d] hover:text-white text-[#1c130d] text-center py-3 rounded-lg font-bold text-sm transition-all duration-300 border border-gray-200 hover:border-transparent">
                     View Details
                   </Link>
                 </div>
@@ -185,7 +185,7 @@ const HomePage = () => {
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
           {activeAuctions.length > 0 ? (
             activeAuctions.map((auction) => (
-              <div key={auction._id} className="group bg-white rounded-xl overflow-hidden border border-[#e5e7eb] hover:shadow-xl hover:shadow-gray-200/50 transition-all duration-300 flex flex-col h-full">
+              <div key={auction.id} className="group bg-white rounded-xl overflow-hidden border border-[#e5e7eb] hover:shadow-xl hover:shadow-gray-200/50 transition-all duration-300 flex flex-col h-full">
                 <div className="relative aspect-[4/3] overflow-hidden bg-gray-100">
                   <div className="absolute top-3 left-3 z-10 flex gap-2">
                     <span className="bg-green-600 text-white text-[10px] font-bold px-2 py-1 rounded shadow-sm flex items-center gap-1 animate-pulse">LIVE</span>
@@ -206,7 +206,7 @@ const HomePage = () => {
                       <p className="text-xl font-black text-orange-600">{formatCurrency(auction.currentPrice || auction.startPrice)}</p>
                     </div>
                   </div>
-                  <Link to={`/auction/${auction._id}`} className="mt-4 block w-full bg-orange-50 hover:bg-orange-100 text-orange-600 text-center py-2.5 rounded-lg font-bold text-sm transition-colors border border-orange-100">
+                  <Link to={`/auction/${auction.id}`} className="mt-4 block w-full bg-orange-50 hover:bg-orange-100 text-orange-600 text-center py-2.5 rounded-lg font-bold text-sm transition-colors border border-orange-100">
                     Bid Now
                   </Link>
                 </div>
@@ -275,7 +275,7 @@ const HomePage = () => {
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
           {upcomingAuctions.length > 0 ? (
             upcomingAuctions.map(auction => (
-              <div key={auction._id} className="group bg-white rounded-xl overflow-hidden border border-[#e5e7eb] hover:shadow-xl hover:shadow-gray-200/50 transition-all duration-300 flex flex-col h-full">
+              <div key={auction.id} className="group bg-white rounded-xl overflow-hidden border border-[#e5e7eb] hover:shadow-xl hover:shadow-gray-200/50 transition-all duration-300 flex flex-col h-full">
                 <div className="relative aspect-[16/9] overflow-hidden bg-gray-100">
                   <div className="absolute top-3 left-3 z-10 flex gap-2">
                     <span className="bg-blue-600 text-white text-[10px] font-bold px-2 py-1 rounded shadow-sm uppercase tracking-wide">
@@ -296,7 +296,7 @@ const HomePage = () => {
                     <div className="text-sm font-medium text-gray-900">
                       Starting: <span className="font-bold">{formatCurrency(auction.startPrice)}</span>
                     </div>
-                    <Link to={`/auction/${auction._id}`} className="text-sm font-bold text-orange-600 border border-orange-600/30 hover:bg-orange-600 hover:text-white px-4 py-2 rounded-lg transition-all">
+                    <Link to={`/auction/${auction.id}`} className="text-sm font-bold text-orange-600 border border-orange-600/30 hover:bg-orange-600 hover:text-white px-4 py-2 rounded-lg transition-all">
                       View Details
                     </Link>
                   </div>
