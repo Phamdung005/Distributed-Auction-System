@@ -9,15 +9,10 @@ const joinedAuctions = new Set();
 
 /**
  * Kết nối Socket.io
- * @param {string} token - JWT access token
+ * @param {string|null} token - JWT access token (optional for anonymous viewing)
  * @returns {Socket} socket instance
  */
 export const connectSocket = (token) => {
-    if (!token) {
-        console.error('Token is required to connect socket');
-        return null;
-    }
-
     // If socket already exists and is connected, return it
     if (socket?.connected) {
         console.log('Socket already connected, reusing existing connection');
@@ -32,17 +27,24 @@ export const connectSocket = (token) => {
     }
 
     // Create new socket connection
-    socket = io(SOCKET_URL, {
-        auth: { token },
+    // Only pass token if it exists (allow anonymous connections)
+    const socketConfig = {
         transports: ['websocket'],
         reconnection: true,
         reconnectionDelay: 1000,
         reconnectionAttempts: 5,
-    });
+    };
+
+    // Add auth token only if provided
+    if (token) {
+        socketConfig.auth = { token };
+    }
+
+    socket = io(SOCKET_URL, socketConfig);
 
     // Connection events
     socket.on('connect', () => {
-        console.log('✅ Socket connected:', socket.id);
+        console.log('✅ Socket connected:', socket.id, token ? '(authenticated)' : '(anonymous)');
     });
 
     socket.on('disconnect', (reason) => {

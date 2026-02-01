@@ -67,78 +67,73 @@ const AuctionDetailPage = () => {
       setCheckingRegistration(false);
     }
 
-    if (isAuthenticated) {
-      const token = getAccessToken();
-      const socket = connectSocket(token);
+    // Setup socket for ALL users (authenticated AND anonymous)
+    // Anonymous users can view, but cannot bid
+    const token = isAuthenticated ? getAccessToken() : null;
+    const socket = connectSocket(token);
 
-      if (socket) {
-        // Handle connect event (for reconnections)
-        const handleConnect = () => {
-          setConnected(true);
-          if (!hasJoinedRef.current) {
-            hasJoinedRef.current = true;
-            joinAuction(id, (data) => {
-              setAuction(prev => ({ ...prev, ...data }));
-              setBidAmount(data.currentPrice + data.minBidIncrement);
-            });
+    if (socket) {
+      // Handle connect event (for reconnections)
+      const handleConnect = () => {
+        console.log('Socket connected, joining auction:', id);
+
+        // Join auction room
+        joinAuction(id, (data) => {
+          console.log('Joined auction:', data);
+          if (data.totalParticipants !== undefined) {
+            setParticipants(data.totalParticipants);
           }
-        };
+        });
 
-        // Join auction immediately if already connected
-        if (socket.connected && !hasJoinedRef.current) {
-          handleConnect();
+        hasJoinedRef.current = true;
+      };
+
+      // If already connected, join immediately
+      if (socket.connected) {
+        handleConnect();
+      } else {
+        // Otherwise, wait for connect event
+        socket.on('connect', handleConnect);
+      }
+
+      const handleBidUpdate = (data) => {
+        if (data.auctionId === id) {
+          setAuction(prev => ({
+            ...prev,
+            currentPrice: data.amount,
+            totalBids: prev.totalBids + 1
+          }));
+          toast.info(`💰 Có bid mới: ${data.amount.toLocaleString('vi-VN')} ₫`);
+        }
+      };
+
+      const handleUserJoined = (data) => {
+        setParticipants(data.totalParticipants);
+      };
+
+      const handleUserLeft = (data) => {
+        setParticipants(data.totalParticipants);
+      };
+
+      onBidUpdate(handleBidUpdate);
+      onUserJoined(handleUserJoined);
+      onUserLeft(handleUserLeft);
+
+      // Cleanup function
+      return () => {
+        // Remove connect handler
+        socket.off('connect', handleConnect);
+
+        // Leave auction if joined
+        if (hasJoinedRef.current) {
+          leaveAuction(id);
+          hasJoinedRef.current = false;
         }
 
-        // Add connect listener
-        socket.on('connect', handleConnect);
-
-        // Add other listeners
-        const handleBidUpdate = (data) => {
-          if (data.auctionId === id) {
-            setAuction(prev => ({
-              ...prev,
-              currentPrice: data.amount,
-              totalBids: prev.totalBids + 1
-            }));
-            toast.info(`💰 Có bid mới: ${data.amount.toLocaleString('vi-VN')} ₫`);
-          }
-        };
-
-        const handleUserJoined = (data) => {
-          setParticipants(data.totalParticipants);
-        };
-
-        const handleUserLeft = (data) => {
-          setParticipants(data.totalParticipants);
-        };
-
-        onBidUpdate(handleBidUpdate);
-        onUserJoined(handleUserJoined);
-        onUserLeft(handleUserLeft);
-
-        // Cleanup function
-        return () => {
-          // Remove connect handler
-          socket.off('connect', handleConnect);
-
-          // Leave auction if joined
-          if (hasJoinedRef.current) {
-            leaveAuction(id);
-            hasJoinedRef.current = false;
-          }
-
-          // Remove all other listeners
-          removeListeners();
-        };
-      }
+        // Remove all other listeners
+        removeListeners();
+      };
     }
-
-    return () => {
-      // Cleanup if not authenticated
-      if (hasJoinedRef.current) {
-        hasJoinedRef.current = false;
-      }
-    };
   }, [id, isAuthenticated]);
 
   const fetchAuctionDetails = async () => {

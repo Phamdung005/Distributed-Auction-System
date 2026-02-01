@@ -148,6 +148,12 @@ const initializeSocketHandlers = (io, redis) => {
                     return;
                 }
 
+                // Chặn anonymous users
+                if (socket.user.isAnonymous || socket.user.role === 'guest') {
+                    socket.emit('bid:error', { message: 'Vui lòng đăng nhập để đấu giá' });
+                    return;
+                }
+
                 // Kiểm tra role trước (gửi lỗi nhanh)
                 if (socket.user.role !== 'bidder') {
                     socket.emit('bid:error', { message: 'Chỉ bidder mới được đặt giá' });
