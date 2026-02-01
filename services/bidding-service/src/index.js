@@ -73,12 +73,6 @@ app.get('/health', (req, res) => {
 // Routes
 app.use('/api/bidding', biddingRoutes);
 
-// Debug routes (load after io is initialized)
-setTimeout(() => {
-    const debugRoutes = require('./routes/debug.routes')(io);
-    app.use('/api', debugRoutes);
-}, 1000);
-
 // 404 Handler
 app.use((req, res) => {
     res.status(404).json({

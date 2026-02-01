@@ -77,9 +77,9 @@ const initializeSocketHandlers = (io, redis) => {
                         userId: socket.user.userId,
                         totalParticipants: viewerCount
                     });
-                    console.log(`✅ NEW viewer: User ${socket.user.userId} joined auction ${auctionId}, total viewers: ${viewerCount}`);
+                    console.log(`NEW viewer: User ${socket.user.userId} joined auction ${auctionId}, total viewers: ${viewerCount}`);
                 } else {
-                    console.log(`🔄 User ${socket.user.userId} reconnected to auction ${auctionId}, viewers unchanged: ${viewerCount}`);
+                    console.log(`User ${socket.user.userId} reconnected to auction ${auctionId}, viewers unchanged: ${viewerCount}`);
                 }
 
             } catch (error) {
@@ -122,9 +122,9 @@ const initializeSocketHandlers = (io, redis) => {
                         totalParticipants: viewerCount
                     });
 
-                    console.log(`❌ User ${socket.user.userId} left auction ${auctionId}, viewers: ${viewerCount}`);
+                    console.log(`User ${socket.user.userId} left auction ${auctionId}, viewers: ${viewerCount}`);
                 } else {
-                    console.log(`🔄 Socket ${socket.id} left but user ${socket.user.userId} still has ${userSocketCount} socket(s) in auction ${auctionId}`);
+                    console.log(`Socket ${socket.id} left but user ${socket.user.userId} still has ${userSocketCount} socket(s) in auction ${auctionId}`);
                 }
             }
         });
