@@ -150,6 +150,54 @@ class AuthController {
             next(error);
         }
     }
+
+    /**
+     * Cập nhật thông tin profile
+     * PUT /api/auth/me
+     */
+    async updateProfile(req, res, next) {
+        try {
+            const userId = req.user.userId;
+            const updateData = req.body;
+
+            const result = await authService.updateUserProfile(userId, updateData);
+
+            res.status(200).json({
+                success: true,
+                message: 'Cập nhật thông tin thành công',
+                data: result
+            });
+        } catch (error) {
+            next(error);
+        }
+    }
+
+    /**
+     * Đổi mật khẩu
+     * POST /api/auth/change-password
+     */
+    async changePassword(req, res, next) {
+        try {
+            const userId = req.user.userId;
+            const { currentPassword, newPassword } = req.body;
+
+            if (!currentPassword || !newPassword) {
+                return res.status(400).json({
+                    success: false,
+                    message: 'Vui lòng điền đầy đủ thông tin'
+                });
+            }
+
+            await authService.changePassword(userId, currentPassword, newPassword);
+
+            res.status(200).json({
+                success: true,
+                message: 'Đổi mật khẩu thành công'
+            });
+        } catch (error) {
+            next(error);
+        }
+    }
 }
 
 module.exports = new AuthController();

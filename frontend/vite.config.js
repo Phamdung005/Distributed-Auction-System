@@ -5,7 +5,7 @@ import tailwindcss from '@tailwindcss/vite'
 // https://vitejs.dev/config/
 export default defineConfig({
     plugins: [
-        react(), 
+        react(),
         tailwindcss(),
     ],
     server: {
@@ -15,6 +15,9 @@ export default defineConfig({
                 target: 'http://localhost:3002',
                 changeOrigin: true,
             }
+        },
+        watch: {
+            usePolling: true,
         }
     }
 })

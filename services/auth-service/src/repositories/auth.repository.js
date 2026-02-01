@@ -1,4 +1,4 @@
-const User = require('shared/models/User');
+const User = require('../models/User');
 
 /**
  * Repository Layer - Xử lý tương tác với Database
@@ -25,14 +25,7 @@ class AuthRepository {
         return await User.findOne({ email }).select('+password');
     }
 
-    /**
-     * Tìm user theo username
-     * @param {string} username
-     * @returns {Promise<User|null>}
-     */
-    async findByUsername(username) {
-        return await User.findOne({ username });
-    }
+
 
     /**
      * Tìm user theo ID
@@ -41,6 +34,15 @@ class AuthRepository {
      */
     async findById(userId) {
         return await User.findById(userId);
+    }
+
+    /**
+     * Tìm user theo ID (bao gồm password)
+     * @param {string} userId
+     * @returns {Promise<User|null>}
+     */
+    async findByIdWithPassword(userId) {
+        return await User.findById(userId).select('+password');
     }
 
     /**

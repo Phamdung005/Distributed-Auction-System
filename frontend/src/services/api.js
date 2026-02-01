@@ -73,6 +73,12 @@ export const authAPI = {
     // Lấy thông tin profile
     getProfile: () => api.get(`${AUTH_BASE_URL}/me`),
 
+    // Cập nhật profile
+    updateProfile: (data) => api.put(`${AUTH_BASE_URL}/me`, data),
+
+    // Đổi mật khẩu
+    changePassword: (data) => api.post(`${AUTH_BASE_URL}/change-password`, data),
+
     // Đăng xuất
     logout: (refreshToken) => api.post(`${AUTH_BASE_URL}/logout`, { refreshToken }),
 
@@ -106,6 +112,12 @@ export const auctionAPI = {
 
     // Hủy auction
     cancelAuction: (id) => api.post(`${AUCTION_BASE_URL}/${id}/cancel`),
+
+    // Đăng ký tham gia đấu giá
+    registerForAuction: (id) => api.post(`${AUCTION_BASE_URL}/${id}/register`),
+
+    // Kiểm tra trạng thái đăng ký
+    checkRegistrationStatus: (id) => api.get(`${AUCTION_BASE_URL}/${id}/registration-status`),
 };
 
 // ==================== BIDDING SERVICE ====================

@@ -1,52 +1,94 @@
-# Hệ Thống Đấu Giá Realtime - Microservices Architecture
+# Hệ Thống Đấu Giá Trực Tuyến Realtime
 
-## 📋 Tổng quan
-Hệ thống đấu giá realtime sử dụng kiến trúc Microservices với khả năng xử lý đồng thời nhiều người đấu giá.
+## Tổng quan
 
-## 🏗️ Kiến trúc
+Hệ thống đấu giá trực tuyến sử dụng kiến trúc **Microservices**, xử lý đấu giá realtime với khả năng chống race condition khi nhiều người đặt giá đồng thời.
+
+## Công nghệ sử dụng
+
+**Backend**: Node.js, Express, MongoDB, Redis, Socket.io  
+**Frontend**: React, Vite, Tailwind CSS  
+**DevOps**: Docker, Docker Compose
+
+## Cấu trúc dự án
+
 ```
-├── frontend/                    # ReactJS Web Application
-├── services/
-│   ├── auth-service/           # Xác thực người dùng
-│   ├── auction-service/        # Quản lý đấu giá
-│   └── bidding-service/        # Xử lý bid realtime
-├── shared/                     # Code dùng chung
-└── docker-compose.yml          # Docker orchestration
+ung-dung-phan-tan-web-auction/
+├── frontend/                    # Ứng dụng Web React
+├── services/                    # Các Microservices
+│   ├── auth-service/           # Xác thực (Port 3001)
+│   ├── auction-service/        # Quản lý đấu giá (Port 3002)
+│   ├── bidding-service/        # Đấu giá Realtime (Port 3003)
+│   ├── notification-service/   # Thông báo (Port 3004)
+│   ├── payment-service/        # Ví & Thanh toán (Port 3006)
+│   └── community-service/      # Bài viết & Bình luận (Port 3005)
+├── shared/                      # Models và database dùng chung
+│   ├── database/
+│   └── models/                 
+└── docker-compose.yml
 ```
 
-## 🚀 Tech Stack
-- **Frontend**: ReactJS + Vite (Single Page Web Application)
-- **Backend**: Node.js + Express
-- **Database**: MongoDB (Primary), Redis (Cache & Pub/Sub)
-- **Communication**: REST API + WebSocket (Socket.io)
-- **Container**: Docker
+## Sơ đồ ERD
 
-## 🔥 Tính năng chính
-- ✅ Authentication với JWT
-- ✅ Quản lý đấu giá (CRUD)
-- ✅ Đấu giá realtime với WebSocket
-- ✅ Xử lý Race Condition với Redis
-- ✅ Caching với Redis
-- ✅ Pub/Sub cho multi-instance scaling
+![Database ERD](image/erd.png)
 
-## 🏃 Chạy Project
+**9 Bảng**: users, auctions, bids, auction_registrations, transactions, escrows, notifications, posts, comments
+
+## Các chức năng đã hoàn thành
+
+- Xác thực & JWT
+- Quản lý đấu giá (CRUD) & vòng đời auction
+- Đấu giá realtime với WebSocket
+- Xử lý race condition (Redis locks)
+- Đăng ký tham gia đấu giá với đặt cọc 10%
+- Hệ thống ví & thanh toán
+- Thông báo realtime (18 loại)
+- Bài viết & bình luận cộng đồng
+
+## Các chức năng chưa hoàn thành
+
+- Xác thực email & đặt lại mật khẩu
+- Tìm kiếm nâng cao & bộ lọc
+- Tự động đấu giá
+- Trang quản trị admin
+- Nhiều phương thức thanh toán
+- Phân tích & báo cáo
+
+## Kế hoạch tương lai
+
+### Tách riêng Database
+Tách database riêng cho mỗi service với kiến trúc hướng sự kiện và Saga pattern
+
+### Tính năng nâng cao
+- **Dashboard realtime cho seller**: Thống kê đấu giá (lượt xem, lượt đặt giá, dự đoán doanh thu)
+- **Phân tích cho bidder**: Tỷ lệ thắng/thua, theo dõi chi tiêu
+- Gợi ý dựa trên AI
+- Ứng dụng di động (React Native)
+
+### Khả năng mở rộng
+- Triển khai Kubernetes
+- Tự động mở rộng & cân bằng tải
+- Phân mảnh database & read replicas
+- Giám sát (Prometheus, Grafana)
+
+### Tính năng kinh doanh
+- Nhiều loại đấu giá (silent, dutch, sealed-bid)
+- Tính năng cao cấp & huy hiệu xác minh
+- Tích hợp vận chuyển & thanh toán
+
+## Khởi chạy
+
+Xem chi tiết tại [QUICK_START.md](QUICK_START.md)
+
 ```bash
-# Khởi động tất cả services
 docker-compose up -d
-
-# Xem logs
-docker-compose logs -f
-
-# Dừng services
-docker-compose down
 ```
 
-## 📦 Services
-- **auth-service**: `http://localhost:3001`
-- **auction-service**: `http://localhost:3002`
-- **bidding-service**: `http://localhost:3003` (WebSocket)
-- **MongoDB**: `localhost:27018`
-- **Redis**: `localhost:6379`
+**Frontend**: http://localhost:3000
 
-## 🔐 Environment Variables
-Mỗi service cần file `.env` riêng. Xem `.env.example` trong mỗi service folder.
+## Tài liệu
+
+- [QUICK_START.md](QUICK_START.md) - Hướng dẫn khởi động
+- [STRUCTURE.md](STRUCTURE.md) - Cấu trúc chi tiết
+- [RACE_CONDITION_EXPLAINED.md](RACE_CONDITION_EXPLAINED.md) - Xử lý race condition
+- [PROJECT_FLOW_AND_ASSIGNMENT.md](PROJECT_FLOW_AND_ASSIGNMENT.md) - Flow người dùng và phân công công việc

@@ -111,6 +111,20 @@ export const AuthProvider = ({ children }) => {
         return localStorage.getItem('accessToken');
     };
 
+    // Refresh user profile
+    const refreshProfile = async () => {
+        try {
+            const response = await authAPI.getProfile();
+            const userData = response.data.data;
+            setUser(userData);
+            localStorage.setItem('user', JSON.stringify(userData));
+            return userData;
+        } catch (error) {
+            console.error('Failed to refresh profile:', error);
+            throw error;
+        }
+    };
+
     const value = {
         user,
         isAuthenticated,
@@ -119,6 +133,7 @@ export const AuthProvider = ({ children }) => {
         login,
         logout,
         getAccessToken,
+        refreshProfile,
     };
 
     return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;

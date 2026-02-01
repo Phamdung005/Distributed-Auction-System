@@ -1,5 +1,5 @@
-const Auction = require('shared/models/Auction');
-const User = require('shared/models/User');
+const Auction = require('../models/Auction');
+const AuctionRegistration = require('../models/AuctionRegistration');
 
 /**
  * Repository Layer cho Auction
@@ -23,10 +23,8 @@ class AuctionRepository {
      * @returns {Promise<Auction|null>}
      */
     async getAuctionById(auctionId) {
-        return await Auction.findById(auctionId)
-            .populate('seller', 'username fullName email')
-            .populate('winner', 'username fullName')
-            .populate('recentBids.bidder', 'username fullName');
+        // No populate - seller and winner are String IDs from Auth Service
+        return await Auction.findById(auctionId);
     }
 
     /**
@@ -44,13 +42,29 @@ class AuctionRepository {
 
         const skip = (page - 1) * limit;
 
+        // Add time-based filtering based on status to prevent expired auctions from showing
+        const now = new Date();
+        const enhancedFilter = { ...filter };
+
+        if (filter.status === 'active') {
+            // For active auctions, ensure they haven't expired
+            enhancedFilter.startTime = { $lte: now };
+            enhancedFilter.endTime = { $gt: now };
+        } else if (filter.status === 'pending') {
+            // For pending auctions, ensure they haven't started yet
+            enhancedFilter.startTime = { $gt: now };
+        } else if (filter.status === 'ended') {
+            // For ended auctions, ensure they have actually ended
+            enhancedFilter.endTime = { $lte: now };
+        }
+
         const [auctions, total] = await Promise.all([
-            Auction.find(filter)
-                .populate('seller', 'username fullName')
+            Auction.find(enhancedFilter)
+                // No populate - seller is String ID from Auth Service
                 .sort(sort)
                 .skip(skip)
                 .limit(limit),
-            Auction.countDocuments(filter)
+            Auction.countDocuments(enhancedFilter)
         ]);
 
         return {

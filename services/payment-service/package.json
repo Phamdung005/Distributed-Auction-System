@@ -1,0 +1,36 @@
+{
+    "name": "payment-service",
+    "version": "1.0.0",
+    "description": "Payment Service for Auction System - Wallet & MoMo Integration",
+    "main": "src/index.js",
+    "scripts": {
+        "start": "node src/index.js",
+        "dev": "nodemon src/index.js"
+    },
+    "keywords": [
+        "payment",
+        "wallet",
+        "momo",
+        "transaction",
+        "auction"
+    ],
+    "author": "",
+    "license": "ISC",
+    "dependencies": {
+        "express": "^4.18.2",
+        "mongoose": "^7.0.3",
+        "redis": "^4.6.5",
+        "jsonwebtoken": "^9.0.0",
+        "express-validator": "^7.0.1",
+        "dotenv": "^16.0.3",
+        "cors": "^2.8.5",
+        "helmet": "^7.1.0",
+        "morgan": "^1.10.0",
+        "axios": "^1.4.0",
+        "crypto": "^1.0.1",
+        "bcryptjs": "^2.4.3"
+    },
+    "devDependencies": {
+        "nodemon": "^2.0.22"
+    }
+}

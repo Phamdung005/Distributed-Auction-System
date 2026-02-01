@@ -7,6 +7,7 @@ require('dotenv').config();
 const connectDB = require('shared/database/mongodb');
 const { createRedisClient } = require('shared/database/redis');
 const auctionRoutes = require('./routes/auction.routes');
+const registrationRoutes = require('./routes/registration.routes');
 const errorHandler = require('./middlewares/errorHandler');
 
 const app = express();
@@ -21,9 +22,9 @@ const initializeApp = async () => {
     try {
         await connectDB(process.env.MONGODB_URI);
 
-        // Import models sau khi kết nối DB
-        require('shared/models/User');
-        require('shared/models/Auction');
+        // Import local models after DB connection
+        require('./models/Auction');
+        require('./models/AuctionRegistration');
 
         redisClient = await createRedisClient(process.env.REDIS_URL);
         app.locals.redis = redisClient;
@@ -52,6 +53,7 @@ app.get('/health', (req, res) => {
 });
 
 // Routes
+app.use('/api/auctions', registrationRoutes); // Mount registration routes (/:id/register)
 app.use('/api/auctions', auctionRoutes);
 
 // 404 Handler

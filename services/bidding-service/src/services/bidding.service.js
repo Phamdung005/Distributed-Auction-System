@@ -78,17 +78,39 @@ class BiddingService {
                 throw new Error('Không thể đặt giá vào auction của chính mình');
             }
 
-            // Bước 7: Cập nhật giá trong MongoDB
+            // Bước 7: Lưu bid vào MongoDB (Bid model)
+            const Bid = require('../models/Bid');
+
+            // Mark previous winning bid as not winning
+            await Bid.updateMany(
+                {
+                    auction_id: auctionId,
+                    isWinning: true
+                },
+                { isWinning: false }
+            );
+
+            // Create new bid document
+            const newBid = await Bid.create({
+                auction_id: auctionId,
+                bidder_id: bidderId,
+                bidAmount: bidAmount,
+                timestamp: new Date(),
+                isWinning: true,
+                isValid: true
+            });
+
+            // Bước 8: Cập nhật giá trong MongoDB
             const updatedAuction = await biddingRepository.updateCurrentPrice(
                 auctionId,
                 bidAmount,
                 bidderId
             );
 
-            // Bước 8: Cập nhật cache trong Redis
+            // Bước 9: Cập nhật cache trong Redis
             await biddingRepository.cachePrice(redis, auctionId, bidAmount);
 
-            // Bước 9: Lưu bid history vào Redis sorted set (để tracking)
+            // Bước 10: Lưu bid history vào Redis sorted set (để tracking)
             await redis.zAdd(`auction:${auctionId}:bids`, {
                 score: Date.now(),
                 value: JSON.stringify({
@@ -98,7 +120,7 @@ class BiddingService {
                 })
             });
 
-            // Bước 10: Publish event qua Redis Pub/Sub để thông báo cho các instances khác
+            // Bước 11: Publish event qua Redis Pub/Sub để thông báo cho các instances khác
             await redis.publish('auction:bid:placed', JSON.stringify({
                 auctionId,
                 bidderId,
@@ -117,7 +139,7 @@ class BiddingService {
         } catch (error) {
             throw error;
         } finally {
-            // Bước 11: Release lock (quan trọng!)
+            // Bước 12: Release lock (quan trọng!)
             // Chỉ xóa lock nếu lock value khớp (tránh xóa lock của người khác)
             const currentLock = await redis.get(lockKey);
             if (currentLock === lockValue) {

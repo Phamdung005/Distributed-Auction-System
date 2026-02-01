@@ -12,7 +12,7 @@ class AuthService {
      * @returns {Promise<Object>}
      */
     async register(userData) {
-        const { username, email, password, fullName, phone } = userData;
+        const { email, password, fullName, phone } = userData;
 
         // Kiểm tra email đã tồn tại
         const existingEmail = await authRepository.findByEmail(email);
@@ -20,15 +20,11 @@ class AuthService {
             throw new Error('Email đã được sử dụng');
         }
 
-        // Kiểm tra username đã tồn tại
-        const existingUsername = await authRepository.findByUsername(username);
-        if (existingUsername) {
-            throw new Error('Username đã được sử dụng');
-        }
+
 
         // Tạo user mới
         const user = await authRepository.createUser({
-            username,
+
             email,
             password,
             fullName,
@@ -50,7 +46,7 @@ class AuthService {
         return {
             user: {
                 id: user._id,
-                username: user.username,
+
                 email: user.email,
                 fullName: user.fullName,
                 role: user.role
@@ -99,7 +95,7 @@ class AuthService {
         return {
             user: {
                 id: user._id,
-                username: user.username,
+
                 email: user.email,
                 fullName: user.fullName,
                 role: user.role,
@@ -180,7 +176,7 @@ class AuthService {
 
         return {
             id: user._id,
-            username: user.username,
+
             email: user.email,
             fullName: user.fullName,
             phone: user.phone,
@@ -213,6 +209,62 @@ class AuthService {
         } catch (error) {
             throw new Error('Token không hợp lệ');
         }
+    }
+
+    /**
+     * Cập nhật thông tin profile
+     * @param {string} userId
+     * @param {Object} updateData
+     * @returns {Promise<Object>}
+     */
+    async updateUserProfile(userId, updateData) {
+        // Không cho phép update email, password, role qua API này
+        delete updateData.email;
+        delete updateData.password;
+        delete updateData.role;
+        delete updateData.balance;
+
+        const user = await authRepository.updateUser(userId, updateData);
+        if (!user) {
+            throw new Error('User không tồn tại');
+        }
+
+        return {
+            id: user._id,
+            email: user.email,
+            fullName: user.fullName,
+            phone: user.phone,
+            balance: user.balance,
+            role: user.role,
+            avatar: user.avatar,
+            createdAt: user.createdAt,
+            city: user.city,
+            district: user.district,
+            address: user.address,
+            dob: user.dob
+        };
+    }
+
+    /**
+     * Đổi mật khẩu
+     * @param {string} userId
+     * @param {string} currentPassword
+     * @param {string} newPassword
+     * @returns {Promise<void>}
+     */
+    async changePassword(userId, currentPassword, newPassword) {
+        const user = await authRepository.findByIdWithPassword(userId);
+        if (!user) {
+            throw new Error('User không tồn tại');
+        }
+
+        const isPasswordValid = await user.comparePassword(currentPassword);
+        if (!isPasswordValid) {
+            throw new Error('Mật khẩu hiện tại không đúng');
+        }
+
+        user.password = newPassword;
+        await user.save();
     }
 }
 
