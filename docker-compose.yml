@@ -137,7 +137,9 @@ services:
       - "3002:3002"
     volumes:
       - ./services/auction-service/src:/app/src
+      - ./services/auction-service/package.json:/app/package.json
       - ./shared:/app/shared
+    command: node src/index.js
     environment:
       - NODE_ENV=production
       - PORT=3002
@@ -161,6 +163,10 @@ services:
     restart: always
     ports:
       - "3003:3003"
+    volumes:
+      - ./services/bidding-service/src:/app/src
+      - ./services/bidding-service/package.json:/app/package.json
+      - ./shared:/app/shared
     environment:
       - NODE_ENV=production
       - PORT=3003
@@ -185,6 +191,11 @@ services:
     restart: always
     ports:
       - "3004:3004"
+    volumes:
+      - ./services/notification-service/src:/app/src
+      - ./services/notification-service/package.json:/app/package.json
+      - ./shared:/app/shared
+    command: node src/index.js
     environment:
       - NODE_ENV=production
       - PORT=3004
@@ -231,6 +242,11 @@ services:
     restart: always
     ports:
       - "3006:3006"
+    volumes:
+      - ./services/payment-service/src:/app/src
+      - ./services/payment-service/package.json:/app/package.json
+      - ./shared:/app/shared
+    command: node src/index.js
     environment:
       - NODE_ENV=production
       - PORT=3006

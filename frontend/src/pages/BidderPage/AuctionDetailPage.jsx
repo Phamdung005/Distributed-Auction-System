@@ -205,7 +205,7 @@ const AuctionDetailPage = () => {
       setBidding(true);
       setShowDepositModal(false);
       await auctionAPI.registerForAuction(id);
-      toast.success('Đăng ký tham gia thành công! Bạn có thể bắt đầu đặt giá.');
+      // toast.success('Đăng ký tham gia thành công! Bạn có thể bắt đầu đặt giá.');
       setIsRegistered(true);
     } catch (error) {
       toast.error(error.response?.data?.message || 'Đăng ký thất bại');

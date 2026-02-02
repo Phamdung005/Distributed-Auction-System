@@ -125,6 +125,7 @@ class BiddingService {
                 auctionId,
                 bidderId,
                 amount: bidAmount,
+                auctionTitle: auction.title, // Add auction title for notification service
                 timestamp: new Date().toISOString()
             }));
 

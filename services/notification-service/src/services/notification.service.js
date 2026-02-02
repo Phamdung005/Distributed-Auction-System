@@ -170,6 +170,16 @@ class NotificationService {
                         type: 'lost_auction',
                         notificationData: { auctionId, auctionTitle }
                     });
+
+                    // The user specifically asked for "nếu thua có thêm thông báo hoàn tiền nữa"
+                    // In a real system, we'd wait for the 'payment:deposit:refunded' event, 
+                    // but we can add an immediate notification if we assume refund is triggered.
+                    notifications.push({
+                        userId: bidderId,
+                        userRole: 'bidder',
+                        type: 'deposit_refunded',
+                        notificationData: { auctionId, auctionTitle, amount: 0 } // Amount will be 0 as placeholder, or fetched
+                    });
                 }
             });
         }

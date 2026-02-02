@@ -35,6 +35,12 @@ const NOTIFICATION_TEMPLATES = {
         priority: 'medium'
     },
 
+    DEPOSIT_REFUNDED: {
+        title: 'Hoàn trả tiền cọc',
+        message: (data) => `Tiền cọc ${formatPrice(data.amount)} cho "${data.auctionTitle}" đã được hoàn trả vào ví của bạn`,
+        priority: 'medium'
+    },
+
     AUCTION_STARTED: {
         title: 'Đấu giá đã bắt đầu',
         message: (data) => `"${data.auctionTitle}" đã bắt đầu. Tham gia ngay!`,

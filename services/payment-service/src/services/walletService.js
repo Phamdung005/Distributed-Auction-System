@@ -288,6 +288,24 @@ class WalletService {
             // Update escrow status to refunded
             await escrow.refund(transaction._id);
 
+            // Publish event for notification service
+            try {
+                const { createRedisClient } = require('shared/database/redis');
+                const redisPublisher = await createRedisClient(process.env.REDIS_URL);
+
+                const eventData = {
+                    userId: userId,
+                    auctionId: auctionId,
+                    amount: amount,
+                    transactionId: transaction._id
+                };
+
+                await redisPublisher.publish('payment:deposit:refunded', JSON.stringify(eventData));
+                await redisPublisher.quit();
+            } catch (redisError) {
+                console.error('Failed to publish refund event:', redisError);
+            }
+
             return {
                 success: true,
                 message: 'Hoàn cọc thành công',

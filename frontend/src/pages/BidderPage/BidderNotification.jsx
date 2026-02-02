@@ -23,6 +23,22 @@ const BidderNotification = () => {
     useEffect(() => {
         fetchNotifications();
         fetchUnreadCount();
+
+        // Listen for real-time notifications
+        const setupSocket = async () => {
+            const { connectSocket } = await import('../../services/socket');
+            const token = localStorage.getItem('accessToken');
+            const socket = connectSocket(token);
+
+            if (socket) {
+                socket.on('notification:new', (newNotif) => {
+                    setNotifications(prev => [newNotif, ...prev]);
+                    setUnreadCount(prev => prev + 1);
+                });
+            }
+        };
+
+        setupSocket();
     }, []);
 
     const fetchNotifications = async () => {

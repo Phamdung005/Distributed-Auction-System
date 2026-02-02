@@ -282,7 +282,7 @@ class AuctionService {
                     const redisPublisher = await createRedisClient(process.env.REDIS_URL);
 
                     const payload = JSON.stringify(auction);
-                    await redisPublisher.publish('auction.ended', payload);
+                    await redisPublisher.publish('auction:ended', payload);
                     console.log(`📡 Published auction.ended event for auction ${auction._id}`);
 
                     // We don't quit immediately if createRedisClient reuses connection, but shared/redis might return new one.

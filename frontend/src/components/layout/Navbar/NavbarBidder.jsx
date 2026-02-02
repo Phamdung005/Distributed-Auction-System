@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '../../../contexts/AuthContext';
 import { Gavel, Bell, Search, User, LogOut } from 'lucide-react';
@@ -16,6 +16,38 @@ const NavbarBidder = () => {
     const { user, isAuthenticated, logout } = useAuth();
     const navigate = useNavigate();
     const [searchKeyword, setSearchKeyword] = useState('');
+    const [unreadCount, setUnreadCount] = useState(0);
+
+    useEffect(() => {
+        if (isAuthenticated) {
+            fetchUnreadCount();
+            setupSocket();
+        }
+    }, [isAuthenticated]);
+
+    const fetchUnreadCount = async () => {
+        try {
+            const { notificationAPI } = await import('../../../services/notification.service');
+            const response = await notificationAPI.getUnreadCount();
+            if (response.data.success) {
+                setUnreadCount(response.data.data.count);
+            }
+        } catch (error) {
+            console.error('Error fetching unread count:', error);
+        }
+    };
+
+    const setupSocket = async () => {
+        const { connectSocket } = await import('../../../services/socket');
+        const token = localStorage.getItem('accessToken');
+        const socket = connectSocket(token);
+
+        if (socket) {
+            socket.on('notification:new', (notification) => {
+                setUnreadCount(prev => prev + 1);
+            });
+        }
+    };
 
     const handleLogout = async () => {
         await logout();
@@ -61,6 +93,11 @@ const NavbarBidder = () => {
                 <div className="flex items-center gap-2 lg:gap-4">
                     <Link to="/notifications" className="p-2.5 bg-[#f5f0eb] text-gray-600 hover:text-[#f26c0d] hover:bg-orange-50 rounded-xl transition-all relative">
                         <Bell size={22} />
+                        {unreadCount > 0 && (
+                            <span className="absolute -top-1 -right-1 bg-red-500 text-white text-[10px] font-bold w-5 h-5 flex items-center justify-center rounded-full border-2 border-white">
+                                {unreadCount > 99 ? '99+' : unreadCount}
+                            </span>
+                        )}
                     </Link>
 
                     <div className="h-8 w-[1px] bg-gray-200 mx-1 hidden sm:block"></div>

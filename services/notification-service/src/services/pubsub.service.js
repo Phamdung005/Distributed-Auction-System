@@ -26,28 +26,31 @@ class PubSubService {
         await this.subscriber.subscribe('auction:starting-soon', this.handleAuctionStartingSoon.bind(this));
         await this.subscriber.subscribe('auction:ending-soon', this.handleAuctionEndingSoon.bind(this));
         await this.subscriber.subscribe('auction:registration:approved', this.handleRegistrationApproved.bind(this));
+        await this.subscriber.subscribe('payment:deposit:refunded', this.handleDepositRefunded.bind(this));
 
         console.log('✅ Redis Pub/Sub subscriber initialized');
+        console.log('📡 Subscribed to channels: auction:bid:placed, auction:ended, auction:registration:approved, payment:deposit:refunded, etc.');
     }
 
     /**
-     * Handle bid placed event
+     * Handle incoming messages
      */
     async handleBidPlaced(message) {
         try {
-            const bidData = JSON.parse(message);
-            console.log('📢 Bid placed event received:', bidData);
+            const data = JSON.parse(message);
+            console.log('📢 Received auction:bid:placed:', data.auctionTitle, 'amount:', data.amount);
 
             // Create notifications
-            const notifications = await notificationService.handleBidPlaced(bidData);
+            const notifications = await notificationService.handleBidPlaced(data);
 
             // Send real-time notifications
-            notifications.forEach(notification => {
-                sendNotificationToUser(notification.userId, notification);
-            });
-
+            if (notifications && notifications.length > 0) {
+                notifications.forEach(notification => {
+                    sendNotificationToUser(notification.userId, notification);
+                });
+            }
         } catch (error) {
-            console.error('Error handling bid placed:', error);
+            console.error('Error handling bid placed event:', error);
         }
     }
 
@@ -56,19 +59,30 @@ class PubSubService {
      */
     async handleAuctionEnded(message) {
         try {
-            const auctionData = JSON.parse(message);
-            console.log('📢 Auction ended event received:', auctionData);
+            const data = JSON.parse(message);
+            console.log('📢 Received auction:ended:', data.title || data.auctionTitle);
 
-            // Create notifications
+            // Format data if needed (auction-service publishes full auction object)
+            const auctionData = {
+                auctionId: data.id || data._id,
+                auctionTitle: data.title,
+                winnerId: data.winner?.id || data.winner?._id || data.winner,
+                finalPrice: data.currentPrice,
+                allBidderIds: data.bidderIds || [], // Assuming added by auction-service or notification.service handles it
+                sellerId: data.seller?.id || data.seller?._id || data.seller,
+                bidderName: data.winner?.fullName || data.winnerName || 'Người mua'
+            };
+
             const notifications = await notificationService.handleAuctionEnded(auctionData);
 
             // Send real-time notifications
-            notifications.forEach(notification => {
-                sendNotificationToUser(notification.userId, notification);
-            });
-
+            if (notifications && notifications.length > 0) {
+                notifications.forEach(notification => {
+                    sendNotificationToUser(notification.userId, notification);
+                });
+            }
         } catch (error) {
-            console.error('Error handling auction ended:', error);
+            console.error('Error handling auction ended event:', error);
         }
     }
 
@@ -93,9 +107,10 @@ class PubSubService {
      */
     async handleAuctionStartingSoon(message) {
         try {
-            const { auctionId, auctionTitle, sellerId } = JSON.parse(message);
+            const { auctionId, auctionTitle, sellerId, bidderIds } = JSON.parse(message);
             console.log('📢 Auction starting soon:', auctionTitle);
 
+            // Notify seller
             if (sellerId) {
                 const notification = await notificationService.createNotification({
                     userId: sellerId,
@@ -105,6 +120,19 @@ class PubSubService {
                 });
 
                 sendNotificationToUser(sellerId, notification);
+            }
+
+            // Notify registered bidders
+            if (bidderIds && bidderIds.length > 0) {
+                for (const bidderId of bidderIds) {
+                    const notification = await notificationService.createNotification({
+                        userId: bidderId,
+                        userRole: 'bidder',
+                        type: 'auction_starting_soon',
+                        notificationData: { auctionId, auctionTitle }
+                    });
+                    sendNotificationToUser(bidderId, notification);
+                }
             }
 
         } catch (error) {
@@ -180,6 +208,32 @@ class PubSubService {
 
         } catch (error) {
             console.error('Error handling registration approved:', error);
+        }
+    }
+
+    /**
+     * Handle deposit refunded event
+     */
+    async handleDepositRefunded(message) {
+        try {
+            const { userId, auctionId, amount, auctionTitle } = JSON.parse(message);
+            console.log('📢 Deposit refunded event received for user:', userId);
+
+            const notification = await notificationService.createNotification({
+                userId: userId,
+                userRole: 'bidder',
+                type: 'deposit_refunded',
+                notificationData: {
+                    auctionId,
+                    auctionTitle: auctionTitle || 'Phiên đấu giá',
+                    amount
+                }
+            });
+
+            sendNotificationToUser(userId, notification);
+
+        } catch (error) {
+            console.error('Error handling deposit refunded:', error);
         }
     }
 }
