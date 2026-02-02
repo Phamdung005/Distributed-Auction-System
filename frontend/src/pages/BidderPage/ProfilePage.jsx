@@ -8,17 +8,11 @@ import {
     History,
     LogOut,
     Camera,
-    BadgeCheck,
-    ShieldCheck,
     Gavel,
     Trophy,
     X,
     Clock,
     ChevronRight,
-    MapPin,
-    Mail,
-    Phone,
-    Calendar,
     Wallet
 } from 'lucide-react';
 import { useNavigate, Link, useLocation } from 'react-router-dom';
@@ -66,6 +60,7 @@ const ProfilePage = () => {
     // Initialize data
     useEffect(() => {
         if (user) {
+            console.log('👤 User data updated in ProfilePage:', user);
             setFormData({
                 fullName: user.fullName || '',
                 email: user.email || '',
@@ -147,10 +142,15 @@ const ProfilePage = () => {
     const handleUpdateProfile = async (e) => {
         e.preventDefault();
         setIsLoading(true);
+        console.log('📝 Submitting profile update:', formData);
+
         try {
             // Exclude email/username if they are immutable in backend
             const { email, ...updatePayload } = formData;
-            await authAPI.updateProfile(updatePayload); // You might need to update auth context here
+            console.log('📦 Payload sent to API:', updatePayload);
+
+            const response = await authAPI.updateProfile(updatePayload);
+            console.log('✅ Update response data:', response.data);
 
             // Refresh user data in context
             await refreshProfile();
@@ -158,7 +158,7 @@ const ProfilePage = () => {
             toast.success("Cập nhật thông tin thành công!");
             // Optionally refresh user data here
         } catch (error) {
-            console.error(error);
+            console.error("❌ Update error:", error);
             toast.error(error.response?.data?.message || "Cập nhật thất bại");
         } finally {
             setIsLoading(false);
@@ -295,8 +295,7 @@ const ProfilePage = () => {
                         {activeTab === 'general' && (
                             <section className="bg-white rounded-xl border border-gray-100 shadow-sm overflow-hidden animate-fade-in">
                                 <div className="p-6 border-b border-gray-100 flex justify-between items-center">
-                                    <h3 className="text-lg font-bold text-slate-900 flex items-center gap-2">
-                                        <BadgeCheck className="text-[#f26c0d]" size={24} />
+                                    <h3 className="text-lg font-bold text-slate-900">
                                         Thông tin cá nhân
                                     </h3>
                                 </div>
@@ -309,10 +308,9 @@ const ProfilePage = () => {
                                                     name="fullName"
                                                     value={formData.fullName}
                                                     onChange={handleInputChange}
-                                                    className="w-full rounded-lg border-gray-200 focus:border-[#f26c0d] focus:ring-[#f26c0d] text-slate-900 shadow-sm pl-12 py-3"
+                                                    className="w-full rounded-lg border-gray-200 focus:border-[#f26c0d] focus:ring-[#f26c0d] text-slate-900 shadow-sm px-4 py-3"
                                                     type="text"
                                                 />
-                                                <User className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400" size={20} />
                                             </div>
                                         </div>
                                         <div className="col-span-2 md:col-span-1">
@@ -322,10 +320,9 @@ const ProfilePage = () => {
                                                     name="email" // Read-only usually
                                                     value={formData.email}
                                                     disabled
-                                                    className="w-full rounded-lg border-gray-200 bg-gray-50 text-slate-500 shadow-sm pl-12 py-3 cursor-not-allowed"
+                                                    className="w-full rounded-lg border-gray-200 bg-gray-50 text-slate-500 shadow-sm px-4 py-3 cursor-not-allowed"
                                                     type="email"
                                                 />
-                                                <Mail className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400" size={20} />
                                             </div>
                                         </div>
                                         <div className="col-span-2 md:col-span-1">
@@ -335,10 +332,9 @@ const ProfilePage = () => {
                                                     name="phone"
                                                     value={formData.phone}
                                                     onChange={handleInputChange}
-                                                    className="w-full rounded-lg border-gray-200 focus:border-[#f26c0d] focus:ring-[#f26c0d] text-slate-900 shadow-sm pl-12 py-3"
+                                                    className="w-full rounded-lg border-gray-200 focus:border-[#f26c0d] focus:ring-[#f26c0d] text-slate-900 shadow-sm px-4 py-3"
                                                     type="tel"
                                                 />
-                                                <Phone className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400" size={20} />
                                             </div>
                                         </div>
                                         <div className="col-span-2 md:col-span-1">
@@ -348,10 +344,9 @@ const ProfilePage = () => {
                                                     name="dob"
                                                     value={formData.dob}
                                                     onChange={handleInputChange}
-                                                    className="w-full rounded-lg border-gray-200 focus:border-[#f26c0d] focus:ring-[#f26c0d] text-slate-900 shadow-sm pl-12 py-3"
+                                                    className="w-full rounded-lg border-gray-200 focus:border-[#f26c0d] focus:ring-[#f26c0d] text-slate-900 shadow-sm px-4 py-3"
                                                     type="date"
                                                 />
-                                                <Calendar className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400" size={20} />
                                             </div>
                                         </div>
                                         <div className="col-span-2">
@@ -361,10 +356,9 @@ const ProfilePage = () => {
                                                     name="address"
                                                     value={formData.address}
                                                     onChange={handleInputChange}
-                                                    className="w-full rounded-lg border-gray-200 focus:border-[#f26c0d] focus:ring-[#f26c0d] text-slate-900 shadow-sm resize-none pl-12 py-3"
+                                                    className="w-full rounded-lg border-gray-200 focus:border-[#f26c0d] focus:ring-[#f26c0d] text-slate-900 shadow-sm resize-none px-4 py-3"
                                                     rows="2"
                                                 ></textarea>
-                                                <MapPin className="absolute left-4 top-3 text-gray-400" size={20} />
                                             </div>
                                         </div>
                                         <div className="col-span-2 flex justify-end gap-3 mt-2">
@@ -399,8 +393,7 @@ const ProfilePage = () => {
                         {activeTab === 'security' && (
                             <section className="bg-white rounded-xl border border-gray-100 shadow-sm overflow-hidden animate-fade-in">
                                 <div className="p-6 border-b border-gray-100">
-                                    <h3 className="text-lg font-bold text-slate-900 flex items-center gap-2">
-                                        <ShieldCheck className="text-[#f26c0d]" size={24} />
+                                    <h3 className="text-lg font-bold text-slate-900">
                                         Bảo mật
                                     </h3>
                                 </div>
@@ -418,7 +411,7 @@ const ProfilePage = () => {
                                                 name="currentPassword"
                                                 value={passwordData.currentPassword}
                                                 onChange={handlePasswordChange}
-                                                className="w-full rounded-lg border-gray-200 focus:border-[#f26c0d] focus:ring-[#f26c0d] shadow-sm py-3"
+                                                className="w-full rounded-lg border-gray-200 focus:border-[#f26c0d] focus:ring-[#f26c0d] shadow-sm py-3 px-4"
                                                 placeholder="••••••••"
                                             />
                                         </div>
@@ -429,7 +422,7 @@ const ProfilePage = () => {
                                                 name="newPassword"
                                                 value={passwordData.newPassword}
                                                 onChange={handlePasswordChange}
-                                                className="w-full rounded-lg border-gray-200 focus:border-[#f26c0d] focus:ring-[#f26c0d] shadow-sm py-3"
+                                                className="w-full rounded-lg border-gray-200 focus:border-[#f26c0d] focus:ring-[#f26c0d] shadow-sm py-3 px-4"
                                                 placeholder="••••••••"
                                             />
                                         </div>
@@ -440,7 +433,7 @@ const ProfilePage = () => {
                                                 name="confirmPassword"
                                                 value={passwordData.confirmPassword}
                                                 onChange={handlePasswordChange}
-                                                className="w-full rounded-lg border-gray-200 focus:border-[#f26c0d] focus:ring-[#f26c0d] shadow-sm py-3"
+                                                className="w-full rounded-lg border-gray-200 focus:border-[#f26c0d] focus:ring-[#f26c0d] shadow-sm py-3 px-4"
                                                 placeholder="••••••••"
                                             />
                                         </div>
@@ -478,8 +471,7 @@ const ProfilePage = () => {
                         {activeTab === 'wallet' && (
                             <section className="bg-white rounded-xl border border-gray-100 shadow-sm overflow-hidden animate-fade-in">
                                 <div className="p-6 border-b border-gray-100">
-                                    <h3 className="text-lg font-bold text-slate-900 flex items-center gap-2">
-                                        <Wallet className="text-[#f26c0d]" size={24} />
+                                    <h3 className="text-lg font-bold text-slate-900">
                                         Ví của tôi
                                     </h3>
                                 </div>
@@ -574,8 +566,7 @@ const ProfilePage = () => {
                         {activeTab === 'orders' && (
                             <section className="bg-white rounded-xl border border-gray-100 shadow-sm overflow-hidden animate-fade-in">
                                 <div className="p-6 border-b border-gray-100">
-                                    <h3 className="text-lg font-bold text-slate-900 flex items-center gap-2">
-                                        <ShoppingBag className="text-[#f26c0d]" size={24} />
+                                    <h3 className="text-lg font-bold text-slate-900">
                                         Đơn hàng của tôi
                                     </h3>
                                 </div>
@@ -589,8 +580,7 @@ const ProfilePage = () => {
                         {activeTab === 'history' && (
                             <section className="bg-white rounded-xl border border-gray-100 shadow-sm overflow-hidden animate-fade-in">
                                 <div className="p-6 border-b border-gray-100 flex flex-wrap justify-between items-center gap-4">
-                                    <h3 className="text-lg font-bold text-slate-900 flex items-center gap-2">
-                                        <Gavel className="text-[#f26c0d]" size={24} />
+                                    <h3 className="text-lg font-bold text-slate-900">
                                         Lịch sử đấu giá
                                     </h3>
                                     <div className="flex items-center gap-2">
