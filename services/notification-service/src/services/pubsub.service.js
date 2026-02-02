@@ -30,8 +30,8 @@ class PubSubService {
         await this.subscriber.subscribe('payment:deposit:completed', this.handleWalletDeposit.bind(this));
         await this.subscriber.subscribe('payment:auction:paid', this.handleAuctionPaid.bind(this));
 
-        console.log('✅ Redis Pub/Sub subscriber initialized');
-        console.log('📡 Subscribed to channels: auction:bid:placed, auction:ended, payment:deposit:refunded, payment:auction:paid, etc.');
+        console.log('Redis Pub/Sub subscriber initialized');
+        console.log('Subscribed to channels: auction:bid:placed, auction:ended, payment:deposit:refunded, payment:auction:paid, etc.');
     }
 
     // ... (intermediate code) ...
@@ -42,10 +42,10 @@ class PubSubService {
     async handleAuctionPaid(message) {
         try {
             const data = JSON.parse(message);
-            console.log('📢 Auction paid event received:', JSON.stringify(data));
+            console.log('Auction paid event received:', JSON.stringify(data));
 
             const notification = await notificationService.handleAuctionPaymentSuccessful(data);
-            console.log('✅ Notification created for payment:', notification?._id);
+            console.log('Notification created for payment:', notification?._id);
 
             if (notification) {
                 sendNotificationToUser(data.userId, notification);
