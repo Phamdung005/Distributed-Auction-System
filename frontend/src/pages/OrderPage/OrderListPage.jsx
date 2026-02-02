@@ -47,6 +47,13 @@ const OrderListPage = ({ isEmbedded = false }) => {
 
     return (
         <div className={isEmbedded ? "w-full" : "container mx-auto px-4 py-8"}>
+            {!isEmbedded && (
+                <div className="flex flex-wrap items-center gap-2 mb-4 text-sm">
+                    <Link to="/" className="text-gray-500 hover:text-indigo-600">Trang chủ</Link>
+                    <span className="text-gray-400">/</span>
+                    <span className="text-gray-900 font-bold">Đơn hàng của tôi</span>
+                </div>
+            )}
             {!isEmbedded && <h1 className="text-3xl font-bold mb-8">Đơn Hàng Của Tôi</h1>}
 
             {/* Tabs */}

@@ -111,7 +111,7 @@ const sampleAuctions = [
         startPrice: 100000,
         minBidIncrement: 10000,
         startTime: new Date(Date.now() - 1 * 60 * 1000), // Started 1 min ago
-        endTime: new Date(Date.now() + 5 * 60 * 1000), // Ends in 5 mins
+        endTime: new Date(Date.now() + 2 * 60 * 1000), // Ends in 5 mins
         status: "active",
         condition: "new",
         seller: SELLER_ID

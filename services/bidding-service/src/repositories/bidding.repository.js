@@ -36,7 +36,11 @@ class BiddingRepository {
         try {
             const response = await axios.patch(
                 `${AUCTION_SERVICE_URL}/api/auctions/${auctionId}`,
-                { currentPrice: newPrice, totalBids: 1 }
+                {
+                    currentPrice: newPrice,
+                    totalBids: 1,
+                    winner: bidderId
+                }
             );
             return response.data?.data || {};
         } catch (error) {

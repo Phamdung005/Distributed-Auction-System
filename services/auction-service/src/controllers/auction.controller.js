@@ -162,10 +162,11 @@ class AuctionController {
      */
     async updatePrice(req, res, next) {
         try {
-            const { currentPrice, totalBids } = req.body;
+            const { currentPrice, totalBids, winner } = req.body;
             const auction = await auctionService.updatePrice(req.params.id, {
                 currentPrice,
-                totalBids: 1 // Increment by 1 logic resides in repository/service usually, but here request body sends it
+                totalBids: 1,
+                winner
             });
 
             res.status(200).json({

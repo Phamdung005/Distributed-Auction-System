@@ -191,6 +191,10 @@ class AuctionService {
             updateOp.$inc = { totalBids: updateData.totalBids };
         }
 
+        if (updateData.winner !== undefined) {
+            updateOp.$set.winner = updateData.winner;
+        }
+
         // We pass the raw update operator to repository which passes it to findByIdAndUpdate
         const updated = await auctionRepository.updateAuction(auctionId, updateOp);
         return this._formatAuction(updated);

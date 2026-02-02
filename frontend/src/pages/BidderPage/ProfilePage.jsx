@@ -21,7 +21,7 @@ import {
     Calendar,
     Wallet
 } from 'lucide-react';
-import { useNavigate, Link } from 'react-router-dom';
+import { useNavigate, Link, useLocation } from 'react-router-dom';
 import walletApi from '../../services/walletApi';
 import OrderListPage from '../OrderPage/OrderListPage';
 import { ShoppingBag } from 'lucide-react';
@@ -29,9 +29,10 @@ import { ShoppingBag } from 'lucide-react';
 const ProfilePage = () => {
     const { user, logout, refreshProfile } = useAuth();
     const navigate = useNavigate();
+    const location = useLocation();
 
     // State for tabs
-    const [activeTab, setActiveTab] = useState('general'); // general, security, history, wallet
+    const [activeTab, setActiveTab] = useState(location.state?.activeTab || 'general'); // general, security, history, wallet
 
     // State for form data
     const [formData, setFormData] = useState({

@@ -73,7 +73,7 @@ const WalletPage = () => {
     const handleTestDeposit = async () => {
         try {
             setLoading(true);
-            const amount = 1000000000; 
+            const amount = 1000000000;
             const response = await walletApi.depositFunds(amount, 'wallet', { description: 'Test deposit 1 billion' });
 
             if (response.success) {

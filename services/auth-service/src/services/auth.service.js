@@ -190,7 +190,11 @@ class AuthService {
             balance: user.balance,
             role: user.role,
             avatar: user.avatar,
-            createdAt: user.createdAt
+            createdAt: user.createdAt,
+            city: user.city,
+            district: user.district,
+            address: user.address,
+            dob: user.dob
         };
     }
 

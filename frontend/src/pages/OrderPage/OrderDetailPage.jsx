@@ -61,7 +61,7 @@ const OrderDetailPage = () => {
     return (
         <div className="container mx-auto px-4 py-8 max-w-6xl">
             <div className="mb-6">
-                <Link to="/orders" className="text-indigo-600 hover:text-indigo-800 font-medium">&larr; Quay lại danh sách</Link>
+                <Link to="/profile" state={{ activeTab: 'orders' }} className="text-indigo-600 hover:text-indigo-800 font-medium">&larr; Quay lại Hồ sơ</Link>
             </div>
 
             <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
@@ -91,9 +91,12 @@ const OrderDetailPage = () => {
 
                         {/* Action Buttons Placeholder */}
                         {isBuyer && order.status === 'pending_payment' && (
-                            <button className="w-full mt-6 bg-indigo-600 text-white py-2 rounded-md hover:bg-indigo-700 font-medium transition">
+                            <Link
+                                to="/wallet"
+                                className="block text-center w-full mt-6 bg-indigo-600 text-white py-2 rounded-md hover:bg-indigo-700 font-medium transition"
+                            >
                                 Thanh Toán Ngay
-                            </button>
+                            </Link>
                         )}
                         {!isBuyer && order.status === 'paid' && (
                             <button className="w-full mt-6 bg-blue-600 text-white py-2 rounded-md hover:bg-blue-700 font-medium transition">

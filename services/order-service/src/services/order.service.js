@@ -1,15 +1,20 @@
 const orderRepository = require('../repositories/order.repository');
 
+const axios = require('axios');
+const AUTH_SERVICE_URL = process.env.AUTH_SERVICE_URL || 'http://localhost:3001';
+
 class OrderService {
     /**
      * Create order automatically when auction ends (Event Handler)
      * @param {Object} auctionData - Payload from Redis event
      */
     async createOrderFromAuctionEvent(auctionData) {
+        const auctionId = auctionData._id || auctionData.id;
+
         // Check if order already exists
-        const existingOrder = await orderRepository.getOrderByAuctionId(auctionData._id);
+        const existingOrder = await orderRepository.getOrderByAuctionId(auctionId);
         if (existingOrder) {
-            console.log(`Order already exists for auction ${auctionData._id}`);
+            console.log(`Order already exists for auction ${auctionId}`);
             return existingOrder;
         }
 
@@ -18,12 +23,43 @@ class OrderService {
             return null;
         }
 
+        // Fetch buyer details from Auth Service
+        let shippingAddress = {
+            fullName: '',
+            phoneNumber: '',
+            address: '',
+            city: '',
+            note: ''
+        };
+
+        try {
+            console.log(`Fetching user details for winner: ${auctionData.winner}`);
+            const response = await axios.get(`${AUTH_SERVICE_URL}/api/auth/profile/${auctionData.winner}`);
+
+            if (response.data && response.data.success) {
+                const user = response.data.data;
+                console.log('User details fetched successfully:', user.email);
+
+                shippingAddress = {
+                    fullName: user.fullName || '',
+                    phoneNumber: user.phone || '',
+                    address: user.address ? `${user.address}${user.district ? ', ' + user.district : ''}` : '',
+                    city: user.city || '',
+                    note: ''
+                };
+            }
+        } catch (error) {
+            console.error('Failed to fetch user details for order creation:', error.message);
+            // Continue order creation even if fetching user fails, shippingAddress will be empty
+        }
+
         const orderData = {
-            auctionId: auctionData._id,
+            auctionId: auctionId,
             sellerId: auctionData.seller, // Assuming string ID
             buyerId: auctionData.winner,
             finalPrice: auctionData.currentPrice,
             status: 'pending_payment',
+            shippingAddress: shippingAddress,
             messages: [],
             // Snapshot details
             auctionDetails: {
