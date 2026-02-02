@@ -168,6 +168,35 @@ class AuctionService {
     }
 
     /**
+     * Cập nhật giá auction (Internal)
+     * @param {string} auctionId
+     * @param {Object} updateData
+     * @returns {Promise<Object>}
+     */
+    async updatePrice(auctionId, updateData) {
+        const auction = await auctionRepository.getAuctionById(auctionId);
+
+        if (!auction) {
+            throw new Error('Auction không tồn tại');
+        }
+
+        // Construct MongoDB update operation
+        const updateOp = {};
+
+        if (updateData.currentPrice !== undefined) {
+            updateOp.$set = { currentPrice: updateData.currentPrice };
+        }
+
+        if (updateData.totalBids !== undefined) {
+            updateOp.$inc = { totalBids: updateData.totalBids };
+        }
+
+        // We pass the raw update operator to repository which passes it to findByIdAndUpdate
+        const updated = await auctionRepository.updateAuction(auctionId, updateOp);
+        return this._formatAuction(updated);
+    }
+
+    /**
      * Xóa auction
      * @param {string} auctionId
      * @param {string} sellerId

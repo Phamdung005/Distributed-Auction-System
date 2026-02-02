@@ -76,6 +76,7 @@ const AuctionDetailPage = () => {
       // Handle connect event (for reconnections)
       const handleConnect = () => {
         console.log('Socket connected, joining auction:', id);
+        setConnected(true);
 
         // Join auction room
         joinAuction(id, (data) => {
@@ -88,6 +89,11 @@ const AuctionDetailPage = () => {
         hasJoinedRef.current = true;
       };
 
+      const handleDisconnect = () => {
+        console.log('Socket disconnected');
+        setConnected(false);
+      };
+
       // If already connected, join immediately
       if (socket.connected) {
         handleConnect();
@@ -96,6 +102,8 @@ const AuctionDetailPage = () => {
         socket.on('connect', handleConnect);
       }
 
+      socket.on('disconnect', handleDisconnect);
+
       const handleBidUpdate = (data) => {
         if (data.auctionId === id) {
           setAuction(prev => ({
@@ -103,7 +111,7 @@ const AuctionDetailPage = () => {
             currentPrice: data.amount,
             totalBids: prev.totalBids + 1
           }));
-          toast.info(`💰 Có bid mới: ${data.amount.toLocaleString('vi-VN')} ₫`);
+          toast.info(`Có bid mới: ${data.amount.toLocaleString('vi-VN')} ₫`);
         }
       };
 
@@ -123,6 +131,7 @@ const AuctionDetailPage = () => {
       return () => {
         // Remove connect handler
         socket.off('connect', handleConnect);
+        socket.off('disconnect', handleDisconnect);
 
         // Leave auction if joined
         if (hasJoinedRef.current) {
@@ -135,6 +144,25 @@ const AuctionDetailPage = () => {
       };
     }
   }, [id, isAuthenticated]);
+
+  // Handle automatic status update based on time
+  useEffect(() => {
+    if (!auction) return;
+
+    const now = new Date();
+
+    // Auto-switch from Pending to Active
+    if (auction.status === 'pending' && new Date(auction.startTime) <= now) {
+      setAuction(prev => ({ ...prev, status: 'active' }));
+      fetchAuctionDetails();
+    }
+
+    // Auto-switch from Active to Ended (optional, but good for UI consistency)
+    if (auction.status === 'active' && new Date(auction.endTime) <= now) {
+      setAuction(prev => ({ ...prev, status: 'ended' }));
+      fetchAuctionDetails();
+    }
+  }, [currentTime, auction]);
 
   const fetchAuctionDetails = async () => {
     try {
@@ -258,6 +286,9 @@ const AuctionDetailPage = () => {
       const seconds = Math.floor((diffMs % (1000 * 60)) / 1000);
       timeRemaining = `${String(hours).padStart(2, '0')}:${String(minutes).padStart(2, '0')}:${String(seconds).padStart(2, '0')}`;
       timeLabel = 'Sắp diễn ra sau';
+    } else {
+      timeRemaining = 'Đang bắt đầu...';
+      timeLabel = 'Trạng thái';
     }
   } else if (isActive) {
     // For active auctions, calculate remaining time from endTime

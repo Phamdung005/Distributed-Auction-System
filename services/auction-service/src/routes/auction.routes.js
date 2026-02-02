@@ -40,6 +40,13 @@ router.get('/:id', auctionController.getAuctionById);
 router.post('/', authenticate, authorize('seller'), createAuctionValidation, auctionController.createAuction);
 
 /**
+ * @route   PATCH /api/auctions/:id
+ * @desc    Cập nhật giá auction (Internal)
+ * @access  Internal
+ */
+router.patch('/:id', auctionController.updatePrice);
+
+/**
  * @route   PUT /api/auctions/:id
  * @desc    Cập nhật auction
  * @access  Private (Seller, Owner)

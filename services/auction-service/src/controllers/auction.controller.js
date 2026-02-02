@@ -155,6 +155,27 @@ class AuctionController {
             next(error);
         }
     }
+
+    /**
+     * Cập nhật giá auction (Internal / Bidding Service)
+     * PATCH /api/auctions/:id
+     */
+    async updatePrice(req, res, next) {
+        try {
+            const { currentPrice, totalBids } = req.body;
+            const auction = await auctionService.updatePrice(req.params.id, {
+                currentPrice,
+                totalBids: 1 // Increment by 1 logic resides in repository/service usually, but here request body sends it
+            });
+
+            res.status(200).json({
+                success: true,
+                data: auction
+            });
+        } catch (error) {
+            next(error);
+        }
+    }
 }
 
 module.exports = new AuctionController();
