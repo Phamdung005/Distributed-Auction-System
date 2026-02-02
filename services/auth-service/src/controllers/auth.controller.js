@@ -216,6 +216,21 @@ class AuthController {
             next(error);
         }
     }
+    /**
+     * Lấy danh sách users (Admin)
+     * GET /api/auth/users
+     */
+    async getAllUsers(req, res, next) {
+        try {
+            const users = await authService.getAllUsers();
+            res.status(200).json({
+                success: true,
+                data: users
+            });
+        } catch (error) {
+            next(error);
+        }
+    }
 }
 
 module.exports = new AuthController();

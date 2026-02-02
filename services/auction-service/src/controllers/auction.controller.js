@@ -129,7 +129,8 @@ class AuctionController {
     async deleteAuction(req, res, next) {
         try {
             const sellerId = req.user.userId;
-            await auctionService.deleteAuction(req.params.id, sellerId);
+            const userRole = req.user.role;
+            await auctionService.deleteAuction(req.params.id, sellerId, userRole);
 
             res.status(200).json({
                 success: true,

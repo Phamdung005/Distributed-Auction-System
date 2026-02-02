@@ -79,7 +79,7 @@ export const AuthProvider = ({ children }) => {
             setIsAuthenticated(true);
 
             toast.success('Đăng nhập thành công!');
-            return { success: true };
+            return { success: true, user };
         } catch (error) {
             const message = error.response?.data?.message || 'Đăng nhập thất bại';
             toast.error(message);

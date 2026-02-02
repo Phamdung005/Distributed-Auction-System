@@ -206,14 +206,15 @@ class AuctionService {
      * @param {string} sellerId
      * @returns {Promise<void>}
      */
-    async deleteAuction(auctionId, sellerId) {
+    async deleteAuction(auctionId, sellerId, userRole) {
         const auction = await auctionRepository.getAuctionById(auctionId);
 
         if (!auction) {
             throw new Error('Auction không tồn tại');
         }
 
-        if (auction.seller._id.toString() !== sellerId) {
+        // Nếu không phải admin thì phải check owner
+        if (userRole !== 'admin' && auction.seller._id.toString() !== sellerId) {
             throw new Error('Bạn không có quyền xóa auction này');
         }
 

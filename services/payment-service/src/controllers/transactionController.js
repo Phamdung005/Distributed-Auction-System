@@ -86,8 +86,14 @@ class TransactionController {
     async getTransactionStats(req, res) {
         try {
             const userId = req.user.userId;
+            const userRole = req.user.role;
 
-            const result = await transactionService.getTransactionStats(userId);
+            let result;
+            if (userRole === 'admin') {
+                result = await transactionService.getTransactionStats('global');
+            } else {
+                result = await transactionService.getTransactionStats(userId);
+            }
 
             if (!result.success) {
                 return res.status(400).json(result);

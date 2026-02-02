@@ -100,6 +100,13 @@ class AuthRepository {
             $set: { refreshTokens: [] }
         });
     }
+    /**
+     * Lấy tất cả users (cẩn thận với số lượng lớn)
+     * @returns {Promise<Array>}
+     */
+    async findAll() {
+        return await User.find({}).sort({ createdAt: -1 });
+    }
 }
 
 module.exports = new AuthRepository();

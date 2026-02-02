@@ -92,7 +92,12 @@ class TransactionService {
      */
     async getTransactionStats(userId) {
         try {
-            const stats = await transactionRepository.getTransactionStats(userId);
+            let stats;
+            if (userId === 'global') {
+                stats = await transactionRepository.getGlobalTransactionStats();
+            } else {
+                stats = await transactionRepository.getTransactionStats(userId);
+            }
 
             return {
                 success: true,

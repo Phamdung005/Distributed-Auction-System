@@ -14,6 +14,7 @@ import { CreateAuctionPage, MyAuctionsPage } from './pages/SellerPage';
 import { SupportPage } from './components/support';
 import OrderListPage from './pages/OrderPage/OrderListPage';
 import OrderDetailPage from './pages/OrderPage/OrderDetailPage';
+import AdminDashboard from './pages/AdminPage/AdminDashboard';
 
 const MainContainer = ({ children }) => {
     const location = useLocation();
@@ -37,12 +38,22 @@ const MainContainer = ({ children }) => {
     );
 };
 
+const AdminRouteWrapper = ({ children }) => {
+    const location = useLocation();
+    if (location.pathname.startsWith('/admin')) {
+        return null;
+    }
+    return children;
+};
+
 function App() {
     return (
         <AuthProvider>
             <Router future={{ v7_startTransition: true, v7_relativeSplatPath: true }}>
                 <div className="webapp">
-                    <NavbarSelector />
+                    <AdminRouteWrapper>
+                        <NavbarSelector />
+                    </AdminRouteWrapper>
                     <MainContainer>
                         <Routes>
                             {/* Public routes */}
@@ -93,6 +104,11 @@ function App() {
                             <Route path="/orders/:id" element={
                                 <PrivateRoute>
                                     <OrderDetailPage />
+                                </PrivateRoute>
+                            } />
+                            <Route path="/admin" element={
+                                <PrivateRoute>
+                                    <AdminDashboard />
                                 </PrivateRoute>
                             } />
 

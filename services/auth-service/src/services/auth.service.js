@@ -280,6 +280,22 @@ class AuthService {
         user.password = newPassword;
         await user.save();
     }
+    /**
+     * Lấy danh sách users (Admin)
+     * @returns {Promise<Object>}
+     */
+    async getAllUsers() {
+        const users = await authRepository.findAll();
+        return users.map(user => ({
+            id: user._id,
+            email: user.email,
+            fullName: user.fullName,
+            phone: user.phone,
+            role: user.role,
+            isActive: user.isActive,
+            createdAt: user.createdAt
+        }));
+    }
 }
 
 module.exports = new AuthService();
