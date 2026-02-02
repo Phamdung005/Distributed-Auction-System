@@ -102,6 +102,19 @@ const sampleAuctions = [
         status: "active",
         condition: "used",
         seller: SELLER_ID
+    },
+    {
+        title: "Test Auction - Ends in 5 Minutes",
+        description: "This auction is for testing order creation. Ends in 5 minutes. Bid now!",
+        images: ["https://plus.unsplash.com/premium_photo-1683141154082-324d296f3c66?q=80&w=2940&auto=format&fit=crop"],
+        category: "other",
+        startPrice: 100000,
+        minBidIncrement: 10000,
+        startTime: new Date(Date.now() - 1 * 60 * 1000), // Started 1 min ago
+        endTime: new Date(Date.now() + 5 * 60 * 1000), // Ends in 5 mins
+        status: "active",
+        condition: "new",
+        seller: SELLER_ID
     }
 ];
 
@@ -109,23 +122,23 @@ const seedDB = async () => {
     try {
         console.log('Connecting to MongoDB at:', MONGODB_URI);
         await mongoose.connect(MONGODB_URI);
-        console.log('✅ Connected to MongoDB');
+        console.log('Connected to MongoDB');
 
         // Clear existing auctions? Uncomment if you want to wipe DB
         // await Auction.deleteMany({});
-        // console.log('🗑️ Cleared existing auctions');
+        // console.log('Cleared existing auctions');
 
         // Insert new auctions
         const result = await Auction.insertMany(sampleAuctions);
-        console.log(`✅ Seeded ${result.length} auctions`);
+        console.log(`Seeded ${result.length} auctions`);
 
-        console.log('ℹ️ Use this Seller ID for your user in Auth Service if you want to manage these:', SELLER_ID);
+        console.log('ℹUse this Seller ID for your user in Auth Service if you want to manage these:', SELLER_ID);
 
         await mongoose.connection.close();
-        console.log('👋 Connection closed');
+        console.log('Connection closed');
         process.exit(0);
     } catch (error) {
-        console.error('❌ Error seeding database:', error);
+        console.error('Error seeding database:', error);
         process.exit(1);
     }
 };

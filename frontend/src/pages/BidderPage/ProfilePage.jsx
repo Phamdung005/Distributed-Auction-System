@@ -23,6 +23,8 @@ import {
 } from 'lucide-react';
 import { useNavigate, Link } from 'react-router-dom';
 import walletApi from '../../services/walletApi';
+import OrderListPage from '../OrderPage/OrderListPage';
+import { ShoppingBag } from 'lucide-react';
 
 const ProfilePage = () => {
     const { user, logout, refreshProfile } = useAuth();
@@ -273,6 +275,13 @@ const ProfilePage = () => {
                                 >
                                     <Wallet size={20} />
                                     Ví của tôi
+                                </button>
+                                <button
+                                    onClick={() => setActiveTab('orders')}
+                                    className={`flex items-center gap-3 px-5 py-4 transition-colors text-left ${activeTab === 'orders' ? 'bg-[#f26c0d]/10 border-l-4 border-[#f26c0d] text-[#f26c0d] font-medium' : 'text-slate-600 hover:bg-gray-50 border-l-4 border-transparent'}`}
+                                >
+                                    <ShoppingBag size={20} />
+                                    Đơn hàng của tôi
                                 </button>
                                 <button
                                     onClick={handleLogout}
@@ -563,6 +572,21 @@ const ProfilePage = () => {
                                             </div>
                                         </>
                                     )}
+                                </div>
+                            </section>
+                        )}
+
+                        {/* Section 5: Orders */}
+                        {activeTab === 'orders' && (
+                            <section className="bg-white rounded-xl border border-gray-100 shadow-sm overflow-hidden animate-fade-in">
+                                <div className="p-6 border-b border-gray-100">
+                                    <h3 className="text-lg font-bold text-slate-900 flex items-center gap-2">
+                                        <ShoppingBag className="text-[#f26c0d]" size={24} />
+                                        Đơn hàng của tôi
+                                    </h3>
+                                </div>
+                                <div className="p-6">
+                                    <OrderListPage isEmbedded={true} />
                                 </div>
                             </section>
                         )}

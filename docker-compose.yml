@@ -78,6 +78,19 @@ services:
     networks:
       - auction-network
 
+  mongodb-order:
+    image: mongo:7.0
+    container_name: mongodb-order
+    restart: always
+    ports:
+      - "27023:27017"
+    environment:
+      MONGO_INITDB_DATABASE: order_db
+    volumes:
+      - mongodb_order_data:/data/db
+    networks:
+      - auction-network
+
   # Redis Cache & Pub/Sub
   redis:
     image: redis:7-alpine
@@ -239,6 +252,32 @@ services:
     networks:
       - auction-network
 
+  # Order Service - Quản lý đơn hàng
+  order-service:
+    build:
+      context: .
+      dockerfile: ./services/order-service/Dockerfile
+    container_name: order-service
+    restart: always
+    ports:
+      - "3007:3007"
+    volumes:
+      - ./services/order-service/src:/app/src
+      - ./shared:/app/shared
+    environment:
+      - NODE_ENV=production
+      - PORT=3007
+      - MONGODB_URI=mongodb://mongodb-order:27017/order_db
+      - REDIS_URL=redis://:redis123@redis:6379
+      - JWT_SECRET=your-super-secret-jwt-key-change-in-production
+      - AUTH_SERVICE_URL=http://auth-service:3001
+    depends_on:
+      - mongodb-order
+      - redis
+      - auth-service
+    networks:
+      - auction-network
+
   # Nginx API Gateway
   nginx:
     image: nginx:alpine
@@ -255,6 +294,7 @@ services:
       - payment-service
       - notification-service
       - community-service
+      - order-service
     networks:
       - auction-network
 
@@ -266,7 +306,8 @@ volumes:
   mongodb_auth_data:
   mongodb_auction_data:
   mongodb_bidding_data:
-  mongodb_payment_data:
   mongodb_notification_data:
   mongodb_community_data:
+  mongodb_payment_data:
+  mongodb_order_data:
   redis_data:

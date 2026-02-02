@@ -12,6 +12,8 @@ import { LoginPage, RegisterPage } from './pages/AuthPage';
 import { HomePage, AuctionDetailPage, ProfilePage, AuctionListPage, AuctionCommunityPage, BidderNotification, SearchResultPage, WalletPage } from './pages/BidderPage';
 import { CreateAuctionPage, MyAuctionsPage } from './pages/SellerPage';
 import { SupportPage } from './components/support';
+import OrderListPage from './pages/OrderPage/OrderListPage';
+import OrderDetailPage from './pages/OrderPage/OrderDetailPage';
 
 const MainContainer = ({ children }) => {
     const location = useLocation();
@@ -80,6 +82,16 @@ function App() {
                             <Route path="/wallet" element={
                                 <PrivateRoute>
                                     <WalletPage />
+                                </PrivateRoute>
+                            } />
+                            <Route path="/orders" element={
+                                <PrivateRoute>
+                                    <OrderListPage />
+                                </PrivateRoute>
+                            } />
+                            <Route path="/orders/:id" element={
+                                <PrivateRoute>
+                                    <OrderDetailPage />
                                 </PrivateRoute>
                             } />
 
