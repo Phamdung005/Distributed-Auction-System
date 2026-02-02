@@ -24,6 +24,7 @@ const MainContainer = ({ children }) => {
         location.pathname === '/register' ||
         location.pathname === '/profile' ||
         location.pathname === '/wallet' ||
+        location.pathname === '/notifications' ||
         location.pathname.startsWith('/auction/');
 
     return (

@@ -6,8 +6,8 @@ const formatPrice = (price) => {
 const NOTIFICATION_TEMPLATES = {
     // ============ BIDDER NOTIFICATIONS ============
     BID_PLACED: {
-        title: 'Có người đặt giá mới',
-        message: (data) => `${data.bidderName} đã đặt giá ${formatPrice(data.amount)} cho "${data.auctionTitle}"`,
+        title: 'Đặt giá thành công',
+        message: (data) => `Bạn đã đặt giá ${formatPrice(data.amount)} cho "${data.auctionTitle}"`,
         priority: 'low'
     },
 
@@ -21,6 +21,12 @@ const NOTIFICATION_TEMPLATES = {
         title: 'Bạn đang dẫn đầu',
         message: (data) => `Bạn đang dẫn đầu đấu giá "${data.auctionTitle}" với giá ${formatPrice(data.amount)}`,
         priority: 'medium'
+    },
+
+    REGISTRATION_APPROVED: {
+        title: 'Đăng ký tham gia thành công',
+        message: (data) => `Bạn đã đăng ký thành công phiên đấu giá "${data.auctionTitle}". Tiền cọc: ${formatPrice(data.amount)}`,
+        priority: 'high'
     },
 
     AUCTION_STARTING_SOON: {

@@ -71,6 +71,13 @@ class NotificationService {
     }
 
     /**
+     * Delete all notifications
+     */
+    async deleteAllNotifications(userId) {
+        return await notificationRepository.deleteAllNotifications(userId);
+    }
+
+    /**
      * Create notification for bid event
      */
     async handleBidPlaced(bidData) {
@@ -98,6 +105,14 @@ class NotificationService {
                 notificationData: { auctionId, auctionTitle, amount }
             });
         }
+
+        // Notification for bidder (confirmation)
+        notifications.push({
+            userId: bidderId,
+            userRole: 'bidder',
+            type: 'bid_placed',
+            notificationData: { auctionId, auctionTitle, amount, bidderName }
+        });
 
         // Create all notifications
         const created = await Promise.all(

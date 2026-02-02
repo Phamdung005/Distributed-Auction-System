@@ -25,6 +25,7 @@ class PubSubService {
         await this.subscriber.subscribe('auction:started', this.handleAuctionStarted.bind(this));
         await this.subscriber.subscribe('auction:starting-soon', this.handleAuctionStartingSoon.bind(this));
         await this.subscriber.subscribe('auction:ending-soon', this.handleAuctionEndingSoon.bind(this));
+        await this.subscriber.subscribe('auction:registration:approved', this.handleRegistrationApproved.bind(this));
 
         console.log('✅ Redis Pub/Sub subscriber initialized');
     }
@@ -151,6 +152,34 @@ class PubSubService {
 
         } catch (error) {
             console.error('Error handling auction ending soon:', error);
+        }
+    }
+
+
+    /**
+     * Handle registration approved event
+     */
+    async handleRegistrationApproved(message) {
+        try {
+            const { userId, auctionId, auctionTitle, registrationId, depositAmount } = JSON.parse(message);
+            console.log('📢 Registration approved event received for user:', userId);
+
+            const notification = await notificationService.createNotification({
+                userId: userId,
+                userRole: 'bidder',
+                type: 'registration_approved',
+                notificationData: {
+                    auctionId,
+                    auctionTitle,
+                    registrationId,
+                    amount: depositAmount
+                }
+            });
+
+            sendNotificationToUser(userId, notification);
+
+        } catch (error) {
+            console.error('Error handling registration approved:', error);
         }
     }
 }

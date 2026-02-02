@@ -99,6 +99,21 @@ class NotificationController {
             next(error);
         }
     }
+
+    /**
+     * Delete all notifications
+     * DELETE /api/notifications
+     */
+    async deleteAllNotifications(req, res, next) {
+        try {
+            const userId = req.user.id;
+            const count = await notificationService.deleteAllNotifications(userId);
+
+            res.json({ message: 'All notifications deleted', count });
+        } catch (error) {
+            next(error);
+        }
+    }
 }
 
 module.exports = new NotificationController();

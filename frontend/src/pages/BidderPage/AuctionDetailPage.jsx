@@ -111,7 +111,7 @@ const AuctionDetailPage = () => {
             currentPrice: data.amount,
             totalBids: prev.totalBids + 1
           }));
-          toast.info(`Có bid mới: ${data.amount.toLocaleString('vi-VN')} ₫`);
+          // toast.info(`Có bid mới: ${data.amount.toLocaleString('vi-VN')} ₫`);
         }
       };
 
@@ -244,7 +244,7 @@ const AuctionDetailPage = () => {
     setBidding(true);
     try {
       await placeBid(id, amount);
-      toast.success('Đặt giá thành công! 🎉');
+      // toast.success('Đặt giá thành công! 🎉');
       setBidAmount(amount + auction.minBidIncrement);
     } catch (error) {
       toast.error(error.message || 'Đặt giá thất bại');

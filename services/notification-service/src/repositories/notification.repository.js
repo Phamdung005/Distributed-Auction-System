@@ -109,6 +109,14 @@ class NotificationRepository {
     }
 
     /**
+     * Delete all notifications for a user
+     */
+    async deleteAllNotifications(userId) {
+        const result = await Notification.deleteMany({ userId });
+        return result.deletedCount;
+    }
+
+    /**
      * Get notifications by type
      */
     async getNotificationsByType(userId, type, limit = 10) {
