@@ -126,9 +126,7 @@ const HomePage = () => {
               <div key={auction.id} className="group bg-white rounded-xl overflow-hidden border border-[#e5e7eb] hover:shadow-xl hover:shadow-gray-200/50 transition-all duration-300 flex flex-col h-full transform hover:-translate-y-1">
                 <div className="relative aspect-[4/3] overflow-hidden bg-gray-100">
                   <div className="absolute top-3 left-3 z-10 flex gap-2">
-                    <span className="bg-red-500 text-white text-[10px] font-bold px-2.5 py-1 rounded-md shadow-sm flex items-center gap-1">
-                      <span className="material-symbols-outlined text-[12px]">visibility</span> {auction.viewCount}
-                    </span>
+                    {/* View count removed as requested */}
                   </div>
                   <div
                     className="w-full h-full bg-cover bg-center group-hover:scale-110 transition-transform duration-500"

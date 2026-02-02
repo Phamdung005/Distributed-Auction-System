@@ -65,7 +65,10 @@ class AuctionController {
      */
     async getAuctionById(req, res, next) {
         try {
-            const auction = await auctionService.getAuctionById(req.params.id);
+            const { incrementView } = req.query;
+            const shouldIncrement = incrementView !== 'false'; // Default to true if not specified or not 'false'
+
+            const auction = await auctionService.getAuctionById(req.params.id, shouldIncrement);
 
             res.status(200).json({
                 success: true,
