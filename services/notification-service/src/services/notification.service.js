@@ -204,6 +204,25 @@ class NotificationService {
             notificationData: { amount, transactionId, paymentMethod }
         });
     }
+
+    /**
+     * Create notification for auction payment
+     */
+    async handleAuctionPaymentSuccessful(paymentData) {
+        const { userId, amount, auctionId, auctionTitle, transactionId } = paymentData;
+
+        return await this.createNotification({
+            userId,
+            userRole: 'bidder',
+            type: 'auction_payment_successful',
+            notificationData: {
+                amount,
+                auctionId,
+                auctionTitle: auctionTitle || 'Phiên đấu giá',
+                transactionId
+            }
+        });
+    }
 }
 
 module.exports = new NotificationService();

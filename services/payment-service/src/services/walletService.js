@@ -273,7 +273,7 @@ class WalletService {
      * @param {string} auctionId - ID của auction
      * @returns {Promise<Object>}
      */
-    async unfreezeFunds(userId, amount, auctionId) {
+    async unfreezeFunds(userId, amount, auctionId, auctionTitle) {
         // Removed transaction for standalone MongoDB support
         try {
             // Import Escrow model
@@ -318,7 +318,8 @@ class WalletService {
                     userId: userId,
                     auctionId: auctionId,
                     amount: amount,
-                    transactionId: transaction._id
+                    transactionId: transaction._id,
+                    auctionTitle: auctionTitle
                 };
 
                 await redisPublisher.publish('payment:deposit:refunded', JSON.stringify(eventData));
@@ -352,7 +353,7 @@ class WalletService {
      * @param {number} finalPrice - Giá cuối cùng của auction
      * @returns {Promise<Object>}
      */
-    async payAuctionWinner(userId, auctionId, finalPrice) {
+    async payAuctionWinner(userId, auctionId, finalPrice, auctionTitle) {
         try {
             // Import Escrow model
             const Escrow = require('../models/Escrow');
@@ -418,7 +419,9 @@ class WalletService {
                     finalPrice: finalPrice,
                     transactionId: transaction._id,
                     paymentMethod: 'wallet',
-                    timestamp: new Date().toISOString()
+                    timestamp: new Date().toISOString(),
+                    auctionTitle: auctionTitle,
+                    amount: finalPrice // Add amount for consistency with notification template
                 };
 
                 console.log(`🚀 Publishing payment:auction:paid to Redis for auction: ${auctionId}`);

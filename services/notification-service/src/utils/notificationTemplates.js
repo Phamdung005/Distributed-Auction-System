@@ -71,15 +71,21 @@ const NOTIFICATION_TEMPLATES = {
         priority: 'high'
     },
 
+    AUCTION_PAYMENT_SUCCESSFUL: {
+        title: 'Thanh toán thành công',
+        message: (data) => `Bạn đã thanh toán thành công ${formatPrice(data.amount)} cho "${data.auctionTitle}".`,
+        priority: 'high'
+    },
+
     // ============ SELLER NOTIFICATIONS ============
     SELLER_NEW_BID: {
-        title: '💰 Có người đặt giá vào auction của bạn',
+        title: 'Có người đặt giá vào auction của bạn',
         message: (data) => `${data.bidderName} đã đặt giá ${formatPrice(data.amount)} cho "${data.auctionTitle}"`,
         priority: 'medium'
     },
 
     SELLER_FIRST_BID: {
-        title: '🎯 Bid đầu tiên!',
+        title: 'Bid đầu tiên!',
         message: (data) => `"${data.auctionTitle}" đã nhận được bid đầu tiên: ${formatPrice(data.amount)}`,
         priority: 'high'
     },
@@ -103,7 +109,7 @@ const NOTIFICATION_TEMPLATES = {
     },
 
     SELLER_AUCTION_SOLD: {
-        title: '🎉 Auction đã bán thành công!',
+        title: 'Auction đã bán thành công!',
         message: (data) => `"${data.auctionTitle}" đã bán với giá ${formatPrice(data.amount)} cho ${data.bidderName}`,
         priority: 'high'
     },

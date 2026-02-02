@@ -64,10 +64,12 @@ const OrderDetailPage = () => {
             // Call payAuction API
             // Note: order.auctionId is likely a string based on Order schema
             const auctionId = typeof order.auctionId === 'object' ? order.auctionId._id : order.auctionId;
+            const auctionTitle = order.auctionDetails?.title || order.auctionId?.title || 'Unknown Product';
 
             const result = await walletApi.payAuction({
                 auctionId: auctionId,
-                finalPrice: order.finalPrice
+                finalPrice: order.finalPrice,
+                auctionTitle: auctionTitle
             });
 
             if (result.success) {

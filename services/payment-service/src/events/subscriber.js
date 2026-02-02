@@ -28,9 +28,10 @@ const subscribeToEvents = async () => {
  */
 const processAuctionEndRefunds = async (auctionData) => {
     const auctionId = auctionData._id || auctionData.id;
+    const auctionTitle = auctionData.title || auctionData.auctionTitle; // Get title
     const winnerId = auctionData.winner ? (typeof auctionData.winner === 'object' ? auctionData.winner.id || auctionData.winner._id : auctionData.winner) : null;
 
-    console.log(`Processing refunds for auction ${auctionId}. Winner: ${winnerId}`);
+    console.log(`Processing refunds for auction ${auctionId} (${auctionTitle}). Winner: ${winnerId}`);
 
     try {
         // 1. Get all frozen escrows for this auction
@@ -54,7 +55,8 @@ const processAuctionEndRefunds = async (auctionData) => {
             console.log(`Refunding deposit for loser/participant: ${escrow.user_id}, Amount: ${escrow.amount}`);
 
             try {
-                await walletService.unfreezeFunds(escrow.user_id, escrow.amount, auctionId);
+                // Pass auctionTitle to unfreezeFunds
+                await walletService.unfreezeFunds(escrow.user_id, escrow.amount, auctionId, auctionTitle);
                 console.log(`✅ Refund successful for user ${escrow.user_id}`);
             } catch (refundError) {
                 console.error(`❌ Failed to refund user ${escrow.user_id}:`, refundError.message);

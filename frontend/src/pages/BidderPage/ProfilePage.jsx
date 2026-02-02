@@ -60,7 +60,7 @@ const ProfilePage = () => {
     // Initialize data
     useEffect(() => {
         if (user) {
-            console.log('👤 User data updated in ProfilePage:', user);
+
             setFormData({
                 fullName: user.fullName || '',
                 email: user.email || '',
@@ -99,14 +99,13 @@ const ProfilePage = () => {
     const fetchWalletInfo = async () => {
         setLoadingWallet(true);
         try {
-            console.log('🔄 Fetching wallet info...');
+
             const [balanceResponse, transactionsResponse] = await Promise.all([
                 walletApi.getWalletBalance(),
                 walletApi.getTransactionHistory({}, 1, 5)
             ]);
 
-            console.log('✅ Balance response:', balanceResponse);
-            console.log('✅ Transactions response:', transactionsResponse);
+
 
             if (balanceResponse.success) {
                 setWalletInfo(balanceResponse.data);
@@ -142,15 +141,15 @@ const ProfilePage = () => {
     const handleUpdateProfile = async (e) => {
         e.preventDefault();
         setIsLoading(true);
-        console.log('📝 Submitting profile update:', formData);
+
 
         try {
             // Exclude email/username if they are immutable in backend
             const { email, ...updatePayload } = formData;
-            console.log('📦 Payload sent to API:', updatePayload);
+
 
             const response = await authAPI.updateProfile(updatePayload);
-            console.log('✅ Update response data:', response.data);
+
 
             // Refresh user data in context
             await refreshProfile();
