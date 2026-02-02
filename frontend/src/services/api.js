@@ -96,7 +96,7 @@ export const auctionAPI = {
     getActiveAuctions: (params) => api.get(`${AUCTION_BASE_URL}/active`, { params }),
 
     // Lấy auction theo ID
-    getAuctionById: (id) => api.get(`${AUCTION_BASE_URL}/${id}`),
+    getAuctionById: (id, params) => api.get(`${AUCTION_BASE_URL}/${id}`, { params }),
 
     // Lấy auctions của tôi
     getMyAuctions: (params) => api.get(`${AUCTION_BASE_URL}/my`, { params }),

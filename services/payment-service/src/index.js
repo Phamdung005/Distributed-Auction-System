@@ -23,6 +23,8 @@ const PORT = process.env.PORT || 3006;
 
 let redisClient;
 
+const subscribeToEvents = require('./events/subscriber');
+
 /**
  * Khởi tạo ứng dụng
  */
@@ -32,6 +34,9 @@ const initializeApp = async () => {
 
         redisClient = await createRedisClient(process.env.REDIS_URL);
         app.locals.redis = redisClient;
+
+        // Initialize Redis Subscriber
+        await subscribeToEvents();
 
         console.log('✅ Tất cả kết nối đã được thiết lập');
     } catch (error) {

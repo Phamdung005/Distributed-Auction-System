@@ -41,7 +41,8 @@ const notificationSchema = new mongoose.Schema({
             'registration_rejected',   // Bidder: Đăng ký tham gia bị từ chối
             'payment_required',        // Winner: Cần thanh toán
             'payment_received',        // Seller: Đã nhận thanh toán
-            'deposit_refunded'         // Bidder: Tiền cọc đã được hoàn
+            'deposit_refunded',        // Bidder: Tiền cọc đã được hoàn
+            'wallet_deposit'           // Bidder: Nạp tiền thành công
         ],
         required: [true, 'Loại thông báo là bắt buộc']
     },

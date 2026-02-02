@@ -65,7 +65,10 @@ class AuctionController {
      */
     async getAuctionById(req, res, next) {
         try {
-            const auction = await auctionService.getAuctionById(req.params.id);
+            const { incrementView } = req.query;
+            const shouldIncrement = incrementView !== 'false'; // Default to true if not specified or not 'false'
+
+            const auction = await auctionService.getAuctionById(req.params.id, shouldIncrement);
 
             res.status(200).json({
                 success: true,
@@ -149,6 +152,28 @@ class AuctionController {
             res.status(200).json({
                 success: true,
                 message: 'Hủy auction thành công',
+                data: auction
+            });
+        } catch (error) {
+            next(error);
+        }
+    }
+
+    /**
+     * Cập nhật giá auction (Internal / Bidding Service)
+     * PATCH /api/auctions/:id
+     */
+    async updatePrice(req, res, next) {
+        try {
+            const { currentPrice, totalBids, winner } = req.body;
+            const auction = await auctionService.updatePrice(req.params.id, {
+                currentPrice,
+                totalBids: 1,
+                winner
+            });
+
+            res.status(200).json({
+                success: true,
                 data: auction
             });
         } catch (error) {

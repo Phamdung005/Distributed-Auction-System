@@ -44,6 +44,26 @@ const userSchema = new mongoose.Schema({
         type: Boolean,
         default: true
     },
+    // Address info
+    address: {
+        type: String,
+        trim: true,
+        default: ''
+    },
+    city: {
+        type: String,
+        trim: true,
+        default: ''
+    },
+    district: {
+        type: String,
+        trim: true,
+        default: ''
+    },
+    dob: {
+        type: Date,
+        default: null
+    },
     avatar: {
         type: String,
         default: null

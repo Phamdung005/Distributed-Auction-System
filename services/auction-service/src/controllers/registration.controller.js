@@ -96,6 +96,33 @@ class RegistrationController {
 
             await newRegistration.save();
 
+            // Publish event for notification service
+            try {
+                const { createRedisClient } = require('shared/database/redis');
+                const redisPublisher = await createRedisClient(process.env.REDIS_URL);
+
+                const eventData = {
+                    userId: userId,
+                    auctionId: auctionId,
+                    auctionTitle: auction.title,
+                    registrationId: newRegistration._id,
+                    depositAmount: depositAmount
+                };
+
+                await redisPublisher.publish('auction:registration:approved', JSON.stringify(eventData));
+                // Do not close connection if it is shared/singleton, or manage it properly. 
+                // Based on auction.service usage, we can leave it open or quit if we are sure.
+                // For safety and short-term fix, we'll mimic auction.service pattern (which didn't quit in valid block).
+                // But better to be safe with resources if createRedisClient makes new one.
+                // Assuming shared lib handles connection pooling or we should quit. 
+                // I will quit to be safe as this is a controller.
+                await redisPublisher.quit();
+
+            } catch (redisError) {
+                console.error('Failed to publish registration event:', redisError);
+                // Do not fail the request just because notification failed
+            }
+
             return res.status(201).json({
                 success: true,
                 message: 'Đăng ký tham gia đấu giá thành công',

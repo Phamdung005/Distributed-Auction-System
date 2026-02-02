@@ -6,8 +6,8 @@ const formatPrice = (price) => {
 const NOTIFICATION_TEMPLATES = {
     // ============ BIDDER NOTIFICATIONS ============
     BID_PLACED: {
-        title: 'Có người đặt giá mới',
-        message: (data) => `${data.bidderName} đã đặt giá ${formatPrice(data.amount)} cho "${data.auctionTitle}"`,
+        title: 'Đặt giá thành công',
+        message: (data) => `Bạn đã đặt giá ${formatPrice(data.amount)} cho "${data.auctionTitle}"`,
         priority: 'low'
     },
 
@@ -23,9 +23,21 @@ const NOTIFICATION_TEMPLATES = {
         priority: 'medium'
     },
 
+    REGISTRATION_APPROVED: {
+        title: 'Đăng ký tham gia thành công',
+        message: (data) => `Bạn đã đăng ký thành công phiên đấu giá "${data.auctionTitle}". Tiền cọc: ${formatPrice(data.amount)}`,
+        priority: 'high'
+    },
+
     AUCTION_STARTING_SOON: {
         title: 'Đấu giá sắp bắt đầu',
         message: (data) => `"${data.auctionTitle}" sẽ bắt đầu trong 15 phút`,
+        priority: 'medium'
+    },
+
+    DEPOSIT_REFUNDED: {
+        title: 'Hoàn trả tiền cọc',
+        message: (data) => `Tiền cọc ${formatPrice(data.amount)} cho "${data.auctionTitle}" đã được hoàn trả vào ví của bạn`,
         priority: 'medium'
     },
 
@@ -53,15 +65,27 @@ const NOTIFICATION_TEMPLATES = {
         priority: 'low'
     },
 
+    WALLET_DEPOSIT: {
+        title: 'Nạp tiền thành công',
+        message: (data) => `Bạn đã nạp thành công ${formatPrice(data.amount)} vào ví.`,
+        priority: 'high'
+    },
+
+    AUCTION_PAYMENT_SUCCESSFUL: {
+        title: 'Thanh toán thành công',
+        message: (data) => `Bạn đã thanh toán thành công ${formatPrice(data.amount)} cho "${data.auctionTitle}".`,
+        priority: 'high'
+    },
+
     // ============ SELLER NOTIFICATIONS ============
     SELLER_NEW_BID: {
-        title: '💰 Có người đặt giá vào auction của bạn',
+        title: 'Có người đặt giá vào auction của bạn',
         message: (data) => `${data.bidderName} đã đặt giá ${formatPrice(data.amount)} cho "${data.auctionTitle}"`,
         priority: 'medium'
     },
 
     SELLER_FIRST_BID: {
-        title: '🎯 Bid đầu tiên!',
+        title: 'Bid đầu tiên!',
         message: (data) => `"${data.auctionTitle}" đã nhận được bid đầu tiên: ${formatPrice(data.amount)}`,
         priority: 'high'
     },
@@ -85,7 +109,7 @@ const NOTIFICATION_TEMPLATES = {
     },
 
     SELLER_AUCTION_SOLD: {
-        title: '🎉 Auction đã bán thành công!',
+        title: 'Auction đã bán thành công!',
         message: (data) => `"${data.auctionTitle}" đã bán với giá ${formatPrice(data.amount)} cho ${data.bidderName}`,
         priority: 'high'
     },

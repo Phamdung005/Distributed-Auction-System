@@ -25,132 +25,55 @@ class PubSubService {
         await this.subscriber.subscribe('auction:started', this.handleAuctionStarted.bind(this));
         await this.subscriber.subscribe('auction:starting-soon', this.handleAuctionStartingSoon.bind(this));
         await this.subscriber.subscribe('auction:ending-soon', this.handleAuctionEndingSoon.bind(this));
+        await this.subscriber.subscribe('auction:registration:approved', this.handleRegistrationApproved.bind(this));
+        await this.subscriber.subscribe('payment:deposit:refunded', this.handleDepositRefunded.bind(this));
+        await this.subscriber.subscribe('payment:deposit:completed', this.handleWalletDeposit.bind(this));
+        await this.subscriber.subscribe('payment:auction:paid', this.handleAuctionPaid.bind(this));
 
         console.log('✅ Redis Pub/Sub subscriber initialized');
+        console.log('📡 Subscribed to channels: auction:bid:placed, auction:ended, payment:deposit:refunded, payment:auction:paid, etc.');
     }
 
+    // ... (intermediate code) ...
+
     /**
-     * Handle bid placed event
+     * Handle auction payment successful event
      */
-    async handleBidPlaced(message) {
+    async handleAuctionPaid(message) {
         try {
-            const bidData = JSON.parse(message);
-            console.log('📢 Bid placed event received:', bidData);
+            const data = JSON.parse(message);
+            console.log('📢 Auction paid event received:', JSON.stringify(data));
 
-            // Create notifications
-            const notifications = await notificationService.handleBidPlaced(bidData);
+            const notification = await notificationService.handleAuctionPaymentSuccessful(data);
+            console.log('✅ Notification created for payment:', notification?._id);
 
-            // Send real-time notifications
-            notifications.forEach(notification => {
-                sendNotificationToUser(notification.userId, notification);
-            });
+            if (notification) {
+                sendNotificationToUser(data.userId, notification);
+            }
 
         } catch (error) {
-            console.error('Error handling bid placed:', error);
+            console.error('Error handling auction payment:', error);
         }
     }
 
     /**
-     * Handle auction ended event
+     * Handle wallet deposit event
      */
-    async handleAuctionEnded(message) {
+    async handleWalletDeposit(message) {
         try {
-            const auctionData = JSON.parse(message);
-            console.log('📢 Auction ended event received:', auctionData);
+            const data = JSON.parse(message);
+            console.log('Wallet deposit event received:', JSON.stringify(data));
 
-            // Create notifications
-            const notifications = await notificationService.handleAuctionEnded(auctionData);
+            const notification = await notificationService.handleWalletDeposit(data);
+            console.log('Notification created for deposit:', notification?._id);
 
-            // Send real-time notifications
-            notifications.forEach(notification => {
-                sendNotificationToUser(notification.userId, notification);
-            });
-
-        } catch (error) {
-            console.error('Error handling auction ended:', error);
-        }
-    }
-
-    /**
-     * Handle auction started event
-     */
-    async handleAuctionStarted(message) {
-        try {
-            const auctionData = JSON.parse(message);
-            console.log('📢 Auction started event received:', auctionData);
-
-            // Create notifications for watchers/bidders
-            // Implementation can be added later
-
-        } catch (error) {
-            console.error('Error handling auction started:', error);
-        }
-    }
-
-    /**
-     * Handle auction starting soon event (from auction-service scheduler)
-     */
-    async handleAuctionStartingSoon(message) {
-        try {
-            const { auctionId, auctionTitle, sellerId } = JSON.parse(message);
-            console.log('📢 Auction starting soon:', auctionTitle);
-
-            if (sellerId) {
-                const notification = await notificationService.createNotification({
-                    userId: sellerId,
-                    userRole: 'seller',
-                    type: 'seller_auction_starting_soon',
-                    notificationData: { auctionId, auctionTitle }
-                });
-
-                sendNotificationToUser(sellerId, notification);
+            if (notification) {
+                console.log(`Broadcasting to user ${data.userId}`);
+                sendNotificationToUser(data.userId, notification);
             }
 
         } catch (error) {
-            console.error('Error handling auction starting soon:', error);
-        }
-    }
-
-    /**
-     * Handle auction ending soon event (from auction-service scheduler)
-     */
-    async handleAuctionEndingSoon(message) {
-        try {
-            const { auctionId, auctionTitle, sellerId, bidderIds, currentPrice } = JSON.parse(message);
-            console.log('📢 Auction ending soon:', auctionTitle);
-
-            const notifications = [];
-
-            // Notify seller
-            if (sellerId) {
-                notifications.push({
-                    userId: sellerId,
-                    userRole: 'seller',
-                    type: 'seller_auction_ending_soon',
-                    notificationData: { auctionId, auctionTitle, amount: currentPrice }
-                });
-            }
-
-            // Notify bidders
-            if (bidderIds && bidderIds.length > 0) {
-                bidderIds.forEach(bidderId => {
-                    notifications.push({
-                        userId: bidderId,
-                        userRole: 'bidder',
-                        type: 'auction_ending_soon',
-                        notificationData: { auctionId, auctionTitle }
-                    });
-                });
-            }
-
-            // Create and send all notifications
-            for (const notifData of notifications) {
-                const notification = await notificationService.createNotification(notifData);
-                sendNotificationToUser(notifData.userId, notification);
-            }
-
-        } catch (error) {
-            console.error('Error handling auction ending soon:', error);
+            console.error('Error handling wallet deposit:', error);
         }
     }
 }

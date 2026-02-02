@@ -73,11 +73,11 @@ const WalletPage = () => {
     const handleTestDeposit = async () => {
         try {
             setLoading(true);
-            const amount = 1000000000; 
+            const amount = 1000000000;
             const response = await walletApi.depositFunds(amount, 'wallet', { description: 'Test deposit 1 billion' });
 
             if (response.success) {
-                toast.success('Đã nạp 1 tỷ VND vào tài khoản (Test)');
+                // toast.success('Đã nạp 1 tỷ VND vào tài khoản (Test)');
                 await Promise.all([loadWalletInfo(), loadTransactions()]);
             } else {
                 toast.error(response.message);

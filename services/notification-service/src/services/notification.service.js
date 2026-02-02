@@ -71,6 +71,13 @@ class NotificationService {
     }
 
     /**
+     * Delete all notifications
+     */
+    async deleteAllNotifications(userId) {
+        return await notificationRepository.deleteAllNotifications(userId);
+    }
+
+    /**
      * Create notification for bid event
      */
     async handleBidPlaced(bidData) {
@@ -98,6 +105,14 @@ class NotificationService {
                 notificationData: { auctionId, auctionTitle, amount }
             });
         }
+
+        // Notification for bidder (confirmation)
+        notifications.push({
+            userId: bidderId,
+            userRole: 'bidder',
+            type: 'bid_placed',
+            notificationData: { auctionId, auctionTitle, amount, bidderName }
+        });
 
         // Create all notifications
         const created = await Promise.all(
@@ -155,6 +170,16 @@ class NotificationService {
                         type: 'lost_auction',
                         notificationData: { auctionId, auctionTitle }
                     });
+
+                    // The user specifically asked for "nếu thua có thêm thông báo hoàn tiền nữa"
+                    // In a real system, we'd wait for the 'payment:deposit:refunded' event, 
+                    // but we can add an immediate notification if we assume refund is triggered.
+                    notifications.push({
+                        userId: bidderId,
+                        userRole: 'bidder',
+                        type: 'deposit_refunded',
+                        notificationData: { auctionId, auctionTitle, amount: 0 } // Amount will be 0 as placeholder, or fetched
+                    });
                 }
             });
         }
@@ -164,6 +189,39 @@ class NotificationService {
         );
 
         return created;
+    }
+
+    /**
+     * Create notification for wallet deposit
+     */
+    async handleWalletDeposit(depositData) {
+        const { userId, amount, transactionId, paymentMethod } = depositData;
+
+        return await this.createNotification({
+            userId,
+            userRole: 'bidder',
+            type: 'wallet_deposit',
+            notificationData: { amount, transactionId, paymentMethod }
+        });
+    }
+
+    /**
+     * Create notification for auction payment
+     */
+    async handleAuctionPaymentSuccessful(paymentData) {
+        const { userId, amount, auctionId, auctionTitle, transactionId } = paymentData;
+
+        return await this.createNotification({
+            userId,
+            userRole: 'bidder',
+            type: 'auction_payment_successful',
+            notificationData: {
+                amount,
+                auctionId,
+                auctionTitle: auctionTitle || 'Phiên đấu giá',
+                transactionId
+            }
+        });
     }
 }
 

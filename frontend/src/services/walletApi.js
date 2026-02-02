@@ -152,6 +152,25 @@ class WalletApi {
             throw error.response?.data || { success: false, message: 'Lỗi khi rút tiền' };
         }
     }
+
+    /**
+     * Thanh toán cho người thắng đấu giá
+     * @param {Object} data - { auctionId, finalPrice }
+     * @returns {Promise<Object>}
+     */
+    async payAuction(data) {
+        try {
+            const response = await axios.post(
+                `${PAYMENT_SERVICE_URL}/api/wallet/pay-auction`,
+                data,
+                this.getAuthHeader()
+            );
+            return response.data;
+        } catch (error) {
+            console.error('Error paying auction:', error);
+            throw error.response?.data || { success: false, message: 'Lỗi khi thanh toán đấu giá' };
+        }
+    }
 }
 
 export default new WalletApi();

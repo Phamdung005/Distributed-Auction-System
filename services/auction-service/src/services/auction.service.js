@@ -168,6 +168,39 @@ class AuctionService {
     }
 
     /**
+     * Cập nhật giá auction (Internal)
+     * @param {string} auctionId
+     * @param {Object} updateData
+     * @returns {Promise<Object>}
+     */
+    async updatePrice(auctionId, updateData) {
+        const auction = await auctionRepository.getAuctionById(auctionId);
+
+        if (!auction) {
+            throw new Error('Auction không tồn tại');
+        }
+
+        // Construct MongoDB update operation
+        const updateOp = {};
+
+        if (updateData.currentPrice !== undefined) {
+            updateOp.$set = { currentPrice: updateData.currentPrice };
+        }
+
+        if (updateData.totalBids !== undefined) {
+            updateOp.$inc = { totalBids: updateData.totalBids };
+        }
+
+        if (updateData.winner !== undefined) {
+            updateOp.$set.winner = updateData.winner;
+        }
+
+        // We pass the raw update operator to repository which passes it to findByIdAndUpdate
+        const updated = await auctionRepository.updateAuction(auctionId, updateOp);
+        return this._formatAuction(updated);
+    }
+
+    /**
      * Xóa auction
      * @param {string} auctionId
      * @param {string} sellerId
@@ -219,10 +252,6 @@ class AuctionService {
         return this._formatAuction(updated);
     }
 
-    /**
-     * Auto-update auction status based on current time
-     * @private
-     */
     async _updateAuctionStatus(auction) {
         const now = new Date();
         const startTime = new Date(auction.startTime);
@@ -241,8 +270,25 @@ class AuctionService {
 
         // Update status if changed
         if (newStatus !== auction.status) {
+            // Use findByIdAndUpdate to ensure atomic update
             await auctionRepository.updateAuction(auction._id, { status: newStatus });
             auction.status = newStatus;
+
+            // If auction ended, publish event for downstream services (Order, Payment)
+            if (newStatus === 'ended') {
+                try {
+                    const { createRedisClient } = require('shared/database/redis');
+                    const redisPublisher = await createRedisClient(process.env.REDIS_URL);
+
+                    const payload = JSON.stringify(auction);
+                    await redisPublisher.publish('auction:ended', payload);
+                    console.log(`📡 Published auction.ended event for auction ${auction._id} (Winner: ${auction.winner ? auction.winner : 'None'})`);
+
+                    await redisPublisher.quit();
+                } catch (error) {
+                    console.error('❌ Failed to publish auction.ended event:', error);
+                }
+            }
         }
     }
 

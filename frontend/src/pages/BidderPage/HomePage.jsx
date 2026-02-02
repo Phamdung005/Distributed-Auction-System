@@ -3,25 +3,35 @@ import { Link } from 'react-router-dom';
 import { auctionAPI } from '../../services/api';
 
 const HomePage = () => {
+  const [hotAuctions, setHotAuctions] = useState([]);
   const [activeAuctions, setActiveAuctions] = useState([]);
   const [upcomingAuctions, setUpcomingAuctions] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [heroAuction, setHeroAuction] = useState(null);
 
   useEffect(() => {
     const fetchData = async () => {
       try {
-        const [activeRes, upcomingRes] = await Promise.all([
-          auctionAPI.getActiveAuctions({ page: 1, limit: 4 }),
-          auctionAPI.getAuctions({ page: 1, limit: 3, status: 'pending' }) // Assuming 'pending' is the status for upcoming
+        const [hotRes, activeRes, upcomingRes] = await Promise.all([
+          auctionAPI.getAuctions({ page: 1, limit: 4, sort: '-viewCount', status: 'active' }),
+          auctionAPI.getActiveAuctions({ page: 1, limit: 8, sort: '-createdAt' }),
+          auctionAPI.getAuctions({ page: 1, limit: 3, sort: 'startTime', status: 'pending' })
         ]);
 
-        setActiveAuctions(activeRes.data?.data?.auctions || []);
+        const hot = hotRes.data?.data?.auctions || [];
+        const active = activeRes.data?.data?.auctions || [];
+        const upcoming = upcomingRes.data?.data?.auctions || [];
 
-        if (upcomingRes.data?.data?.auctions) {
-          setUpcomingAuctions(upcomingRes.data.data.auctions);
+
+        setHotAuctions(hot);
+        if (hot.length > 0) {
+          setHeroAuction(hot[0]);
         }
+
+        setActiveAuctions(active);
+        setUpcomingAuctions(upcoming);
       } catch (error) {
-        console.error('Error fetching homepage data:', error);
+
       } finally {
         setLoading(false);
       }
@@ -30,67 +40,153 @@ const HomePage = () => {
     fetchData();
   }, []);
 
+  // Format currency
+  const formatCurrency = (amount) => {
+    return new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(amount);
+  };
+
+  // Calculate time remaining (simple version for display)
+  const getTimeRemaining = (endTime) => {
+    const total = Date.parse(endTime) - Date.parse(new Date());
+    if (total <= 0) return "Finished";
+    const hours = Math.floor((total / (1000 * 60 * 60)));
+    const minutes = Math.floor((total / 1000 / 60) % 60);
+    return `${hours}h ${minutes}m`;
+  };
+
+  if (loading) {
+    return (
+      <div className="w-full flex items-center justify-center min-h-screen">
+        <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-[#f26c0d]"></div>
+      </div>
+    );
+  }
+
   return (
     <main className="w-full flex flex-col min-w-0">
-      {/* Hero Section */}
-      <div className="relative w-full overflow-hidden bg-[#1c130d] rounded-xl my-6">
-        <div className="absolute inset-0 bg-gradient-to-r from-black/80 via-black/40 to-transparent z-10"></div>
-        <div
-          className="h-[480px] w-full bg-cover bg-center"
-          style={{ backgroundImage: "url('https://lh3.googleusercontent.com/aida-public/AB6AXuB-AbqajDCQX7o5jQRIv_yp4wBxOOHlakS5HmUeWK4KRxInsyz9Z3jnhjNv2Ck3BnPDNUsmz-YBzNffUAse0c_a1sf9EpY5UvIZNBUH2kgdaJalof6LPeGXHcEXQtJLy_TwyWiPvAFvxeAyOxRZCxuEc2w2jiZaOI_90veWICVYLZ_saRJKg0YpvQweKV4sz_i2drzbPvXEwk5voxWZgp5qTvx8BP22zw4HuTOdJFvldHr_odtVfyfJUjXbXWx0YkQQUV_gFiEGfD2W')" }}
-        ></div>
-        <div className="absolute inset-0 z-20 flex flex-col justify-center items-start px-4 md:px-8 max-w-[1440px] mx-auto">
-          <span className="inline-flex items-center gap-1.5 rounded-full bg-orange-500/90 px-4 py-1.5 text-xs font-bold text-white mb-6 uppercase tracking-wide backdrop-blur-sm">
-            <span className="h-2 w-2 rounded-full bg-white animate-pulse"></span>
-            Featured Auction
-          </span>
-          <h1 className="text-4xl sm:text-6xl font-black text-white leading-tight mb-4 max-w-3xl drop-shadow-lg">
-            Exclusive Antique Watch Collection
-          </h1>
-          <p className="text-gray-200 text-lg sm:text-xl mb-8 max-w-2xl font-medium drop-shadow-sm leading-relaxed">
-            Rare 19th-century timepieces ending soon. Don't miss your chance to own a piece of history.
-          </p>
-          <div className="flex flex-wrap items-center gap-4">
-            <div className="flex items-center gap-3 bg-white/10 backdrop-blur-md text-white px-5 py-3 rounded-xl border border-white/20">
-              <span className="material-symbols-outlined text-orange-500 text-[24px]">timer</span>
-              <div>
-                <span className="text-xs uppercase text-gray-300 font-bold tracking-wider block">Time Left</span>
-                <span className="font-mono text-xl font-bold">02:14:55</span>
+      {/* Hero Section - displaying the #1 Hot Auction */}
+      {heroAuction && (
+        <div className="relative w-full overflow-hidden bg-[#1c130d] rounded-xl my-6 group">
+          <div className="absolute inset-0 bg-gradient-to-r from-black/90 via-black/50 to-transparent z-10"></div>
+          <div
+            className="h-[480px] w-full bg-cover bg-center transition-transform duration-700 group-hover:scale-105"
+            style={{ backgroundImage: `url('${heroAuction.images?.[0] || 'https://via.placeholder.com/1200x600'}')` }}
+          ></div>
+          <div className="absolute inset-0 z-20 flex flex-col justify-center items-start px-4 md:px-12 max-w-[1440px] mx-auto">
+            <span className="inline-flex items-center gap-1.5 rounded-full bg-orange-500/90 px-4 py-1.5 text-xs font-bold text-white mb-6 uppercase tracking-wide backdrop-blur-sm shadow-lg shadow-orange-500/20">
+              <span className="h-2 w-2 rounded-full bg-white animate-pulse"></span>
+              Featured Auction
+            </span>
+            <h1 className="text-4xl sm:text-6xl font-black text-white leading-tight mb-4 max-w-3xl drop-shadow-2xl line-clamp-2">
+              {heroAuction.title}
+            </h1>
+            <p className="text-gray-200 text-lg sm:text-xl mb-8 max-w-2xl font-medium drop-shadow-md leading-relaxed line-clamp-2">
+              {heroAuction.description}
+            </p>
+            <div className="flex flex-wrap items-center gap-6">
+              <div className="flex items-center gap-4 bg-white/10 backdrop-blur-md text-white px-6 py-3.5 rounded-2xl border border-white/20 shadow-xl">
+                <span className="material-symbols-outlined text-orange-500 text-[28px]">timer</span>
+                <div>
+                  <span className="text-xs uppercase text-gray-300 font-bold tracking-wider block mb-0.5">Time Left</span>
+                  <span className="font-mono text-xl font-bold">{getTimeRemaining(heroAuction.endTime)}</span>
+                </div>
+              </div>
+              <div className="flex items-center gap-4 bg-white/10 backdrop-blur-md text-white px-6 py-3.5 rounded-2xl border border-white/20 shadow-xl">
+                <span className="material-symbols-outlined text-green-500 text-[28px]">payments</span>
+                <div>
+                  <span className="text-xs uppercase text-gray-300 font-bold tracking-wider block mb-0.5">Current Bid</span>
+                  <span className="font-mono text-xl font-bold">{formatCurrency(heroAuction.currentPrice || heroAuction.startPrice)}</span>
+                </div>
               </div>
             </div>
-            <button className="bg-orange-600 hover:bg-orange-700 text-white px-8 py-3.5 rounded-xl font-bold text-lg transition-all hover:shadow-lg hover:shadow-orange-500/30 transform hover:-translate-y-0.5">
-              Place Your Bid
-            </button>
+            <div className="mt-8">
+              <Link to={`/auction/${heroAuction.id}`} className="bg-[#f26c0d] hover:bg-orange-600 text-white px-10 py-4 rounded-xl font-bold text-lg transition-all hover:shadow-lg hover:shadow-orange-500/30 transform hover:-translate-y-1 inline-block">
+                Place Your Bid
+              </Link>
+            </div>
           </div>
         </div>
-      </div>
+      )}
 
-      {/* Hot Products Section */}
-      <section className="max-w-[1440px] mx-auto w-full py-8 md:py-16">
+      {/* Hot Auctions Section - Most Viewed */}
+      <section className="max-w-[1440px] mx-auto w-full py-12">
         <div className="flex items-center justify-between mb-8">
           <div>
             <h2 className="text-3xl font-bold text-[#1c130d] flex items-center gap-3">
-              Hot Products
-              <span className="material-symbols-outlined text-red-500">local_fire_department</span>
+              Hot Auctions
+              <span className="material-symbols-outlined text-red-500 animate-bounce">local_fire_department</span>
             </h2>
-            <p className="text-[#9c6c49] mt-2 text-lg">Most active auctions happening right now.</p>
+            <p className="text-[#9c6c49] mt-2 text-lg">Most viewed auctions right now.</p>
           </div>
-          <Link to="/auction-list" className="hidden sm:flex items-center text-orange-600 font-bold hover:underline gap-1">
-            View All Live Auctions <span className="material-symbols-outlined">arrow_forward</span>
+        </div>
+
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+          {hotAuctions.length > 0 ? (
+            hotAuctions.map((auction) => (
+              <div key={auction.id} className="group bg-white rounded-xl overflow-hidden border border-[#e5e7eb] hover:shadow-xl hover:shadow-gray-200/50 transition-all duration-300 flex flex-col h-full transform hover:-translate-y-1">
+                <div className="relative aspect-[4/3] overflow-hidden bg-gray-100">
+                  <div className="absolute top-3 left-3 z-10 flex gap-2">
+                    {/* View count removed as requested */}
+                  </div>
+                  <div
+                    className="w-full h-full bg-cover bg-center group-hover:scale-110 transition-transform duration-500"
+                    style={{ backgroundImage: `url('${auction.images?.[0] || 'https://via.placeholder.com/400x300'}')` }}
+                  ></div>
+                  <div className="absolute inset-0 bg-black/0 group-hover:bg-black/10 transition-colors duration-300"></div>
+                </div>
+                <div className="p-5 flex flex-col flex-1">
+                  <div className="text-xs font-bold text-orange-600 mb-2 uppercase tracking-wide">{auction.category}</div>
+                  <h3 className="font-bold text-lg leading-tight text-[#1c130d] line-clamp-2 mb-3 h-[48px]">{auction.title}</h3>
+
+                  <div className="grid grid-cols-2 gap-4 mb-4">
+                    <div>
+                      <p className="text-xs text-gray-500 mb-0.5">Current Price</p>
+                      <p className="font-bold text-[#1c130d]">{formatCurrency(auction.currentPrice || auction.startPrice)}</p>
+                    </div>
+                    <div>
+                      <p className="text-xs text-gray-500 mb-0.5">Time Left</p>
+                      <p className="font-bold text-orange-600">{getTimeRemaining(auction.endTime)}</p>
+                    </div>
+                  </div>
+
+                  <Link to={`/auction/${auction.id}`} className="mt-auto block w-full bg-gray-50 hover:bg-[#1c130d] hover:text-white text-[#1c130d] text-center py-3 rounded-lg font-bold text-sm transition-all duration-300 border border-gray-200 hover:border-transparent">
+                    View Details
+                  </Link>
+                </div>
+              </div>
+            ))
+          ) : (
+            <div className="col-span-4 text-center py-16 bg-gray-50 rounded-xl border border-dashed border-gray-300">
+              <span className="material-symbols-outlined text-gray-400 text-6xl mb-4">sentiment_dissatisfied</span>
+              <p className="text-gray-500 text-lg">No hot auctions found.</p>
+            </div>
+          )}
+        </div>
+      </section>
+
+      {/* Live Auctions Section */}
+      <section className="max-w-[1440px] mx-auto w-full py-12 border-t border-gray-100">
+        <div className="flex items-center justify-between mb-8">
+          <div>
+            <h2 className="text-3xl font-bold text-[#1c130d] flex items-center gap-3">
+              Live Auctions
+              <span className="material-symbols-outlined text-green-500">sensors</span>
+            </h2>
+            <p className="text-[#9c6c49] mt-2 text-lg">Happening right now. Bid before it's too late!</p>
+          </div>
+          <Link to="/auction-list" className="hidden sm:flex items-center text-orange-600 font-bold hover:underline gap-1 group">
+            View All Live Auctions
+            <span className="material-symbols-outlined group-hover:translate-x-1 transition-transform">arrow_forward</span>
           </Link>
         </div>
 
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-          {loading ? (
-            [1, 2, 3, 4].map((i) => (
-              <div key={i} className="animate-pulse bg-gray-200 h-[380px] rounded-xl"></div>
-            ))
-          ) : activeAuctions.length > 0 ? (
+          {activeAuctions.length > 0 ? (
             activeAuctions.map((auction) => (
-              <div key={auction.id} className="group bg-white rounded-xl overflow-hidden border border-[#e5e7eb] hover:shadow-xl hover:shadow-gray-200/50 transition-all duration-300 flex flex-col">
+              <div key={auction.id} className="group bg-white rounded-xl overflow-hidden border border-[#e5e7eb] hover:shadow-xl hover:shadow-gray-200/50 transition-all duration-300 flex flex-col h-full">
                 <div className="relative aspect-[4/3] overflow-hidden bg-gray-100">
                   <div className="absolute top-3 left-3 z-10 flex gap-2">
-                    <span className="bg-red-500 text-white text-[10px] font-bold px-2 py-1 rounded shadow-sm flex items-center gap-1">LIVE</span>
+                    <span className="bg-green-600 text-white text-[10px] font-bold px-2 py-1 rounded shadow-sm flex items-center gap-1 animate-pulse">LIVE</span>
                   </div>
                   <div
                     className="w-full h-full bg-cover bg-center group-hover:scale-110 transition-transform duration-500"
@@ -100,42 +196,36 @@ const HomePage = () => {
                 <div className="p-4 flex flex-col flex-1">
                   <h3 className="font-bold text-lg leading-tight text-[#1c130d] line-clamp-1 mb-1">{auction.title}</h3>
                   <div className="flex items-center gap-2 text-xs text-[#9c6c49] mb-4">
-                    <span>{auction.category || 'General'}</span> • <span>{auction.totalBids || 0} Bids</span>
+                    <span>{auction.category}</span> • <span>{auction.totalBids || 0} Bids</span>
                   </div>
                   <div className="mt-auto flex justify-between items-end">
                     <div>
                       <p className="text-xs text-gray-500 mb-0.5">Current Bid</p>
-                      <p className="text-xl font-black text-orange-600">{(auction.currentPrice || auction.startingPrice)?.toLocaleString('vi-VN')} VND</p>
+                      <p className="text-xl font-black text-orange-600">{formatCurrency(auction.currentPrice || auction.startPrice)}</p>
                     </div>
                   </div>
-                  <Link to={`/auction/${auction.id}`} className="mt-4 block w-full bg-orange-100 hover:bg-orange-200 text-orange-700 text-center py-2 rounded-lg font-bold text-sm transition-colors">
+                  <Link to={`/auction/${auction.id}`} className="mt-4 block w-full bg-orange-50 hover:bg-orange-100 text-orange-600 text-center py-2.5 rounded-lg font-bold text-sm transition-colors border border-orange-100">
                     Bid Now
                   </Link>
                 </div>
               </div>
             ))
           ) : (
-            <div className="col-span-4 text-center py-10 text-gray-500">No active auctions right now.</div>
+            <div className="col-span-4 text-center py-12 text-gray-500">No active auctions right now.</div>
           )}
-        </div>
-
-        <div className="mt-8 text-center sm:hidden">
-          <Link to="/auction-list" className="inline-flex items-center text-orange-600 font-bold hover:underline gap-1">
-            View All Live Auctions <span className="material-symbols-outlined">arrow_forward</span>
-          </Link>
         </div>
       </section>
 
       {/* Why Choose Section */}
-      <section className="bg-white border-y border-[#e5e7eb] py-20">
-        <div className="max-w-[1440px] mx-auto w-full">
+      <section className="bg-[#f8f7f5] py-20 my-8 rounded-3xl mx-4 lg:mx-0">
+        <div className="max-w-[1440px] mx-auto w-full px-4">
           <div className="text-center max-w-2xl mx-auto mb-16">
             <h2 className="text-3xl font-bold text-[#1c130d] mb-4">Why Choose BidMaster?</h2>
             <p className="text-gray-500">Experience the most secure, transparent, and exciting auction platform trusted by collectors worldwide.</p>
           </div>
           <div className="grid grid-cols-1 md:grid-cols-3 gap-12 text-center">
-            <div className="flex flex-col items-center gap-4">
-              <div className="size-20 bg-orange-50 rounded-2xl flex items-center justify-center text-orange-600 mb-2">
+            <div className="flex flex-col items-center gap-4 group">
+              <div className="size-20 bg-white rounded-2xl flex items-center justify-center text-orange-600 mb-2 shadow-sm group-hover:scale-110 transition-transform duration-300">
                 <span className="material-symbols-outlined text-[40px]">security</span>
               </div>
               <h3 className="text-xl font-bold text-[#1c130d]">Secure Transactions</h3>
@@ -143,8 +233,8 @@ const HomePage = () => {
                 Every bid and transaction is protected by bank-grade security protocols. We ensure your funds and items are safe.
               </p>
             </div>
-            <div className="flex flex-col items-center gap-4">
-              <div className="size-20 bg-orange-50 rounded-2xl flex items-center justify-center text-orange-600 mb-2">
+            <div className="flex flex-col items-center gap-4 group">
+              <div className="size-20 bg-white rounded-2xl flex items-center justify-center text-orange-600 mb-2 shadow-sm group-hover:scale-110 transition-transform duration-300">
                 <span className="material-symbols-outlined text-[40px]">verified</span>
               </div>
               <h3 className="text-xl font-bold text-[#1c130d]">Verified Sellers</h3>
@@ -152,8 +242,8 @@ const HomePage = () => {
                 We rigorously vet all sellers to guarantee the authenticity of items. Bid with confidence knowing who you're buying from.
               </p>
             </div>
-            <div className="flex flex-col items-center gap-4">
-              <div className="size-20 bg-orange-50 rounded-2xl flex items-center justify-center text-orange-600 mb-2">
+            <div className="flex flex-col items-center gap-4 group">
+              <div className="size-20 bg-white rounded-2xl flex items-center justify-center text-orange-600 mb-2 shadow-sm group-hover:scale-110 transition-transform duration-300">
                 <span className="material-symbols-outlined text-[40px]">gavel</span>
               </div>
               <h3 className="text-xl font-bold text-[#1c130d]">Fair Bidding System</h3>
@@ -175,18 +265,20 @@ const HomePage = () => {
             </h2>
             <p className="text-[#9c6c49] mt-2 text-lg">Preview and register for future events.</p>
           </div>
-          <Link to="/upcoming" className="hidden sm:flex items-center text-orange-600 font-bold hover:underline gap-1">
-            See Calendar <span className="material-symbols-outlined">arrow_forward</span>
+          <Link to="/upcoming" className="hidden sm:flex items-center text-orange-600 font-bold hover:underline gap-1 group">
+            See Calendar <span className="material-symbols-outlined group-hover:translate-x-1 transition-transform">arrow_forward</span>
           </Link>
         </div>
 
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
           {upcomingAuctions.length > 0 ? (
             upcomingAuctions.map(auction => (
-              <div key={auction.id} className="group bg-white rounded-xl overflow-hidden border border-[#e5e7eb] hover:shadow-xl hover:shadow-gray-200/50 transition-all duration-300 flex flex-col">
+              <div key={auction.id} className="group bg-white rounded-xl overflow-hidden border border-[#e5e7eb] hover:shadow-xl hover:shadow-gray-200/50 transition-all duration-300 flex flex-col h-full">
                 <div className="relative aspect-[16/9] overflow-hidden bg-gray-100">
                   <div className="absolute top-3 left-3 z-10 flex gap-2">
-                    <span className="bg-blue-600 text-white text-[10px] font-bold px-2 py-1 rounded shadow-sm uppercase tracking-wide">Upcoming</span>
+                    <span className="bg-blue-600 text-white text-[10px] font-bold px-2 py-1 rounded shadow-sm uppercase tracking-wide">
+                      {new Date(auction.startTime).toLocaleDateString('en-GB')}
+                    </span>
                   </div>
                   <div
                     className="w-full h-full bg-cover bg-center group-hover:scale-110 transition-transform duration-500"
@@ -194,65 +286,33 @@ const HomePage = () => {
                   ></div>
                   <div className="absolute inset-0 bg-black/40 group-hover:bg-black/20 transition-colors"></div>
                 </div>
-                <div className="p-6">
-                  <div className="text-sm text-orange-600 font-bold mb-2">{auction.category}</div>
-                  <h3 className="font-bold text-xl text-[#1c130d] mb-2 leading-tight">{auction.title}</h3>
+                <div className="p-6 flex flex-col flex-1">
+                  <div className="text-sm text-orange-600 font-bold mb-2 uppercase tracking-wide">{auction.category}</div>
+                  <h3 className="font-bold text-xl text-[#1c130d] mb-2 leading-tight line-clamp-2">{auction.title}</h3>
                   <p className="text-gray-500 text-sm mb-4 line-clamp-2">{auction.description}</p>
-                  <div className="flex items-center justify-between pt-4 border-t border-[#f4ece7]">
+                  <div className="mt-auto flex items-center justify-between pt-4 border-t border-[#f4ece7]">
                     <div className="text-sm font-medium text-gray-900">
-                      Starting: <span className="font-bold">{auction.startingPrice?.toLocaleString('vi-VN')} VND</span>
+                      Starting: <span className="font-bold">{formatCurrency(auction.startPrice)}</span>
                     </div>
-                    <button className="text-sm font-bold text-orange-600 border border-orange-600/30 hover:bg-orange-600 hover:text-white px-4 py-2 rounded-lg transition-all">
-                      Register Interest
-                    </button>
+                    <Link to={`/auction/${auction.id}`} className="text-sm font-bold text-orange-600 border border-orange-600/30 hover:bg-orange-600 hover:text-white px-4 py-2 rounded-lg transition-all">
+                      View Details
+                    </Link>
                   </div>
                 </div>
               </div>
             ))
           ) : (
-            // Static fallback for Upcoming if no data found
-            <>
-              <div className="group bg-white rounded-xl overflow-hidden border border-[#e5e7eb] hover:shadow-xl hover:shadow-gray-200/50 transition-all duration-300 flex flex-col">
-                <div className="relative aspect-[16/9] overflow-hidden bg-gray-100">
-                  <div className="absolute top-3 left-3 z-10 flex gap-2">
-                    <span className="bg-blue-600 text-white text-[10px] font-bold px-2 py-1 rounded shadow-sm uppercase tracking-wide">In 2 Days</span>
-                  </div>
-                  <div className="w-full h-full bg-cover bg-center group-hover:scale-110 transition-transform duration-500" style={{ backgroundImage: "url('https://lh3.googleusercontent.com/aida-public/AB6AXuC3lOhq_3Y6OrfAix1xjc_nb_LlR4TQDtxBQWydEaqI0T0ttRqz3C2fi6m7w3Vo3d8bGgxZKsGKUL09yr-qJdb1D5lPBNON3EbSNIj3Q6-J8NTdGK3m4bc-1iyG8kBDOa3S0zVKTmA-y0yszjlpwtiGwK65D1QCRwz_fUT2MGrx_eoDWlAUQlSEaY7kmWyOoIILUi8ROpGkxTeYNFgzXlMHVE7si1vpp4H-fCu2HvAPDpZnqm1UYA7YMjbkx_pphC1sJ0Yvz0njcCDA')" }}></div>
-                </div>
-                <div className="p-6">
-                  <div className="text-sm text-orange-600 font-bold mb-2">Real Estate</div>
-                  <h3 className="font-bold text-xl text-[#1c130d] mb-2 leading-tight">Sea View Villa, Da Nang Coastline</h3>
-                  <p className="text-gray-500 text-sm mb-4 line-clamp-2">A breathtaking modern villa overlooking the pristine beaches of Da Nang. Perfect for vacation or investment.</p>
-                  <div className="flex items-center justify-between pt-4 border-t border-[#f4ece7]">
-                    <div className="text-sm font-medium text-gray-900">Starting: <span className="font-bold">15.0B VND</span></div>
-                    <button className="text-sm font-bold text-orange-600 border border-orange-600/30 hover:bg-orange-600 hover:text-white px-4 py-2 rounded-lg transition-all">
-                      Register Interest
-                    </button>
-                  </div>
-                </div>
-              </div>
-
-              <div className="group bg-white rounded-xl overflow-hidden border border-[#e5e7eb] hover:shadow-xl hover:shadow-gray-200/50 transition-all duration-300 flex flex-col">
-                <div className="relative aspect-[16/9] overflow-hidden bg-gray-100">
-                  <div className="absolute top-3 left-3 z-10 flex gap-2">
-                    <span className="bg-blue-600 text-white text-[10px] font-bold px-2 py-1 rounded shadow-sm uppercase tracking-wide">In 5 Days</span>
-                  </div>
-                  <div className="w-full h-full bg-cover bg-center group-hover:scale-110 transition-transform duration-500" style={{ backgroundImage: "url('https://lh3.googleusercontent.com/aida-public/AB6AXuAYZabLZnfmJbiK4M603mKJ3uZOqqhqvstvcX2YhOKAmIsnhKQkmItUORFEDLvFNbgkIlpsuAy23VePWl3L9Rdlh1m01ItB-W3lkHwb0N3aTUbvweVqarahORGpeHaX0yKkBUkOF5hFIZ_j2xnerq0NUruvNYuv3MIwB2tibR22TqXlWPqRXv356szzQi94eqU_E4z_LSv8qSOmiKKK0-UruU5pdbnAfWjzyZuo0uTUR3e5e2JwiMAPFZWeGycHifeIJ1uaO9axmhVi')" }}></div>
-                </div>
-                <div className="p-6">
-                  <div className="text-sm text-orange-600 font-bold mb-2">Art & Antiques</div>
-                  <h3 className="font-bold text-xl text-[#1c130d] mb-2 leading-tight">Modern Abstract Collection</h3>
-                  <p className="text-gray-500 text-sm mb-4 line-clamp-2">Featuring "Urban Chaos" and other contemporary masterpieces by emerging Asian artists.</p>
-                  <div className="flex items-center justify-between pt-4 border-t border-[#f4ece7]">
-                    <div className="text-sm font-medium text-gray-900">Starting: <span className="font-bold">45.5M VND</span></div>
-                    <button className="text-sm font-bold text-orange-600 border border-orange-600/30 hover:bg-orange-600 hover:text-white px-4 py-2 rounded-lg transition-all">
-                      Register Interest
-                    </button>
-                  </div>
-                </div>
-              </div>
-            </>
+            <div className="col-span-3 text-center py-16 bg-gray-50 rounded-xl border border-dashed border-gray-300">
+              <span className="material-symbols-outlined text-gray-400 text-6xl mb-4">event_busy</span>
+              <p className="text-gray-500 text-lg">No upcoming auctions scheduled.</p>
+            </div>
           )}
+        </div>
+
+        <div className="mt-8 text-center sm:hidden">
+          <Link to="/upcoming" className="inline-flex items-center text-orange-600 font-bold hover:underline gap-1">
+            See Calendar <span className="material-symbols-outlined">arrow_forward</span>
+          </Link>
         </div>
       </section>
     </main>

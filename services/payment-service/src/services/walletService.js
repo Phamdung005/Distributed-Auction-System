@@ -81,6 +81,27 @@ class WalletService {
                 { completedAt: new Date() }
             );
 
+            // Publish event for notification service
+            try {
+                const { createRedisClient } = require('shared/database/redis');
+                const redisPublisher = await createRedisClient(process.env.REDIS_URL);
+
+                const eventData = {
+                    userId: userId,
+                    amount: amount,
+                    transactionId: transaction._id,
+                    paymentMethod: paymentMethod,
+                    timestamp: new Date().toISOString()
+                };
+
+                console.log(`🚀 Publishing payment:deposit:completed to Redis for user: ${userId}, amount: ${amount}`);
+                const result = await redisPublisher.publish('payment:deposit:completed', JSON.stringify(eventData));
+                console.log(`✅ Event published successfully to ${result} subscribers`);
+                await redisPublisher.quit();
+            } catch (redisError) {
+                console.error('❌ Failed to publish deposit event:', redisError);
+            }
+
             return {
                 success: true,
                 message: 'Nạp tiền thành công',
@@ -252,7 +273,7 @@ class WalletService {
      * @param {string} auctionId - ID của auction
      * @returns {Promise<Object>}
      */
-    async unfreezeFunds(userId, amount, auctionId) {
+    async unfreezeFunds(userId, amount, auctionId, auctionTitle) {
         // Removed transaction for standalone MongoDB support
         try {
             // Import Escrow model
@@ -288,6 +309,25 @@ class WalletService {
             // Update escrow status to refunded
             await escrow.refund(transaction._id);
 
+            // Publish event for notification service
+            try {
+                const { createRedisClient } = require('shared/database/redis');
+                const redisPublisher = await createRedisClient(process.env.REDIS_URL);
+
+                const eventData = {
+                    userId: userId,
+                    auctionId: auctionId,
+                    amount: amount,
+                    transactionId: transaction._id,
+                    auctionTitle: auctionTitle
+                };
+
+                await redisPublisher.publish('payment:deposit:refunded', JSON.stringify(eventData));
+                await redisPublisher.quit();
+            } catch (redisError) {
+                console.error('Failed to publish refund event:', redisError);
+            }
+
             return {
                 success: true,
                 message: 'Hoàn cọc thành công',
@@ -313,7 +353,7 @@ class WalletService {
      * @param {number} finalPrice - Giá cuối cùng của auction
      * @returns {Promise<Object>}
      */
-    async payAuctionWinner(userId, auctionId, finalPrice) {
+    async payAuctionWinner(userId, auctionId, finalPrice, auctionTitle) {
         try {
             // Import Escrow model
             const Escrow = require('../models/Escrow');
@@ -367,6 +407,29 @@ class WalletService {
 
             // 6. Release escrow (mark as used for payment)
             await escrow.release(transaction._id);
+
+            // 7. Publish event for Order Service
+            try {
+                const { createRedisClient } = require('shared/database/redis');
+                const redisPublisher = await createRedisClient(process.env.REDIS_URL);
+
+                const eventData = {
+                    auctionId: auctionId,
+                    userId: userId,
+                    finalPrice: finalPrice,
+                    transactionId: transaction._id,
+                    paymentMethod: 'wallet',
+                    timestamp: new Date().toISOString(),
+                    auctionTitle: auctionTitle,
+                    amount: finalPrice // Add amount for consistency with notification template
+                };
+
+                console.log(`🚀 Publishing payment:auction:paid to Redis for auction: ${auctionId}`);
+                await redisPublisher.publish('payment:auction:paid', JSON.stringify(eventData));
+                await redisPublisher.quit();
+            } catch (redisError) {
+                console.error('❌ Failed to publish payment event:', redisError);
+            }
 
             return {
                 success: true,
