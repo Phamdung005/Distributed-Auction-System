@@ -41,7 +41,8 @@ class AuthService {
         // Tạo tokens
         const accessToken = generateAccessToken({
             userId: user._id,
-            role: user.role
+            role: user.role,
+            fullName: user.fullName
         });
         const refreshToken = generateRefreshToken({
             userId: user._id
@@ -90,7 +91,8 @@ class AuthService {
         // Tạo tokens
         const accessToken = generateAccessToken({
             userId: user._id,
-            role: user.role
+            role: user.role,
+            fullName: user.fullName
         });
         const refreshToken = generateRefreshToken({
             userId: user._id
@@ -140,7 +142,8 @@ class AuthService {
             // Tạo access token mới
             const newAccessToken = generateAccessToken({
                 userId: user._id,
-                role: user.role
+                role: user.role,
+                fullName: user.fullName
             });
 
             return {

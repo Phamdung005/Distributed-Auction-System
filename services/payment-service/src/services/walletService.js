@@ -81,6 +81,27 @@ class WalletService {
                 { completedAt: new Date() }
             );
 
+            // Publish event for notification service
+            try {
+                const { createRedisClient } = require('shared/database/redis');
+                const redisPublisher = await createRedisClient(process.env.REDIS_URL);
+
+                const eventData = {
+                    userId: userId,
+                    amount: amount,
+                    transactionId: transaction._id,
+                    paymentMethod: paymentMethod,
+                    timestamp: new Date().toISOString()
+                };
+
+                console.log(`🚀 Publishing payment:deposit:completed to Redis for user: ${userId}, amount: ${amount}`);
+                const result = await redisPublisher.publish('payment:deposit:completed', JSON.stringify(eventData));
+                console.log(`✅ Event published successfully to ${result} subscribers`);
+                await redisPublisher.quit();
+            } catch (redisError) {
+                console.error('❌ Failed to publish deposit event:', redisError);
+            }
+
             return {
                 success: true,
                 message: 'Nạp tiền thành công',

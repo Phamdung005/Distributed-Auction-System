@@ -54,7 +54,10 @@ const setupNotificationSocket = (io) => {
  */
 const sendNotificationToUser = (userId, notification) => {
     if (global.notificationIO) {
+        console.log(`📡 Emitting notification:new to room user:${userId}`);
         global.notificationIO.to(`user:${userId}`).emit('notification:new', notification);
+    } else {
+        console.warn('⚠️ global.notificationIO not found, cannot send notification');
     }
 };
 

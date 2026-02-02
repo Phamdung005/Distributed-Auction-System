@@ -42,6 +42,7 @@ const AuctionDetailPage = () => {
   const [activeTab, setActiveTab] = useState('description');
   const [selectedImage, setSelectedImage] = useState(0);
   const [currentTime, setCurrentTime] = useState(new Date());
+  const [recentBids, setRecentBids] = useState([]);
 
   const [isRegistered, setIsRegistered] = useState(false);
   const [checkingRegistration, setCheckingRegistration] = useState(true);
@@ -111,7 +112,22 @@ const AuctionDetailPage = () => {
             currentPrice: data.amount,
             totalBids: prev.totalBids + 1
           }));
-          // toast.info(`Có bid mới: ${data.amount.toLocaleString('vi-VN')} ₫`);
+
+          // Update recent bids list
+          const newBid = {
+            bidderId: data.bidderId,
+            bidderName: data.bidderName,
+            amount: data.amount,
+            timestamp: data.timestamp || new Date().toISOString()
+          };
+
+          setRecentBids(prev => {
+            // Avoid duplicates
+            if (prev.some(b => b.amount === newBid.amount && b.bidderId === newBid.bidderId)) {
+              return prev;
+            }
+            return [newBid, ...prev].slice(0, 10);
+          });
         }
       };
 
@@ -171,6 +187,16 @@ const AuctionDetailPage = () => {
       setAuction(data);
       if (data) {
         setBidAmount(data.currentPrice + data.minBidIncrement);
+      }
+
+      // Fetch bid history from bidding service
+      try {
+        const historyRes = await biddingAPI.getBidHistory(id, 10);
+        if (historyRes.data.success) {
+          setRecentBids(historyRes.data.data.bids);
+        }
+      } catch (historyErr) {
+        console.error('Error fetching bid history:', historyErr);
       }
     } catch (error) {
       toast.error('Không thể tải thông tin đấu giá');
@@ -620,20 +646,21 @@ const AuctionDetailPage = () => {
                   )}
 
                   {/* Bid History Footer */}
-                  {auction.recentBids && auction.recentBids.length > 0 && (
-                    <div className="bg-[#f8f7f5] border-t border-[#e5ded9] -mx-6 -mb-6">
-                      <div className="p-4 border-b border-[#e5ded9] flex justify-between items-center">
-                        <h4 className="font-bold text-[#1c130d] text-sm">Lịch sử đặt giá</h4>
+                  <div className="bg-[#f8f7f5] border-t border-[#e5ded9] -mx-6 -mb-6">
+                    <div className="p-4 border-b border-[#e5ded9] flex justify-between items-center">
+                      <h4 className="font-bold text-[#1c130d] text-sm">Lịch sử đặt giá</h4>
+                      {recentBids.length > 0 && (
                         <button className="text-xs text-[#f26c0d] font-medium hover:underline">Xem tất cả</button>
-                      </div>
-                      <div className="max-h-48 overflow-y-auto">
+                      )}
+                    </div>
+                    <div className="max-h-48 overflow-y-auto">
+                      {recentBids && recentBids.length > 0 ? (
                         <table className="w-full text-sm text-left">
                           <tbody className="divide-y divide-[#e5ded9]">
-                            {auction.recentBids.slice(0, 5).map((bid, idx) => {
+                            {recentBids.slice(0, 10).map((bid, idx) => {
                               // Check if this bid is from the current user
-                              const isCurrentUserBid = user && bid.bidder &&
-                                (bid.bidder._id === user.id || bid.bidder.id === user.id ||
-                                  bid.bidder._id === user._id || bid.bidder.id === user._id);
+                              const bidderId = bid.bidderId || (bid.bidder && (bid.bidder._id || bid.bidder.id));
+                              const isCurrentUserBid = user && bidderId && (bidderId === user.id || bidderId === user._id);
 
                               return (
                                 <tr key={idx} className="bg-white hover:bg-gray-50 transition-colors">
@@ -644,20 +671,24 @@ const AuctionDetailPage = () => {
                                     {isCurrentUserBid ? (
                                       <span className="font-bold text-[#f26c0d]">Bạn</span>
                                     ) : (
-                                      bid.bidder?.fullName || 'Ẩn danh'
+                                      bid.bidderName || (bid.bidder && bid.bidder.fullName) || 'Người dùng'
                                     )}
                                   </td>
                                   <td className="px-4 py-3 text-right font-bold text-[#1c130d]">
-                                    {bid.amount?.toLocaleString('vi-VN')} ₫
+                                    {bid.amount?.toLocaleString('vi-VN') || bid.bidAmount?.toLocaleString('vi-VN')} ₫
                                   </td>
                                 </tr>
                               );
                             })}
                           </tbody>
                         </table>
-                      </div>
+                      ) : (
+                        <div className="p-8 text-center text-[#9c6c49] text-sm italic">
+                          Chưa có lượt đặt giá nào. Hãy là người đầu tiên!
+                        </div>
+                      )}
                     </div>
-                  )}
+                  </div>
                 </div>
               </div>
 

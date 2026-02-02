@@ -173,7 +173,8 @@ const initializeSocketHandlers = (io, redis) => {
                     auctionId,
                     socket.user.userId,
                     amount,
-                    socket.user.role
+                    socket.user.role,
+                    socket.user.fullName
                 );
 
                 // Gửi confirmation cho người bid

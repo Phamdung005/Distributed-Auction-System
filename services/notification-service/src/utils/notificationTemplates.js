@@ -65,6 +65,12 @@ const NOTIFICATION_TEMPLATES = {
         priority: 'low'
     },
 
+    WALLET_DEPOSIT: {
+        title: 'Nạp tiền thành công',
+        message: (data) => `Bạn đã nạp thành công ${formatPrice(data.amount)} vào ví.`,
+        priority: 'high'
+    },
+
     // ============ SELLER NOTIFICATIONS ============
     SELLER_NEW_BID: {
         title: '💰 Có người đặt giá vào auction của bạn',

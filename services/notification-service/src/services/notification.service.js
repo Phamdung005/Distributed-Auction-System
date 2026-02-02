@@ -190,6 +190,20 @@ class NotificationService {
 
         return created;
     }
+
+    /**
+     * Create notification for wallet deposit
+     */
+    async handleWalletDeposit(depositData) {
+        const { userId, amount, transactionId, paymentMethod } = depositData;
+
+        return await this.createNotification({
+            userId,
+            userRole: 'bidder',
+            type: 'wallet_deposit',
+            notificationData: { amount, transactionId, paymentMethod }
+        });
+    }
 }
 
 module.exports = new NotificationService();

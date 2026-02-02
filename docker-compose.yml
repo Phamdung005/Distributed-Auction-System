@@ -113,6 +113,11 @@ services:
     restart: always
     ports:
       - "3001:3001"
+    volumes:
+      - ./services/auth-service/src:/app/src
+      - ./services/auth-service/package.json:/app/package.json
+      - ./shared:/app/shared
+    command: node src/index.js
     environment:
       - NODE_ENV=production
       - PORT=3001

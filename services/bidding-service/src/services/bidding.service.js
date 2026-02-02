@@ -20,7 +20,7 @@ class BiddingService {
      * @param {number} bidAmount
      * @param {string} role - Role của user (phải là 'bidder')
      */
-    async placeBid(redis, auctionId, bidderId, bidAmount, role) {
+    async placeBid(redis, auctionId, bidderId, bidAmount, role, bidderName) {
         // Chắn chắn chỉ bidder mới được đặt giá
         if (role !== 'bidder') {
             throw new Error('Chỉ bidder mới được đặt giá');
@@ -115,6 +115,7 @@ class BiddingService {
                 score: Date.now(),
                 value: JSON.stringify({
                     bidderId,
+                    bidderName: bidderName || 'Người dùng',
                     amount: bidAmount,
                     timestamp: new Date().toISOString()
                 })
@@ -124,6 +125,7 @@ class BiddingService {
             await redis.publish('auction:bid:placed', JSON.stringify({
                 auctionId,
                 bidderId,
+                bidderName: bidderName || 'Người dùng',
                 amount: bidAmount,
                 auctionTitle: auction.title, // Add auction title for notification service
                 timestamp: new Date().toISOString()

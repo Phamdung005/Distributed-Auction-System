@@ -3,6 +3,7 @@ import { io } from 'socket.io-client';
 const SOCKET_URL = 'http://localhost:3003';
 
 let socket = null;
+let currentToken = null;
 
 // Global tracking of joined auctions to prevent duplicates
 const joinedAuctions = new Set();
@@ -13,11 +14,14 @@ const joinedAuctions = new Set();
  * @returns {Socket} socket instance
  */
 export const connectSocket = (token) => {
-    // If socket already exists and is connected, return it
-    if (socket?.connected) {
-        console.log('Socket already connected, reusing existing connection');
+    // If socket already exists and is connected, and token hasn't changed, return it
+    if (socket?.connected && currentToken === token) {
+        console.log('Socket already connected with same token, reusing existing connection');
         return socket;
     }
+
+    // Update current token
+    currentToken = token;
 
     // If socket exists but disconnected, disconnect it fully first
     if (socket) {

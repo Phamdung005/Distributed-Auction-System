@@ -27,6 +27,7 @@ class PubSubService {
         await this.subscriber.subscribe('auction:ending-soon', this.handleAuctionEndingSoon.bind(this));
         await this.subscriber.subscribe('auction:registration:approved', this.handleRegistrationApproved.bind(this));
         await this.subscriber.subscribe('payment:deposit:refunded', this.handleDepositRefunded.bind(this));
+        await this.subscriber.subscribe('payment:deposit:completed', this.handleWalletDeposit.bind(this));
 
         console.log('✅ Redis Pub/Sub subscriber initialized');
         console.log('📡 Subscribed to channels: auction:bid:placed, auction:ended, auction:registration:approved, payment:deposit:refunded, etc.');
@@ -234,6 +235,27 @@ class PubSubService {
 
         } catch (error) {
             console.error('Error handling deposit refunded:', error);
+        }
+    }
+
+    /**
+     * Handle wallet deposit event
+     */
+    async handleWalletDeposit(message) {
+        try {
+            const data = JSON.parse(message);
+            console.log('📢 Wallet deposit event received:', JSON.stringify(data));
+
+            const notification = await notificationService.handleWalletDeposit(data);
+            console.log('✅ Notification created for deposit:', notification?._id);
+
+            if (notification) {
+                console.log(`🔗 Broadcasting to user ${data.userId}`);
+                sendNotificationToUser(data.userId, notification);
+            }
+
+        } catch (error) {
+            console.error('Error handling wallet deposit:', error);
         }
     }
 }

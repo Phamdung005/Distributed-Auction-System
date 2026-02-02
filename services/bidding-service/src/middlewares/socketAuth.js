@@ -27,6 +27,7 @@ const authenticateSocket = (socket, next) => {
         socket.user = {
             userId: decoded.userId,
             role: decoded.role,
+            fullName: decoded.fullName || 'Người dùng',
             isAnonymous: false
         };
 
