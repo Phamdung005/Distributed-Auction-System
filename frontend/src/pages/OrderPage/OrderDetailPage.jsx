@@ -3,12 +3,15 @@ import { useParams, Link } from 'react-router-dom';
 import orderService from '../../services/order.service';
 import { useAuth } from '../../contexts/AuthContext';
 
+import walletApi from '../../services/walletApi';
+
 const OrderDetailPage = () => {
     const { id } = useParams();
     const { user: currentUser } = useAuth();
     const [order, setOrder] = useState(null);
     const [loading, setLoading] = useState(true);
     const [msgContent, setMsgContent] = useState('');
+    const [isPaying, setIsPaying] = useState(false);
     const messagesEndRef = useRef(null);
 
     useEffect(() => {
@@ -52,11 +55,46 @@ const OrderDetailPage = () => {
         }
     };
 
+    const handlePayment = async () => {
+        if (!window.confirm(`Bạn có chắc muốn thanh toán ${order.finalPrice.toLocaleString('vi-VN')} đ cho đơn hàng này?`)) return;
+
+        setIsPaying(true);
+        try {
+            // Check balance first (optional but good UX)
+            // Call payAuction API
+            // Note: order.auctionId is likely a string based on Order schema
+            const auctionId = typeof order.auctionId === 'object' ? order.auctionId._id : order.auctionId;
+
+            const result = await walletApi.payAuction({
+                auctionId: auctionId,
+                finalPrice: order.finalPrice
+            });
+
+            if (result.success) {
+                alert('Thanh toán thành công!');
+                fetchOrderDetails(); // Reload order to show Paid status
+            } else {
+                alert(result.message || 'Thanh toán thất bại');
+            }
+        } catch (error) {
+            console.error('Payment failed', error);
+            alert(error.response?.data?.message || 'Lỗi khi thanh toán: ' + error.message);
+        } finally {
+            setIsPaying(false);
+        }
+    };
+
     if (loading) return <div className="flex justify-center p-10"><div className="animate-spin rounded-full h-10 w-10 border-b-2 border-indigo-600"></div></div>;
     if (!order) return <div className="text-center p-10">Đơn hàng không tồn tại</div>;
 
     const isBuyer = currentUser && currentUser.id === order.buyerId;
     const otherPartyName = isBuyer ? 'Người bán' : 'Người mua';
+
+    // Helper to get auction details regardless of whether it's populated or snapshot
+    const auctionTitle = order.auctionDetails?.title || order.auctionId?.title || 'Unknown Product';
+    const auctionImage = order.auctionDetails?.image || (order.auctionId?.images?.[0]) || null;
+    const auctionEndTime = order.auctionDetails?.endTime || order.auctionId?.endTime;
+    const auctionIdVal = typeof order.auctionId === 'object' ? order.auctionId._id : order.auctionId;
 
     return (
         <div className="container mx-auto px-4 py-8 max-w-6xl">
@@ -91,12 +129,13 @@ const OrderDetailPage = () => {
 
                         {/* Action Buttons Placeholder */}
                         {isBuyer && order.status === 'pending_payment' && (
-                            <Link
-                                to="/wallet"
-                                className="block text-center w-full mt-6 bg-indigo-600 text-white py-2 rounded-md hover:bg-indigo-700 font-medium transition"
+                            <button
+                                onClick={handlePayment}
+                                disabled={isPaying}
+                                className={`block text-center w-full mt-6 bg-indigo-600 text-white py-2 rounded-md hover:bg-indigo-700 font-medium transition ${isPaying ? 'opacity-50 cursor-not-allowed' : ''}`}
                             >
-                                Thanh Toán Ngay
-                            </Link>
+                                {isPaying ? 'Đang xử lý...' : 'Thanh Toán Ngay'}
+                            </button>
                         )}
                         {!isBuyer && order.status === 'paid' && (
                             <button className="w-full mt-6 bg-blue-600 text-white py-2 rounded-md hover:bg-blue-700 font-medium transition">
@@ -110,15 +149,17 @@ const OrderDetailPage = () => {
                         <h3 className="font-semibold mb-3 text-gray-800">Sản phẩm đấu giá</h3>
                         <div className="flex gap-3">
                             <div className="h-20 w-20 bg-gray-100 rounded-md overflow-hidden flex-shrink-0">
-                                {order.auctionId?.images?.[0] && (
-                                    <img src={order.auctionId.images[0]} alt="" className="w-full h-full object-cover" />
+                                {auctionImage && (
+                                    <img src={auctionImage} alt="" className="w-full h-full object-cover" />
                                 )}
                             </div>
                             <div>
-                                <Link to={`/auctions/${order.auctionId?._id}`} className="text-indigo-600 hover:underline font-medium line-clamp-2">
-                                    {order.auctionId?.title || 'Unknown Product'}
+                                <Link to={`/auctions/${auctionIdVal}`} className="text-indigo-600 hover:underline font-medium line-clamp-2">
+                                    {auctionTitle}
                                 </Link>
-                                <p className="text-xs text-gray-500 mt-1">Kết thúc: {new Date(order.auctionId?.endTime).toLocaleDateString()}</p>
+                                <p className="text-xs text-gray-500 mt-1">
+                                    Kết thúc: {auctionEndTime ? new Date(auctionEndTime).toLocaleDateString() : 'Unknown'}
+                                </p>
                             </div>
                         </div>
                     </div>

@@ -649,9 +649,6 @@ const AuctionDetailPage = () => {
                   <div className="bg-[#f8f7f5] border-t border-[#e5ded9] -mx-6 -mb-6">
                     <div className="p-4 border-b border-[#e5ded9] flex justify-between items-center">
                       <h4 className="font-bold text-[#1c130d] text-sm">Lịch sử đặt giá</h4>
-                      {recentBids.length > 0 && (
-                        <button className="text-xs text-[#f26c0d] font-medium hover:underline">Xem tất cả</button>
-                      )}
                     </div>
                     <div className="max-h-48 overflow-y-auto">
                       {recentBids && recentBids.length > 0 ? (

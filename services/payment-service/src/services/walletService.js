@@ -407,6 +407,27 @@ class WalletService {
             // 6. Release escrow (mark as used for payment)
             await escrow.release(transaction._id);
 
+            // 7. Publish event for Order Service
+            try {
+                const { createRedisClient } = require('shared/database/redis');
+                const redisPublisher = await createRedisClient(process.env.REDIS_URL);
+
+                const eventData = {
+                    auctionId: auctionId,
+                    userId: userId,
+                    finalPrice: finalPrice,
+                    transactionId: transaction._id,
+                    paymentMethod: 'wallet',
+                    timestamp: new Date().toISOString()
+                };
+
+                console.log(`🚀 Publishing payment:auction:paid to Redis for auction: ${auctionId}`);
+                await redisPublisher.publish('payment:auction:paid', JSON.stringify(eventData));
+                await redisPublisher.quit();
+            } catch (redisError) {
+                console.error('❌ Failed to publish payment event:', redisError);
+            }
+
             return {
                 success: true,
                 message: 'Thanh toán thành công',

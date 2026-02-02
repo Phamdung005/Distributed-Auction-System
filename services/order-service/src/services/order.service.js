@@ -65,7 +65,7 @@ class OrderService {
             auctionDetails: {
                 title: auctionData.title,
                 image: auctionData.images && auctionData.images.length > 0 ? auctionData.images[0] : null,
-                endTime: auctionData.endTime
+                endTime: auctionData.endTime ? new Date(auctionData.endTime) : new Date()
             }
         };
 
@@ -125,6 +125,23 @@ class OrderService {
 
         // This logic can be expanded
         return await orderRepository.updateOrder(orderId, { status });
+    }
+
+    async markOrderAsPaid(auctionId, paymentData) {
+        const order = await orderRepository.getOrderByAuctionId(auctionId);
+        if (!order) {
+            console.error(`Order not found for auction ${auctionId} to mark as paid`);
+            return null;
+        }
+
+        const updateData = {
+            status: 'paid',
+            paymentStatus: 'paid',
+            paymentMethod: paymentData.paymentMethod || 'wallet'
+        };
+
+        console.log(`Marking order ${order._id} as paid`);
+        return await orderRepository.updateOrder(order._id, updateData);
     }
 }
 

@@ -5,7 +5,7 @@ const subscribeToEvents = async () => {
     try {
         const subscriber = await createRedisClient(process.env.REDIS_URL);
 
-        await subscriber.subscribe('auction.ended', async (message) => {
+        await subscriber.subscribe('auction:ended', async (message) => {
             console.log('Received auction.ended event:', message);
             try {
                 const auctionData = JSON.parse(message);
@@ -16,7 +16,18 @@ const subscribeToEvents = async () => {
             }
         });
 
-        console.log('Subscribed to Redis channels: auction.ended');
+        await subscriber.subscribe('payment:auction:paid', async (message) => {
+            console.log('Received payment:auction:paid event:', message);
+            try {
+                const paymentData = JSON.parse(message);
+                await orderService.markOrderAsPaid(paymentData.auctionId, paymentData);
+                console.log('Order payment status updated.');
+            } catch (error) {
+                console.error('Error processing payment:auction:paid event:', error);
+            }
+        });
+
+        console.log('Subscribed to Redis channels: auction:ended, payment:auction:paid');
     } catch (error) {
         console.error('Redis subscription failed:', error);
     }

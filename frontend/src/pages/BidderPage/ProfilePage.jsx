@@ -264,13 +264,6 @@ const ProfilePage = () => {
                                     Bảo mật & Mật khẩu
                                 </button>
                                 <button
-                                    onClick={() => setActiveTab('history')}
-                                    className={`flex items-center gap-3 px-5 py-4 transition-colors text-left ${activeTab === 'history' ? 'bg-[#f26c0d]/10 border-l-4 border-[#f26c0d] text-[#f26c0d] font-medium' : 'text-slate-600 hover:bg-gray-50 border-l-4 border-transparent'}`}
-                                >
-                                    <History size={20} />
-                                    Lịch sử đấu giá
-                                </button>
-                                <button
                                     onClick={() => setActiveTab('wallet')}
                                     className={`flex items-center gap-3 px-5 py-4 transition-colors text-left ${activeTab === 'wallet' ? 'bg-[#f26c0d]/10 border-l-4 border-[#f26c0d] text-[#f26c0d] font-medium' : 'text-slate-600 hover:bg-gray-50 border-l-4 border-transparent'}`}
                                 >

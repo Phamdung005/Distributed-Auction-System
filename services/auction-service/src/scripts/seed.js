@@ -125,8 +125,8 @@ const seedDB = async () => {
         console.log('Connected to MongoDB');
 
         // Clear existing auctions? Uncomment if you want to wipe DB
-        // await Auction.deleteMany({});
-        // console.log('Cleared existing auctions');
+        await Auction.deleteMany({});
+        console.log('Cleared existing auctions');
 
         // Insert new auctions
         const result = await Auction.insertMany(sampleAuctions);
