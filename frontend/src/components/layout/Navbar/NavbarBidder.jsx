@@ -57,7 +57,7 @@ const NavbarBidder = () => {
     const handleSearch = (e) => {
         e.preventDefault();
         if (searchKeyword.trim()) {
-            navigate(`/search?q=${encodeURIComponent(searchKeyword)}`);
+            navigate(`/auction-list?keyword=${encodeURIComponent(searchKeyword)}`);
         }
     };
 

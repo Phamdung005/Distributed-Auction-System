@@ -1,23 +1,25 @@
 import React, { useState, useEffect } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useSearchParams } from 'react-router-dom';
 import { auctionAPI } from '../../services/api';
 import AuctionCard from '../../components/auction/AuctionCard/AuctionCard';
 
 const AuctionListPage = () => {
+    const [searchParams, setSearchParams] = useSearchParams();
     const [auctions, setAuctions] = useState([]);
     const [loading, setLoading] = useState(true);
     const [filters, setFilters] = useState({
+        keyword: searchParams.get('keyword') || '',
         status: ['active', 'pending', 'ended'],
         category: 'all',
         minPrice: 0,
-        maxPrice: 100000000000, // 100 tỷ VNĐ
+        maxPrice: 100000000000,
         sortBy: 'ending_soon',
         page: 1,
         limit: 12
     });
     const [totalAuctions, setTotalAuctions] = useState(0);
-    const [viewMode, setViewMode] = useState('grid'); // 'grid' or 'list'
-    const [dynamicMaxPrice, setDynamicMaxPrice] = useState(100000000000); // Dynamic based on data
+    const [viewMode, setViewMode] = useState('grid');
+    const [dynamicMaxPrice, setDynamicMaxPrice] = useState(100000000000);
 
     const categories = [
         { id: 'all', label: 'Tất cả sản phẩm', icon: 'grid_view' },
@@ -26,6 +28,14 @@ const AuctionListPage = () => {
         { id: 'vehicles', label: 'Phương tiện', icon: 'directions_car' },
         { id: 'art', label: 'Trang sức & Art', icon: 'diamond' },
     ];
+
+    // Sync filters with URL params when component mounts or URL changes
+    useEffect(() => {
+        const keyword = searchParams.get('keyword') || '';
+        if (keyword !== filters.keyword) {
+            setFilters(prev => ({ ...prev, keyword, page: 1 }));
+        }
+    }, [searchParams]);
 
     useEffect(() => {
         fetchAuctions();
@@ -48,6 +58,10 @@ const AuctionListPage = () => {
 
             if (filters.category !== 'all') {
                 params.category = filters.category;
+            }
+
+            if (filters.keyword) {
+                params.keyword = filters.keyword;
             }
 
             // Send multiple statuses as comma-separated string or array
@@ -153,7 +167,23 @@ const AuctionListPage = () => {
             <div className="mb-8 flex flex-col md:flex-row md:items-end justify-between gap-4 max-w-[1920px] mx-auto">
                 <div className="flex flex-col gap-2">
                     <h1 className="text-3xl md:text-4xl font-black leading-tight tracking-tight text-gray-900">Danh Sách Sản Phẩm</h1>
-                    <p className="text-gray-500 text-base">Khám phá và tham gia đấu giá các sản phẩm đang diễn ra và sắp tới.</p>
+                    <div className="flex items-center gap-2">
+                        <p className="text-gray-500 text-base">Khám phá và tham gia đấu giá các sản phẩm đang diễn ra và sắp tới.</p>
+                        {filters.keyword && (
+                            <span className="flex items-center gap-1 bg-orange-100 text-orange-800 px-3 py-1 rounded-full text-sm font-bold">
+                                "{filters.keyword}"
+                                <button
+                                    onClick={() => {
+                                        setSearchParams({});
+                                        setFilters(prev => ({ ...prev, keyword: '', page: 1 }));
+                                    }}
+                                    className="hover:text-red-500 ml-1"
+                                >
+                                    <span className="material-symbols-outlined text-sm font-bold">close</span>
+                                </button>
+                            </span>
+                        )}
+                    </div>
                 </div>
             </div>
 
