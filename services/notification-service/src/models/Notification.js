@@ -42,7 +42,10 @@ const notificationSchema = new mongoose.Schema({
             'payment_required',        // Winner: Cần thanh toán
             'payment_received',        // Seller: Đã nhận thanh toán
             'deposit_refunded',        // Bidder: Tiền cọc đã được hoàn
-            'wallet_deposit'           // Bidder: Nạp tiền thành công
+            'wallet_deposit',          // Bidder: Nạp tiền thành công
+            'seller_auction_created',  // Seller: Tạo đấu giá thành công
+            'seller_auction_updated',  // Seller: Cập nhật đấu giá thành công
+            'seller_auction_deleted'   // Seller: Xóa đấu giá thành công
         ],
         required: [true, 'Loại thông báo là bắt buộc']
     },

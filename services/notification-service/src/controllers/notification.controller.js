@@ -22,7 +22,10 @@ class NotificationController {
                 userRole
             });
 
-            res.json(result);
+            res.json({
+                success: true,
+                data: result
+            });
         } catch (error) {
             next(error);
         }
@@ -37,7 +40,10 @@ class NotificationController {
             const userId = req.user.id;
             const count = await notificationService.getUnreadCount(userId);
 
-            res.json({ count });
+            res.json({
+                success: true,
+                data: { count }
+            });
         } catch (error) {
             next(error);
         }
@@ -58,7 +64,10 @@ class NotificationController {
                 return res.status(404).json({ error: 'Notification not found' });
             }
 
-            res.json(notification);
+            res.json({
+                success: true,
+                data: notification
+            });
         } catch (error) {
             next(error);
         }
@@ -73,7 +82,11 @@ class NotificationController {
             const userId = req.user.id;
             const count = await notificationService.markAllAsRead(userId);
 
-            res.json({ message: 'All notifications marked as read', count });
+            res.json({
+                success: true,
+                message: 'All notifications marked as read',
+                data: { count }
+            });
         } catch (error) {
             next(error);
         }

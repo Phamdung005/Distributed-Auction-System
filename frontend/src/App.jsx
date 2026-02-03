@@ -71,6 +71,11 @@ function App() {
                                     <CreateAuctionPage />
                                 </PrivateRoute>
                             } />
+                            <Route path="/edit-auction/:id" element={
+                                <PrivateRoute>
+                                    <CreateAuctionPage />
+                                </PrivateRoute>
+                            } />
                             <Route path="/my-auctions" element={
                                 <PrivateRoute>
                                     <MyAuctionsPage />

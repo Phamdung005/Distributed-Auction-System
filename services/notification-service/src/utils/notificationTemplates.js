@@ -118,6 +118,24 @@ const NOTIFICATION_TEMPLATES = {
         title: 'Auction đã kết thúc',
         message: (data) => `"${data.auctionTitle}" đã kết thúc nhưng không có người mua${data.totalBids > 0 ? ` (${data.totalBids} bids)` : ''}`,
         priority: 'medium'
+    },
+
+    SELLER_AUCTION_CREATED: {
+        title: 'Tạo đấu giá thành công',
+        message: (data) => `Bạn đã tạo thành công đấu giá "${data.auctionTitle}"`,
+        priority: 'low'
+    },
+
+    SELLER_AUCTION_UPDATED: {
+        title: 'Cập nhật đấu giá thành công',
+        message: (data) => `Thông tin đấu giá "${data.auctionTitle}" đã được cập nhật`,
+        priority: 'low'
+    },
+
+    SELLER_AUCTION_DELETED: {
+        title: 'Xóa đấu giá thành công',
+        message: (data) => `Đấu giá "${data.auctionTitle}" đã được xóa khỏi hệ thống`,
+        priority: 'medium'
     }
 };
 

@@ -38,13 +38,13 @@ const NavbarBidder = () => {
     };
 
     const setupSocket = async () => {
-        const { connectSocket } = await import('../../../services/socket');
+        const { connectNotificationSocket } = await import('../../../services/notificationSocket');
         const token = localStorage.getItem('accessToken');
-        const socket = connectSocket(token);
+        const socket = connectNotificationSocket(token);
 
         if (socket) {
             socket.on('notification:new', (notification) => {
-                setUnreadCount(prev => prev + 1);
+                fetchUnreadCount();
             });
         }
     };

@@ -9,7 +9,9 @@ import {
     XCircle,
     DollarSign,
     AlertCircle,
-    ShoppingBag
+    ShoppingBag,
+    PlusCircle,
+    Edit
 } from 'lucide-react';
 import { notificationAPI } from '../../services/notification.service';
 import { format } from 'date-fns';
@@ -26,14 +28,15 @@ const BidderNotification = () => {
 
         // Listen for real-time notifications
         const setupSocket = async () => {
-            const { connectSocket } = await import('../../services/socket');
+            const { connectNotificationSocket } = await import('../../services/notificationSocket');
             const token = localStorage.getItem('accessToken');
-            const socket = connectSocket(token);
+            const socket = connectNotificationSocket(token);
 
             if (socket) {
                 socket.on('notification:new', (newNotif) => {
                     setNotifications(prev => [newNotif, ...prev]);
                     setUnreadCount(prev => prev + 1);
+                    toast.info(`Thông báo mới: ${newNotif.title}`);
                 });
             }
         };
@@ -45,7 +48,9 @@ const BidderNotification = () => {
         try {
             setLoading(true);
             const response = await notificationAPI.getNotifications({ limit: 50 });
-            setNotifications(response.data.notifications || response.data);
+            if (response.data.success) {
+                setNotifications(response.data.data.notifications || response.data.data);
+            }
             setLoading(false);
         } catch (error) {
             console.error('Failed to fetch notifications:', error);
@@ -56,7 +61,9 @@ const BidderNotification = () => {
     const fetchUnreadCount = async () => {
         try {
             const response = await notificationAPI.getUnreadCount();
-            setUnreadCount(response.data.count);
+            if (response.data.success) {
+                setUnreadCount(response.data.data.count);
+            }
         } catch (error) {
             console.error('Failed to fetch unread count:', error);
         }
@@ -137,6 +144,12 @@ const BidderNotification = () => {
             case 'payment_required':
             case 'seller_auction_no_sale':
                 return <ShoppingBag className="w-6 h-6 text-red-500" />;
+            case 'seller_auction_created':
+                return <PlusCircle className="w-6 h-6 text-green-500" />;
+            case 'seller_auction_updated':
+                return <Edit className="w-6 h-6 text-blue-500" />;
+            case 'seller_auction_deleted':
+                return <Trash2 className="w-6 h-6 text-red-500" />;
             default:
                 return <Info className="w-6 h-6 text-gray-500" />;
         }

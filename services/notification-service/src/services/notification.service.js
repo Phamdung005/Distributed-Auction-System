@@ -11,10 +11,12 @@ class NotificationService {
      */
     async createNotification(data) {
         const { userId, userRole, type, notificationData } = data;
+        console.log(`[NotificationService] Creating ${type} for user ${userId} (${userRole})`);
 
         // Get template
         const template = NOTIFICATION_TEMPLATES[type.toUpperCase()];
         if (!template) {
+            console.error(`[NotificationService] Unknown notification type: ${type}`);
             throw new Error(`Unknown notification type: ${type}`);
         }
 
@@ -24,15 +26,20 @@ class NotificationService {
             userRole,
             type,
             title: template.title,
-            message: template.message(notificationData),
+            message: typeof template.message === 'function' ? template.message(notificationData) : template.message,
             data: notificationData,
             priority: template.priority || 'medium'
         };
 
-        // Save to database
-        const savedNotification = await notificationRepository.createNotification(notification);
-
-        return savedNotification;
+        try {
+            // Save to database
+            const savedNotification = await notificationRepository.createNotification(notification);
+            console.log(`[NotificationService] Notification saved: ${savedNotification._id}`);
+            return savedNotification;
+        } catch (error) {
+            console.error(`[NotificationService] Failed to save notification:`, error.message);
+            throw error;
+        }
     }
 
     /**

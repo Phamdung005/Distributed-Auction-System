@@ -21,19 +21,21 @@ export const AuthProvider = ({ children }) => {
     useEffect(() => {
         const initAuth = async () => {
             const token = localStorage.getItem('accessToken');
-            const savedUser = localStorage.getItem('user');
+            // const savedUser = localStorage.getItem('user'); // No longer used directly for optimistic set
 
-            if (token && savedUser) {
+            if (token) {
                 try {
-                    setUser(JSON.parse(savedUser));
-                    setIsAuthenticated(true);
-
-                    // Verify token vẫn còn hiệu lực
+                    // Chờ verify profile thành công (bao gồm cả việc refresh token tự động ở interceptor nếu cần)
+                    // trước khi set isAuthenticated = true
                     const response = await authAPI.getProfile();
-                    setUser(response.data.data);
-                    localStorage.setItem('user', JSON.stringify(response.data.data));
+                    const userData = response.data.data;
+
+                    setUser(userData);
+                    setIsAuthenticated(true);
+                    localStorage.setItem('user', JSON.stringify(userData));
                 } catch (error) {
-                    console.error('Token invalid:', error);
+                    console.error('Initial auth failed:', error);
+                    // Nếu lỗi 401 (không thể refresh) thì logout
                     logout();
                 }
             }
