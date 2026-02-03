@@ -15,9 +15,11 @@ import {
 import AdminService from '../../services/admin.service';
 import { auctionAPI } from '../../services/api';
 import { useAuth } from '../../contexts/AuthContext';
+import UserManagement from './UserManagement';
 
 const AdminDashboard = () => {
     const { logout } = useAuth();
+    const [activeTab, setActiveTab] = useState('overview'); // 'overview', 'users', etc.
     const [stats, setStats] = useState({
         totalUsers: 0,
         activeUsers: 0,
@@ -47,16 +49,19 @@ const AdminDashboard = () => {
 
             // Fetch Active Auctions
             const auctionsRes = await auctionAPI.getAuctions({ status: 'active', limit: 10, sort: '-createdAt' });
-            setActiveAuctions(auctionsRes.data?.auctions || []);
+            // API returns { success: true, data: { auctions: [], pagination: {} } }
+            // auctionsRes is axios response -> auctionsRes.data is the body -> auctionsRes.data.data is the payload
+            setActiveAuctions(auctionsRes.data?.data?.auctions || []);
 
             // Re-added pending auction logic if needed for the "Pending Approvals" table
-            // Assuming AdminService.getPendingAuctions() exists or similar
+            // AdminService.getPendingAuctions() returns response.data directly
             const pendingRes = await AdminService.getPendingAuctions();
-            setPendingAuctions(pendingRes.auctions || []);
+            setPendingAuctions(pendingRes.data?.auctions || []);
 
 
         } catch (error) {
             console.error("Dashboard load failed", error);
+            toast.error("Failed to load dashboard data: " + (error.message || "Unknown error"));
         } finally {
             setLoading(false);
         }
@@ -125,8 +130,18 @@ const AdminDashboard = () => {
                 </div>
 
                 <nav className="flex-1 px-4 space-y-1 overflow-y-auto">
-                    <NavItem icon={<LayoutDashboard size={20} />} label="Tổng quan" active />
-                    <NavItem icon={<Users size={20} />} label="Người dùng" />
+                    <NavItem
+                        icon={<LayoutDashboard size={20} />}
+                        label="Tổng quan"
+                        active={activeTab === 'overview'}
+                        onClick={() => setActiveTab('overview')}
+                    />
+                    <NavItem
+                        icon={<Users size={20} />}
+                        label="Người dùng"
+                        active={activeTab === 'users'}
+                        onClick={() => setActiveTab('users')}
+                    />
                     <NavItem icon={<Gavel size={20} />} label="Đấu giá" />
                     <NavItem icon={<Wallet size={20} />} label="Tài chính" />
                     <NavItem icon={<FileBarChart size={20} />} label="Báo cáo" />
@@ -172,143 +187,151 @@ const AdminDashboard = () => {
                     </div>
                 </header>
 
-                <div className="p-8 space-y-8">
-                    {/* Stats Cards - Removed Mock Trends */}
-                    <section className="grid grid-cols-1 md:grid-cols-3 gap-6">
-                        <StatCard
-                            title="Tổng người dùng"
-                            value={stats.totalUsers.toString()}
-                            icon={<Users size={24} className="text-blue-600" />}
-                            bg="bg-blue-50"
-                        />
-                        <StatCard
-                            title="Người dùng Active"
-                            value={stats.activeUsers.toString()}
-                            icon={<Users size={24} className="text-green-600" />}
-                            bg="bg-green-50"
-                        />
-                        <StatCard
-                            title="Tổng phiên đấu giá"
-                            value={stats.auctions.toString()}
-                            icon={<LayoutDashboard size={24} className="text-purple-600" />}
-                            bg="bg-purple-50"
-                        />
-                    </section>
+                {activeTab === 'overview' && (
+                    <div className="p-8 space-y-8">
+                        {/* Stats Cards - Removed Mock Trends */}
+                        <section className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                            <StatCard
+                                title="Tổng người dùng"
+                                value={stats.totalUsers.toString()}
+                                icon={<Users size={24} className="text-blue-600" />}
+                                bg="bg-blue-50"
+                            />
+                            <StatCard
+                                title="Người dùng Active"
+                                value={stats.activeUsers.toString()}
+                                icon={<Users size={24} className="text-green-600" />}
+                                bg="bg-green-50"
+                            />
+                            <StatCard
+                                title="Tổng phiên đấu giá"
+                                value={stats.auctions.toString()}
+                                icon={<LayoutDashboard size={24} className="text-purple-600" />}
+                                bg="bg-purple-50"
+                            />
+                        </section>
 
-                    {/* Charts & Breakdown & Active Auctions */}
-                    <section className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-                        {/* User Role Distribution Chart */}
-                        <div className="bg-white p-6 rounded-xl border border-gray-100 shadow-sm flex flex-col">
-                            <h3 className="text-lg font-bold text-gray-900 mb-6">Phân bố người dùng</h3>
-                            <div className="flex-1 flex flex-col justify-center items-center relative">
-                                {/* Simple Donut Chart Representation using CSS/SVG */}
-                                <div className="relative w-48 h-48">
-                                    <svg viewBox="0 0 36 36" className="w-full h-full rotate-[-90deg]">
-                                        {/* Background Circle */}
-                                        <path className="text-gray-100" d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831" fill="none" stroke="currentColor" strokeWidth="3.8" />
-                                        {/* Seller Segment (Blue) */}
-                                        <path className="text-blue-500" strokeDasharray={`${sellerPercent}, 100`} d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831" fill="none" stroke="currentColor" strokeWidth="3.8" />
-                                        {/* Bidder Segment (Orange) - offset by seller percent */}
-                                        <circle cx="18" cy="18" r="15.9155" fill="none" stroke="#f97316" strokeWidth="3.8" strokeDasharray={`${bidderPercent} ${100 - bidderPercent}`} strokeDashoffset={-sellerPercent} />
-                                    </svg>
-                                    <div className="absolute inset-0 flex flex-col items-center justify-center">
-                                        <span className="text-3xl font-bold text-gray-900">{totalRoles}</span>
-                                        <span className="text-xs text-gray-500">Users</span>
+                        {/* Charts & Breakdown & Active Auctions */}
+                        <section className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                            {/* User Role Distribution Chart */}
+                            <div className="bg-white p-6 rounded-xl border border-gray-100 shadow-sm flex flex-col">
+                                <h3 className="text-lg font-bold text-gray-900 mb-6">Phân bố người dùng</h3>
+                                <div className="flex-1 flex flex-col justify-center items-center relative">
+                                    {/* Simple Donut Chart Representation using CSS/SVG */}
+                                    <div className="relative w-48 h-48">
+                                        <svg viewBox="0 0 36 36" className="w-full h-full rotate-[-90deg]">
+                                            {/* Background Circle */}
+                                            <path className="text-gray-100" d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831" fill="none" stroke="currentColor" strokeWidth="3.8" />
+                                            {/* Seller Segment (Blue) */}
+                                            <path className="text-blue-500" strokeDasharray={`${sellerPercent}, 100`} d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831" fill="none" stroke="currentColor" strokeWidth="3.8" />
+                                            {/* Bidder Segment (Orange) - offset by seller percent */}
+                                            <circle cx="18" cy="18" r="15.9155" fill="none" stroke="#f97316" strokeWidth="3.8" strokeDasharray={`${bidderPercent} ${100 - bidderPercent}`} strokeDashoffset={-sellerPercent} />
+                                        </svg>
+                                        <div className="absolute inset-0 flex flex-col items-center justify-center">
+                                            <span className="text-3xl font-bold text-gray-900">{totalRoles}</span>
+                                            <span className="text-xs text-gray-500">Users</span>
+                                        </div>
                                     </div>
-                                </div>
-                                <div className="mt-6 w-full flex justify-between px-4">
-                                    <div className="flex flex-col items-center">
-                                        <span className="flex items-center gap-2 text-sm text-gray-600"><span className="w-3 h-3 rounded-full bg-orange-500"></span>Bidder</span>
-                                        <span className="text-lg font-bold text-gray-900">{stats.bidders}</span>
-                                        <span className="text-xs text-gray-400">{bidderPercent.toFixed(1)}%</span>
-                                    </div>
-                                    <div className="flex flex-col items-center">
-                                        <span className="flex items-center gap-2 text-sm text-gray-600"><span className="w-3 h-3 rounded-full bg-blue-500"></span>Seller</span>
-                                        <span className="text-lg font-bold text-gray-900">{stats.sellers}</span>
-                                        <span className="text-xs text-gray-400">{sellerPercent.toFixed(1)}%</span>
+                                    <div className="mt-6 w-full flex justify-between px-4">
+                                        <div className="flex flex-col items-center">
+                                            <span className="flex items-center gap-2 text-sm text-gray-600"><span className="w-3 h-3 rounded-full bg-orange-500"></span>Bidder</span>
+                                            <span className="text-lg font-bold text-gray-900">{stats.bidders}</span>
+                                            <span className="text-xs text-gray-400">{bidderPercent.toFixed(1)}%</span>
+                                        </div>
+                                        <div className="flex flex-col items-center">
+                                            <span className="flex items-center gap-2 text-sm text-gray-600"><span className="w-3 h-3 rounded-full bg-blue-500"></span>Seller</span>
+                                            <span className="text-lg font-bold text-gray-900">{stats.sellers}</span>
+                                            <span className="text-xs text-gray-400">{sellerPercent.toFixed(1)}%</span>
+                                        </div>
                                     </div>
                                 </div>
                             </div>
-                        </div>
 
-                        {/* Active Auctions List */}
-                        <div className="lg:col-span-2 bg-white rounded-xl border border-gray-100 shadow-sm overflow-hidden flex flex-col">
-                            <div className="px-6 py-4 border-b border-gray-100 flex items-center justify-between">
-                                <h3 className="text-lg font-bold text-gray-900">Các phiên đấu giá hiện có</h3>
-                                <button className="text-sm font-bold text-orange-600 hover:text-orange-700">Xem tất cả</button>
-                            </div>
-                            <div className="overflow-x-auto">
-                                <table className="w-full text-left border-collapse">
-                                    <thead className="bg-[#F8F9FA]">
-                                        <tr>
-                                            <th className="px-6 py-3 text-xs font-bold text-gray-500 uppercase tracking-wider">Sản phẩm</th>
-                                            <th className="px-6 py-3 text-xs font-bold text-gray-500 uppercase tracking-wider">Người bán</th>
-                                            <th className="px-6 py-3 text-xs font-bold text-gray-500 uppercase tracking-wider">Giá hiện tại</th>
-                                            <th className="px-6 py-3 text-xs font-bold text-gray-500 uppercase tracking-wider">Trạng thái</th>
-                                        </tr>
-                                    </thead>
-                                    <tbody className="divide-y divide-gray-100">
-                                        {activeAuctions.length === 0 ? (
+                            {/* Active Auctions List */}
+                            <div className="lg:col-span-2 bg-white rounded-xl border border-gray-100 shadow-sm overflow-hidden flex flex-col">
+                                <div className="px-6 py-4 border-b border-gray-100 flex items-center justify-between">
+                                    <h3 className="text-lg font-bold text-gray-900">Các phiên đấu giá hiện có</h3>
+                                    <button className="text-sm font-bold text-orange-600 hover:text-orange-700">Xem tất cả</button>
+                                </div>
+                                <div className="overflow-x-auto">
+                                    <table className="w-full text-left border-collapse">
+                                        <thead className="bg-[#F8F9FA]">
                                             <tr>
-                                                <td colSpan="4" className="px-6 py-8 text-center text-gray-400">Không có phiên đấu giá nào đang diễn ra.</td>
+                                                <th className="px-6 py-3 text-xs font-bold text-gray-500 uppercase tracking-wider">Sản phẩm</th>
+                                                <th className="px-6 py-3 text-xs font-bold text-gray-500 uppercase tracking-wider">Người bán</th>
+                                                <th className="px-6 py-3 text-xs font-bold text-gray-500 uppercase tracking-wider">Giá hiện tại</th>
+                                                <th className="px-6 py-3 text-xs font-bold text-gray-500 uppercase tracking-wider">Trạng thái</th>
                                             </tr>
-                                        ) : (
-                                            activeAuctions.map(auction => (
-                                                <tr key={auction.id} className="hover:bg-gray-50 transition-colors">
-                                                    <td className="px-6 py-4">
-                                                        <div className="flex items-center gap-3">
-                                                            <div className="h-10 w-10 rounded-lg bg-gray-100 bg-cover bg-center shrink-0 border border-gray-200"
-                                                                style={{ backgroundImage: `url('${auction.image || auction.images?.[0] || 'https://via.placeholder.com/150'}')` }}>
-                                                            </div>
-                                                            <div>
-                                                                <p className="text-sm font-bold text-gray-900 line-clamp-1">{auction.title}</p>
-                                                                <p className="text-xs text-gray-500">{auction.category || 'Chung'}</p>
-                                                            </div>
-                                                        </div>
-                                                    </td>
-                                                    <td className="px-6 py-4">
-                                                        <div className="flex items-center gap-2">
-                                                            <div className="w-6 h-6 rounded-full bg-gray-200 flex items-center justify-center text-xs font-bold text-gray-600">
-                                                                {auction.seller?.fullName?.[0] || 'U'}
-                                                            </div>
-                                                            <span className="text-sm text-gray-600 font-medium">{auction.seller?.fullName || 'Unknown'}</span>
-                                                        </div>
-                                                    </td>
-                                                    <td className="px-6 py-4">
-                                                        <span className="text-sm font-mono font-bold text-orange-600">{formatVND(auction.currentPrice || auction.startPrice)}</span>
-                                                    </td>
-                                                    <td className="px-6 py-4">
-                                                        <span className="px-2 py-1 text-[10px] font-bold rounded-full uppercase bg-green-100 text-green-700">
-                                                            Active
-                                                        </span>
-                                                    </td>
+                                        </thead>
+                                        <tbody className="divide-y divide-gray-100">
+                                            {activeAuctions.length === 0 ? (
+                                                <tr>
+                                                    <td colSpan="4" className="px-6 py-8 text-center text-gray-400">Không có phiên đấu giá nào đang diễn ra.</td>
                                                 </tr>
-                                            ))
-                                        )}
-                                    </tbody>
-                                </table>
+                                            ) : (
+                                                activeAuctions.map(auction => (
+                                                    <tr key={auction.id} className="hover:bg-gray-50 transition-colors">
+                                                        <td className="px-6 py-4">
+                                                            <div className="flex items-center gap-3">
+                                                                <div className="h-10 w-10 rounded-lg bg-gray-100 bg-cover bg-center shrink-0 border border-gray-200"
+                                                                    style={{ backgroundImage: `url('${auction.image || auction.images?.[0] || 'https://via.placeholder.com/150'}')` }}>
+                                                                </div>
+                                                                <div>
+                                                                    <p className="text-sm font-bold text-gray-900 line-clamp-1">{auction.title}</p>
+                                                                    <p className="text-xs text-gray-500">{auction.category || 'Chung'}</p>
+                                                                </div>
+                                                            </div>
+                                                        </td>
+                                                        <td className="px-6 py-4">
+                                                            <div className="flex items-center gap-2">
+                                                                <div className="w-6 h-6 rounded-full bg-gray-200 flex items-center justify-center text-xs font-bold text-gray-600">
+                                                                    {auction.seller?.fullName?.[0] || 'U'}
+                                                                </div>
+                                                                <span className="text-sm text-gray-600 font-medium">{auction.seller?.fullName || 'Unknown'}</span>
+                                                            </div>
+                                                        </td>
+                                                        <td className="px-6 py-4">
+                                                            <span className="text-sm font-mono font-bold text-orange-600">{formatVND(auction.currentPrice || auction.startPrice)}</span>
+                                                        </td>
+                                                        <td className="px-6 py-4">
+                                                            <span className="px-2 py-1 text-[10px] font-bold rounded-full uppercase bg-green-100 text-green-700">
+                                                                Active
+                                                            </span>
+                                                        </td>
+                                                    </tr>
+                                                ))
+                                            )}
+                                        </tbody>
+                                    </table>
+                                </div>
                             </div>
-                        </div>
-                    </section>
+                        </section>
 
 
-                </div>
+                    </div>
+                )}
+
+                {activeTab === 'users' && (
+                    <div className="p-8">
+                        <UserManagement />
+                    </div>
+                )}
             </main>
-        </div>
+        </div >
     );
 };
 
-const NavItem = ({ icon, label, active = false }) => (
-    <a
-        href="#"
-        className={`flex items-center gap-3 px-3 py-3 rounded-lg font-medium transition-colors ${active
+const NavItem = ({ icon, label, active = false, onClick }) => (
+    <div
+        onClick={onClick}
+        className={`flex items-center gap-3 px-3 py-3 rounded-lg font-medium transition-colors cursor-pointer ${active
             ? 'bg-orange-50 text-orange-600'
             : 'text-gray-600 hover:bg-gray-50 hover:text-gray-900'
             }`}
     >
         {icon}
         <span>{label}</span>
-    </a>
+    </div>
 );
 
 const StatCard = ({ title, value, icon, bg }) => (

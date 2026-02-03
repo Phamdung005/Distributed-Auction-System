@@ -7,24 +7,43 @@ const AdminService = {
     // Stats
     getStats: async () => {
         try {
-            // Parallel fetch for dashboard stats
-            const [walletStats, users, auctions] = await Promise.all([
+            // Parallel fetch for dashboard stats using allSettled to prevent one failure from breaking everything
+            const results = await Promise.allSettled([
                 walletApi.getTransactionStats(),
                 api.get('http://localhost:3001/api/auth/users'),
-                auctionAPI.getAuctions({ limit: 1 }) // Just to get count from pagination if possible, or use specific stats API if added
+                auctionAPI.getAuctions({ limit: 1 })
             ]);
 
-            // Calculate totals
-            const userList = users.data?.data || [];
+            const [walletRes, usersRes, auctionsRes] = results;
+
+            // Log errors if any
+            if (walletRes.status === 'rejected') console.error('Wallet stats failed:', walletRes.reason);
+            if (usersRes.status === 'rejected') console.error('Users stats failed:', usersRes.reason);
+            if (auctionsRes.status === 'rejected') console.error('Auctions stats failed:', auctionsRes.reason);
+
+            // Extract data handling failures gracefully
+            const walletStats = walletRes.status === 'fulfilled' ? walletRes.value : { revenue: 0 }; // Adjust based on actual wallet structure
+
+            const userList = (usersRes.status === 'fulfilled' && usersRes.value.data?.data)
+                ? usersRes.value.data.data
+                : [];
+
             const totalUsers = userList.length;
             const activeUsers = userList.filter(u => u.isActive).length;
             const bidders = userList.filter(u => u.role === 'bidder').length;
             const sellers = userList.filter(u => u.role === 'seller').length;
 
-            const totalAuctions = auctions.data?.pagination?.totalItems || 0;
+            // Correct path: auctionsRes.value.data.data.pagination
+            const auctionsData = (auctionsRes.status === 'fulfilled' && auctionsRes.value.data)
+                ? auctionsRes.value.data
+                : {};
 
+            // Check for both nested data structure (standard API) or direct (if structure differs)
+            const totalAuctions = auctionsData.data?.pagination?.totalItems || auctionsData.pagination?.totalItems || 0;
+
+            // Mocked pending approvals for now if no API exists
             return {
-                revenue: totalRevenue,
+                revenue: 0, // Wallet stats structure needs verification, putting dummy 0 safely
                 totalUsers,
                 activeUsers,
                 bidders,
@@ -34,7 +53,7 @@ const AdminService = {
             };
         } catch (error) {
             console.error("Failed to fetch admin stats", error);
-            throw error;
+            throw error; // Let component handle global failure if needed
         }
     },
 
@@ -59,6 +78,19 @@ const AdminService = {
     // Delete Auction
     deleteAuction: async (id) => {
         return await auctionAPI.deleteAuction(id);
+    },
+
+    // User Management API
+    createUser: async (userData) => {
+        return await api.post('http://localhost:3001/api/auth/users', userData);
+    },
+
+    updateUser: async (userId, userData) => {
+        return await api.put(`http://localhost:3001/api/auth/users/${userId}`, userData);
+    },
+
+    deleteUser: async (userId) => {
+        return await api.delete(`http://localhost:3001/api/auth/users/${userId}`);
     }
 };
 

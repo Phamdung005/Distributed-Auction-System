@@ -82,10 +82,31 @@ router.get('/profile/:userId', authController.getProfileById);
  * @access  Private (Admin)
  */
 router.get('/users', authenticate, (req, res, next) => {
-    if (req.user.role !== 'admin') { // Quick inline check or use authorize middleware if available in this file scope (it is imported)
+    if (req.user.role !== 'admin') {
         return res.status(403).json({ success: false, message: 'Forbidden' });
     }
     next();
 }, authController.getAllUsers);
+
+router.post('/users', authenticate, (req, res, next) => {
+    if (req.user.role !== 'admin') {
+        return res.status(403).json({ success: false, message: 'Forbidden' });
+    }
+    next();
+}, authController.createUser);
+
+router.put('/users/:id', authenticate, (req, res, next) => {
+    if (req.user.role !== 'admin') {
+        return res.status(403).json({ success: false, message: 'Forbidden' });
+    }
+    next();
+}, authController.updateUser);
+
+router.delete('/users/:id', authenticate, (req, res, next) => {
+    if (req.user.role !== 'admin') {
+        return res.status(403).json({ success: false, message: 'Forbidden' });
+    }
+    next();
+}, authController.deleteUser);
 
 module.exports = router;
