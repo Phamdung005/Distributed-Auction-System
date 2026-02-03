@@ -16,6 +16,7 @@ import AdminService from '../../services/admin.service';
 import { auctionAPI } from '../../services/api';
 import { useAuth } from '../../contexts/AuthContext';
 import UserManagement from './UserManagement';
+import AuctionManagement from './AuctionManagement';
 
 const AdminDashboard = () => {
     const { logout } = useAuth();
@@ -29,6 +30,7 @@ const AdminDashboard = () => {
     });
     const [activeAuctions, setActiveAuctions] = useState([]);
     const [pendingAuctions, setPendingAuctions] = useState([]); // Added state for pending auctions
+    const [usersMap, setUsersMap] = useState({});
     const [loading, setLoading] = useState(true);
 
     useEffect(() => {
@@ -47,14 +49,25 @@ const AdminDashboard = () => {
                 auctions: Number(statsData.auctions) || 0
             });
 
-            // Fetch Active Auctions
-            const auctionsRes = await auctionAPI.getAuctions({ status: 'active', limit: 10, sort: '-createdAt' });
-            // API returns { success: true, data: { auctions: [], pagination: {} } }
-            // auctionsRes is axios response -> auctionsRes.data is the body -> auctionsRes.data.data is the payload
+            // Fetch Active Auctions and Users in parallel
+            const [auctionsRes, usersRes] = await Promise.all([
+                auctionAPI.getAuctions({ status: 'active', limit: 10, sort: '-createdAt' }),
+                AdminService.getUsers()
+            ]);
+
+            // auctionsRes.data.data.auctions
             setActiveAuctions(auctionsRes.data?.data?.auctions || []);
 
-            // Re-added pending auction logic if needed for the "Pending Approvals" table
-            // AdminService.getPendingAuctions() returns response.data directly
+            // Process users map
+            const usersList = usersRes.data || usersRes || [];
+            const actualUsers = Array.isArray(usersList) ? usersList : (usersList.data || []);
+            const map = {};
+            actualUsers.forEach(user => {
+                map[user.id] = user;
+            });
+            setUsersMap(map);
+
+            // Re-added pending auction logic
             const pendingRes = await AdminService.getPendingAuctions();
             setPendingAuctions(pendingRes.data?.auctions || []);
 
@@ -142,7 +155,12 @@ const AdminDashboard = () => {
                         active={activeTab === 'users'}
                         onClick={() => setActiveTab('users')}
                     />
-                    <NavItem icon={<Gavel size={20} />} label="Đấu giá" />
+                    <NavItem
+                        icon={<Gavel size={20} />}
+                        label="Đấu giá"
+                        active={activeTab === 'auctions'}
+                        onClick={() => setActiveTab('auctions')}
+                    />
                     <NavItem icon={<Wallet size={20} />} label="Tài chính" />
                     <NavItem icon={<FileBarChart size={20} />} label="Báo cáo" />
 
@@ -251,7 +269,12 @@ const AdminDashboard = () => {
                             <div className="lg:col-span-2 bg-white rounded-xl border border-gray-100 shadow-sm overflow-hidden flex flex-col">
                                 <div className="px-6 py-4 border-b border-gray-100 flex items-center justify-between">
                                     <h3 className="text-lg font-bold text-gray-900">Các phiên đấu giá hiện có</h3>
-                                    <button className="text-sm font-bold text-orange-600 hover:text-orange-700">Xem tất cả</button>
+                                    <button
+                                        onClick={() => setActiveTab('auctions')}
+                                        className="text-sm font-bold text-orange-600 hover:text-orange-700"
+                                    >
+                                        Xem tất cả
+                                    </button>
                                 </div>
                                 <div className="overflow-x-auto">
                                     <table className="w-full text-left border-collapse">
@@ -269,37 +292,40 @@ const AdminDashboard = () => {
                                                     <td colSpan="4" className="px-6 py-8 text-center text-gray-400">Không có phiên đấu giá nào đang diễn ra.</td>
                                                 </tr>
                                             ) : (
-                                                activeAuctions.map(auction => (
-                                                    <tr key={auction.id} className="hover:bg-gray-50 transition-colors">
-                                                        <td className="px-6 py-4">
-                                                            <div className="flex items-center gap-3">
-                                                                <div className="h-10 w-10 rounded-lg bg-gray-100 bg-cover bg-center shrink-0 border border-gray-200"
-                                                                    style={{ backgroundImage: `url('${auction.image || auction.images?.[0] || 'https://via.placeholder.com/150'}')` }}>
+                                                activeAuctions.map(auction => {
+                                                    const seller = usersMap[auction.seller] || { fullName: 'Unknown', email: 'N/A' };
+                                                    return (
+                                                        <tr key={auction.id} className="hover:bg-gray-50 transition-colors">
+                                                            <td className="px-6 py-4">
+                                                                <div className="flex items-center gap-3">
+                                                                    <div className="h-10 w-10 rounded-lg bg-gray-100 bg-cover bg-center shrink-0 border border-gray-200"
+                                                                        style={{ backgroundImage: `url('${auction.image || auction.images?.[0] || 'https://via.placeholder.com/150'}')` }}>
+                                                                    </div>
+                                                                    <div>
+                                                                        <p className="text-sm font-bold text-gray-900 line-clamp-1">{auction.title}</p>
+                                                                        <p className="text-xs text-gray-500">{auction.category || 'Chung'}</p>
+                                                                    </div>
                                                                 </div>
-                                                                <div>
-                                                                    <p className="text-sm font-bold text-gray-900 line-clamp-1">{auction.title}</p>
-                                                                    <p className="text-xs text-gray-500">{auction.category || 'Chung'}</p>
+                                                            </td>
+                                                            <td className="px-6 py-4">
+                                                                <div className="flex items-center gap-2">
+                                                                    <div className="w-6 h-6 rounded-full bg-gray-200 flex items-center justify-center text-xs font-bold text-gray-600">
+                                                                        {seller.fullName?.[0] || 'U'}
+                                                                    </div>
+                                                                    <span className="text-sm text-gray-600 font-medium">{seller.fullName}</span>
                                                                 </div>
-                                                            </div>
-                                                        </td>
-                                                        <td className="px-6 py-4">
-                                                            <div className="flex items-center gap-2">
-                                                                <div className="w-6 h-6 rounded-full bg-gray-200 flex items-center justify-center text-xs font-bold text-gray-600">
-                                                                    {auction.seller?.fullName?.[0] || 'U'}
-                                                                </div>
-                                                                <span className="text-sm text-gray-600 font-medium">{auction.seller?.fullName || 'Unknown'}</span>
-                                                            </div>
-                                                        </td>
-                                                        <td className="px-6 py-4">
-                                                            <span className="text-sm font-mono font-bold text-orange-600">{formatVND(auction.currentPrice || auction.startPrice)}</span>
-                                                        </td>
-                                                        <td className="px-6 py-4">
-                                                            <span className="px-2 py-1 text-[10px] font-bold rounded-full uppercase bg-green-100 text-green-700">
-                                                                Active
-                                                            </span>
-                                                        </td>
-                                                    </tr>
-                                                ))
+                                                            </td>
+                                                            <td className="px-6 py-4">
+                                                                <span className="text-sm font-mono font-bold text-orange-600">{formatVND(auction.currentPrice || auction.startPrice)}</span>
+                                                            </td>
+                                                            <td className="px-6 py-4">
+                                                                <span className="px-2 py-1 text-[10px] font-bold rounded-full uppercase bg-green-100 text-green-700">
+                                                                    Active
+                                                                </span>
+                                                            </td>
+                                                        </tr>
+                                                    )
+                                                })
                                             )}
                                         </tbody>
                                     </table>
@@ -314,6 +340,12 @@ const AdminDashboard = () => {
                 {activeTab === 'users' && (
                     <div className="p-8">
                         <UserManagement />
+                    </div>
+                )}
+
+                {activeTab === 'auctions' && (
+                    <div className="p-8">
+                        <AuctionManagement />
                     </div>
                 )}
             </main>

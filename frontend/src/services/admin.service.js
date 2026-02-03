@@ -1,9 +1,25 @@
-
 import axios from 'axios';
 import api, { auctionAPI, authAPI, biddingAPI } from './api';
 import walletApi from './walletApi';
 
+const AUCTION_URL = 'http://localhost:3001/api/auctions'; // Define AUCTION_URL
+
 const AdminService = {
+    // Get All Auctions (for management)
+    getAuctions: async (params) => {
+        return await auctionAPI.getAuctions(params);
+    },
+
+    // Update Auction (Admin override)
+    updateAuction: async (id, data) => {
+        return await auctionAPI.updateAuction(id, data);
+    },
+
+    // Cancel Auction
+    cancelAuction: async (id) => {
+        return await api.post(`${AUCTION_URL}/${id}/cancel`);
+    },
+
     // Stats
     getStats: async () => {
         try {

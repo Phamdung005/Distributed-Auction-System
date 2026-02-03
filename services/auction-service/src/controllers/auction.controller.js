@@ -106,10 +106,12 @@ class AuctionController {
     async updateAuction(req, res, next) {
         try {
             const sellerId = req.user.userId;
+            const userRole = req.user.role;
             const auction = await auctionService.updateAuction(
                 req.params.id,
                 sellerId,
-                req.body
+                req.body,
+                userRole
             );
 
             res.status(200).json({
@@ -148,7 +150,8 @@ class AuctionController {
     async cancelAuction(req, res, next) {
         try {
             const sellerId = req.user.userId;
-            const auction = await auctionService.cancelAuction(req.params.id, sellerId);
+            const userRole = req.user.role;
+            const auction = await auctionService.cancelAuction(req.params.id, sellerId, userRole);
 
             res.status(200).json({
                 success: true,
