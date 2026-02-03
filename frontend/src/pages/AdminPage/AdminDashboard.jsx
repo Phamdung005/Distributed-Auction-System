@@ -30,14 +30,19 @@ const AdminDashboard = () => {
     const [usersMap, setUsersMap] = useState({});
     const [loading, setLoading] = useState(true);
 
+    const [timeRange, setTimeRange] = useState('30days');
+    const [isExporting, setIsExporting] = useState(false);
+
     useEffect(() => {
         fetchData();
-    }, []);
+    }, [timeRange]);
 
     const fetchData = async () => {
         try {
             setLoading(true);
-            const statsData = await AdminService.getStats();
+            // In a real app, pass timeRange to getStats
+            const statsData = await AdminService.getStats(timeRange);
+            // ... (rest of fetch logic remains same)
             setStats({
                 totalUsers: Number(statsData.totalUsers) || 0,
                 activeUsers: Number(statsData.activeUsers) || 0,
@@ -61,7 +66,6 @@ const AdminDashboard = () => {
             // Process users map
             const usersList = usersRes.data || usersRes || [];
             const actualUsers = Array.isArray(usersList) ? usersList : (usersList.data || []);
-
             const map = {};
             actualUsers.forEach(user => {
                 map[String(user.id)] = user;
@@ -73,12 +77,55 @@ const AdminDashboard = () => {
             const pendingRes = await AdminService.getPendingAuctions();
             setPendingAuctions(pendingRes.data?.auctions || []);
 
-
         } catch (error) {
             console.error("Dashboard load failed", error);
             toast.error("Failed to load dashboard data: " + (error.message || "Unknown error"));
         } finally {
             setLoading(false);
+        }
+    };
+
+    const handleExport = () => {
+        try {
+            setIsExporting(true);
+            const csvContent = [
+                ["Báo cáo Admin Dashboard", new Date().toLocaleString('vi-VN')],
+                [""],
+                ["Thống kê tổng quan"],
+                ["Tổng người dùng", stats.totalUsers],
+                ["Người dùng Active", stats.activeUsers],
+                ["Bidder", stats.bidders],
+                ["Seller", stats.sellers],
+                ["Tổng phiên đấu giá", stats.auctions],
+                ["Sắp bắt đầu", stats.pendingAuctions],
+                ["Đang diễn ra", stats.activeAuctions],
+                ["Đã kết thúc", stats.endedAuctions],
+                [""],
+                ["Danh sách phiên đấu giá đang diễn ra (Top 10)"],
+                ["ID", "Tên sản phẩm", "Người bán", "Giá hiện tại", "Trạng thái"],
+                ...activeAuctions.map(auc => [
+                    auc._id,
+                    auc.title,
+                    usersMap[auc.seller?._id || auc.seller]?.username || "N/A",
+                    auc.currentPrice,
+                    auc.status
+                ])
+            ].map(e => e.join(",")).join("\n");
+
+            const blob = new Blob(["\uFEFF" + csvContent], { type: 'text/csv;charset=utf-8;' });
+            const url = URL.createObjectURL(blob);
+            const link = document.createElement("a");
+            link.setAttribute("href", url);
+            link.setAttribute("download", `bao_cao_admin_${new Date().toISOString().slice(0, 10)}.csv`);
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+            toast.success("Xuất báo cáo thành công!");
+        } catch (error) {
+            console.error("Export failed", error);
+            toast.error("Lỗi khi xuất báo cáo");
+        } finally {
+            setIsExporting(false);
         }
     };
 
@@ -199,13 +246,22 @@ const AdminDashboard = () => {
                         </p>
                     </div>
                     <div className="flex items-center gap-4">
-                        <button className="flex items-center gap-2 px-4 py-2 bg-white border border-gray-200 rounded-lg text-sm font-medium text-gray-700 hover:bg-gray-50 transition-colors">
-                            <Calendar size={16} />
-                            30 ngày qua
-                        </button>
-                        <button className="flex items-center gap-2 px-4 py-2 bg-orange-500 text-white rounded-lg text-sm font-medium hover:bg-orange-600 transition-colors shadow-sm shadow-orange-200">
+                        <select
+                            value={timeRange}
+                            onChange={(e) => setTimeRange(e.target.value)}
+                            className="px-4 py-2 bg-white border border-gray-200 rounded-lg text-sm font-medium text-gray-700 hover:bg-gray-50 transition-colors focus:outline-none focus:ring-2 focus:ring-orange-500"
+                        >
+                            <option value="7days">7 ngày qua</option>
+                            <option value="30days">30 ngày qua</option>
+                            <option value="all">Tất cả</option>
+                        </select>
+                        <button
+                            onClick={handleExport}
+                            disabled={isExporting}
+                            className="flex items-center gap-2 px-4 py-2 bg-orange-500 text-white rounded-lg text-sm font-medium hover:bg-orange-600 transition-colors shadow-sm shadow-orange-200 disabled:opacity-50"
+                        >
                             <Download size={16} />
-                            Xuất báo cáo
+                            {isExporting ? 'Đang xuất...' : 'Xuất báo cáo'}
                         </button>
                     </div>
                 </header>
