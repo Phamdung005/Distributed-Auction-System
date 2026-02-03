@@ -20,7 +20,7 @@ import walletApi from '../../services/walletApi';
 import OrderListPage from '../OrderPage/OrderListPage';
 import { ShoppingBag } from 'lucide-react';
 
-const ProfilePage = () => {
+const BidderProfilePage = () => {
     const { user, logout, refreshProfile } = useAuth();
     const navigate = useNavigate();
     const location = useLocation();
@@ -233,14 +233,10 @@ const ProfilePage = () => {
                             <p className="text-sm text-gray-500 mb-4">Thành viên từ {new Date().getFullYear()} • Việt Nam</p>
 
                             {/* Mini Stats */}
-                            <div className="grid grid-cols-2 gap-2 border-t border-gray-100 pt-4 mt-4">
+                            <div className="border-t border-gray-100 pt-4 mt-4">
                                 <div className="text-center">
-                                    <span className="block text-lg font-bold text-slate-900">{user.auctionsParticipated || 0}</span>
-                                    <span className="text-xs text-gray-500 uppercase tracking-wide">Đấu giá</span>
-                                </div>
-                                <div className="text-center">
-                                    <span className="block text-lg font-bold text-[#f26c0d]">{user.auctionsWon || 0}</span>
-                                    <span className="text-xs text-gray-500 uppercase tracking-wide">Thắng</span>
+                                    <span className="block text-xl font-bold text-slate-900">{user.auctionsParticipated || 0}</span>
+                                    <span className="text-xs text-gray-500 uppercase tracking-wide font-medium">Phiên đã tham gia</span>
                                 </div>
                             </div>
                         </div>
@@ -670,4 +666,4 @@ const ProfilePage = () => {
     );
 };
 
-export default ProfilePage;
+export default BidderProfilePage;

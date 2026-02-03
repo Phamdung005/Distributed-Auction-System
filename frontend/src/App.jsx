@@ -9,8 +9,8 @@ import { NavbarSelector } from './components/layout/Navbar';
 
 // Pages
 import { LoginPage, RegisterPage } from './pages/AuthPage';
-import { HomePage, AuctionDetailPage, ProfilePage, AuctionListPage, AuctionCommunityPage, BidderNotification, SearchResultPage, WalletPage } from './pages/BidderPage';
-import { CreateAuctionPage, MyAuctionsPage } from './pages/SellerPage';
+import { HomePage, AuctionDetailPage, BidderProfilePage, AuctionListPage, AuctionCommunityPage, BidderNotification, SearchResultPage, WalletPage } from './pages/BidderPage';
+import { CreateAuctionPage, MyAuctionsPage, SellerProfilePage } from './pages/SellerPage';
 import { SupportPage } from './components/support';
 import OrderListPage from './pages/OrderPage/OrderListPage';
 import OrderDetailPage from './pages/OrderPage/OrderDetailPage';
@@ -36,6 +36,16 @@ const MainContainer = ({ children }) => {
             {children}
         </div>
     );
+};
+
+import { useAuth } from './contexts/AuthContext';
+
+const ProfileRedirect = () => {
+    const { user } = useAuth();
+    if (user?.role === 'seller') {
+        return <SellerProfilePage />;
+    }
+    return <BidderProfilePage />;
 };
 
 const AdminRouteWrapper = ({ children }) => {
@@ -83,7 +93,7 @@ function App() {
                             } />
                             <Route path="/profile" element={
                                 <PrivateRoute>
-                                    <ProfilePage />
+                                    <ProfileRedirect />
                                 </PrivateRoute>
                             } />
                             <Route path="/auction-community" element={

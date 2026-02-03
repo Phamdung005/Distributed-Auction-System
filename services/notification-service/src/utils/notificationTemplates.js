@@ -136,6 +136,12 @@ const NOTIFICATION_TEMPLATES = {
         title: 'Xóa đấu giá thành công',
         message: (data) => `Đấu giá "${data.auctionTitle}" đã được xóa khỏi hệ thống`,
         priority: 'medium'
+    },
+
+    SELLER_PAYOUT_RECEIVED: {
+        title: 'Bạn đã nhận được tiền!',
+        message: (data) => `Bạn đã nhận được ${formatPrice(data.amount)} vào ví từ đấu giá "${data.auctionTitle}"`,
+        priority: 'high'
     }
 };
 

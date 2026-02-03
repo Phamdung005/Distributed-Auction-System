@@ -4,6 +4,8 @@ import { useAuth } from '../../../contexts/AuthContext';
 import { Gavel, Bell, PlusCircle, List, LogOut, Package } from 'lucide-react';
 import { notificationAPI } from '../../../services/notification.service';
 
+import { toast } from 'react-toastify';
+
 const NavLink = ({ to, children, icon: Icon }) => (
     <Link
         to={to}
@@ -44,8 +46,18 @@ const NavbarSeller = () => {
             const socket = connectNotificationSocket(token);
 
             if (socket) {
-                socket.on('notification:new', () => {
+                socket.on('notification:new', (notification) => {
                     fetchUnreadCount(); // Fetch fresh count
+                    // Show toast notification
+                    toast.info(notification.message, {
+                        position: "top-right",
+                        autoClose: 5000,
+                        hideProgressBar: false,
+                        closeOnClick: true,
+                        pauseOnHover: true,
+                        draggable: true,
+                        onClick: () => navigate('/notifications')
+                    });
                 });
             }
         } catch (e) {

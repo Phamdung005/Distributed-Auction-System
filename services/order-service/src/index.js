@@ -9,7 +9,19 @@ const subscribeToEvents = require('./events/subscriber');
 const orderRoutes = require('./routes/order.routes');
 const errorHandler = require('./middlewares/errorHandler');
 
+const http = require('http');
+const { Server } = require('socket.io');
+const setupOrderSocket = require('./sockets/order.socket');
+
 const app = express();
+const server = http.createServer(app);
+const io = new Server(server, {
+    cors: {
+        origin: '*',
+        methods: ['GET', 'POST']
+    }
+});
+
 const PORT = process.env.PORT || 3007;
 
 const initializeApp = async () => {
@@ -18,6 +30,9 @@ const initializeApp = async () => {
 
         // Subscribe to events
         await subscribeToEvents();
+
+        // Setup WebSockets
+        setupOrderSocket(io);
 
         console.log('✅ Services initialized');
     } catch (error) {
@@ -45,7 +60,7 @@ app.use((req, res) => {
 app.use(errorHandler);
 
 initializeApp().then(() => {
-    app.listen(PORT, () => {
+    server.listen(PORT, () => {
         console.log(`🚀 Order Service running on port ${PORT}`);
     });
 });

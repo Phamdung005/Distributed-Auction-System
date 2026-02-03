@@ -17,9 +17,46 @@ const OrderDetailPage = () => {
     useEffect(() => {
         fetchOrderDetails();
 
-        // Simple polling for new messages every 10 seconds
-        const interval = setInterval(fetchOrderDetails, 10000);
-        return () => clearInterval(interval);
+        // Setup Real-time Chat via Socket
+        let socket;
+        const setupChatSocket = async () => {
+            const { connectOrderSocket } = await import('../../services/orderSocket');
+            const token = localStorage.getItem('accessToken');
+            socket = connectOrderSocket(token);
+
+            if (socket) {
+                socket.emit('order:join', id);
+                socket.on('message:new', (newMessage) => {
+                    setOrder(prev => {
+                        if (!prev) return prev;
+                        // Avoid duplicates if fetch and socket happen together
+                        const exists = prev.messages.some(m => m._id === newMessage._id);
+                        if (exists) return prev;
+                        return {
+                            ...prev,
+                            messages: [...prev.messages, newMessage]
+                        };
+                    });
+
+                    // Scroll to bottom
+                    const chatContainer = document.getElementById('chat-messages');
+                    if (chatContainer) {
+                        setTimeout(() => {
+                            chatContainer.scrollTop = chatContainer.scrollHeight;
+                        }, 100);
+                    }
+                });
+            }
+        };
+
+        setupChatSocket();
+
+        return () => {
+            if (socket) {
+                socket.emit('order:leave', id);
+                socket.off('message:new');
+            }
+        };
     }, [id]);
 
     useEffect(() => {
@@ -69,7 +106,8 @@ const OrderDetailPage = () => {
             const result = await walletApi.payAuction({
                 auctionId: auctionId,
                 finalPrice: order.finalPrice,
-                auctionTitle: auctionTitle
+                auctionTitle: auctionTitle,
+                sellerId: order.sellerId
             });
 
             if (result.success) {
@@ -101,7 +139,9 @@ const OrderDetailPage = () => {
     return (
         <div className="container mx-auto px-4 py-8 max-w-6xl">
             <div className="mb-6">
-                <Link to="/profile" state={{ activeTab: 'orders' }} className="text-indigo-600 hover:text-indigo-800 font-medium">&larr; Quay lại Hồ sơ</Link>
+                <Link to="/profile" state={{ activeTab: 'orders' }} className={`${currentUser?.role === 'seller' ? 'text-orange-600 hover:text-orange-800' : 'text-indigo-600 hover:text-indigo-800'} font-medium transition-colors flex items-center gap-1`}>
+                    &larr; Quay lại {currentUser?.role === 'seller' ? 'Quản lý bán hàng' : 'Hồ sơ của tôi'}
+                </Link>
             </div>
 
             <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
@@ -134,15 +174,20 @@ const OrderDetailPage = () => {
                             <button
                                 onClick={handlePayment}
                                 disabled={isPaying}
-                                className={`block text-center w-full mt-6 bg-indigo-600 text-white py-2 rounded-md hover:bg-indigo-700 font-medium transition ${isPaying ? 'opacity-50 cursor-not-allowed' : ''}`}
+                                className={`block text-center w-full mt-6 bg-indigo-600 text-white py-3 rounded-xl hover:bg-indigo-700 font-bold shadow-lg shadow-indigo-100 transition-all ${isPaying ? 'opacity-50 cursor-not-allowed' : ''}`}
                             >
                                 {isPaying ? 'Đang xử lý...' : 'Thanh Toán Ngay'}
                             </button>
                         )}
                         {!isBuyer && order.status === 'paid' && (
-                            <button className="w-full mt-6 bg-blue-600 text-white py-2 rounded-md hover:bg-blue-700 font-medium transition">
+                            <button className="w-full mt-6 bg-orange-500 text-white py-3 rounded-xl hover:bg-orange-600 font-bold shadow-lg shadow-orange-100 transition-all">
                                 Xác nhận giao hàng
                             </button>
+                        )}
+                        {order.status === 'paid' && (
+                            <div className="mt-4 p-4 bg-green-50 text-green-700 rounded-lg text-xs font-medium border border-green-100 text-center">
+                                Đơn hàng đã được thanh toán thành công
+                            </div>
                         )}
                     </div>
 
@@ -192,11 +237,11 @@ const OrderDetailPage = () => {
                                 return (
                                     <div key={index} className={`flex ${isMe ? 'justify-end' : 'justify-start'}`}>
                                         <div className={`max-w-[75%] rounded-2xl px-4 py-2 shadow-sm ${isMe
-                                            ? 'bg-indigo-600 text-white rounded-br-none'
+                                            ? `${currentUser?.role === 'seller' ? 'bg-orange-500' : 'bg-indigo-600'} text-white rounded-br-none`
                                             : 'bg-white text-gray-800 border border-gray-200 rounded-bl-none'
                                             }`}>
-                                            <p>{msg.content}</p>
-                                            <p className={`text-[10px] mt-1 text-right ${isMe ? 'text-indigo-200' : 'text-gray-400'}`}>
+                                            <p className="text-sm">{msg.content}</p>
+                                            <p className={`text-[10px] mt-1 text-right ${isMe ? 'text-white/70' : 'text-gray-400'}`}>
                                                 {new Date(msg.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
                                             </p>
                                         </div>
@@ -219,12 +264,12 @@ const OrderDetailPage = () => {
                                     value={msgContent}
                                     onChange={(e) => setMsgContent(e.target.value)}
                                     placeholder="Nhập tin nhắn..."
-                                    className="flex-1 border border-gray-300 rounded-full px-4 py-2 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
+                                    className={`flex-1 border border-gray-300 rounded-full px-4 py-2 focus:outline-none focus:ring-2 ${currentUser?.role === 'seller' ? 'focus:ring-orange-500' : 'focus:ring-indigo-500'} focus:border-transparent`}
                                 />
                                 <button
                                     type="submit"
                                     disabled={!msgContent.trim()}
-                                    className="bg-indigo-600 text-white rounded-full p-2 px-6 font-medium hover:bg-indigo-700 disabled:opacity-50 disabled:cursor-not-allowed transition"
+                                    className={`${currentUser?.role === 'seller' ? 'bg-orange-500 hover:bg-orange-600' : 'bg-indigo-600 hover:bg-indigo-700'} text-white rounded-full p-2 px-6 font-bold disabled:opacity-50 disabled:cursor-not-allowed transition-all shadow-md`}
                                 >
                                     Gửi
                                 </button>

@@ -101,7 +101,18 @@ class OrderService {
             throw new Error('Unauthorized to send message in this order');
         }
 
-        return await orderRepository.addMessage(orderId, userId, content);
+        const updatedOrder = await orderRepository.addMessage(orderId, userId, content);
+
+        // Emit socket event for real-time chat
+        try {
+            const { emitNewMessage } = require('../sockets/order.socket');
+            const newMessage = updatedOrder.messages[updatedOrder.messages.length - 1];
+            emitNewMessage(orderId, newMessage);
+        } catch (socketError) {
+            console.error('Failed to emit message via socket:', socketError);
+        }
+
+        return updatedOrder;
     }
 
     async updateShippingAddress(orderId, userId, addressData) {

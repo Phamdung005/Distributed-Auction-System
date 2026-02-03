@@ -2,8 +2,8 @@ import React, { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import orderService from '../../services/order.service';
 
-const OrderListPage = ({ isEmbedded = false }) => {
-    const [activeTab, setActiveTab] = useState('buying'); // 'buying' or 'selling'
+const OrderListPage = ({ isEmbedded = false, initialTab = 'buying' }) => {
+    const [activeTab, setActiveTab] = useState(initialTab); // 'buying' or 'selling'
     const [orders, setOrders] = useState([]);
     const [loading, setLoading] = useState(true);
     const [pagination, setPagination] = useState(null);
@@ -118,12 +118,12 @@ const OrderListPage = ({ isEmbedded = false }) => {
                                     <span className={`px-3 py-1 rounded-full text-sm font-medium ${statusColors[order.status] || 'bg-gray-100'}`}>
                                         {statusLabels[order.status] || order.status}
                                     </span>
-                                    <p className="text-indigo-600 font-bold text-xl">
+                                    <p className={`${activeTab === 'selling' ? 'text-orange-600' : 'text-indigo-600'} font-bold text-xl`}>
                                         {order.finalPrice.toLocaleString('vi-VN')} đ
                                     </p>
                                     <Link
                                         to={`/orders/${order._id}`}
-                                        className="inline-flex items-center text-indigo-600 hover:text-indigo-800 font-medium text-sm mt-1"
+                                        className={`inline-flex items-center ${activeTab === 'selling' ? 'text-orange-600 hover:text-orange-800' : 'text-indigo-600 hover:text-indigo-800'} font-medium text-sm mt-1`}
                                     >
                                         Xem chi tiết &rarr;
                                     </Link>

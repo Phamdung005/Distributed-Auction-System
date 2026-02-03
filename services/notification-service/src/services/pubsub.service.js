@@ -29,6 +29,7 @@ class PubSubService {
         await this.subscriber.subscribe('payment:deposit:refunded', this.handleDepositRefunded.bind(this));
         await this.subscriber.subscribe('payment:deposit:completed', this.handleWalletDeposit.bind(this));
         await this.subscriber.subscribe('payment:auction:paid', this.handleAuctionPaid.bind(this));
+        await this.subscriber.subscribe('payment:seller:payout:completed', this.handleSellerPayout.bind(this));
         await this.subscriber.subscribe('auction:created', this.handleAuctionLifecycleEvent.bind(this, 'seller_auction_created'));
         await this.subscriber.subscribe('auction:updated', this.handleAuctionLifecycleEvent.bind(this, 'seller_auction_updated'));
         await this.subscriber.subscribe('auction:deleted', this.handleAuctionLifecycleEvent.bind(this, 'seller_auction_deleted'));
@@ -178,6 +179,24 @@ class PubSubService {
 
         } catch (error) {
             console.error('Error handling wallet deposit:', error);
+        }
+    }
+
+    /**
+     * Handle seller payout event
+     */
+    async handleSellerPayout(message) {
+        try {
+            const data = JSON.parse(message);
+            console.log('Seller payout event received:', JSON.stringify(data));
+
+            const notification = await notificationService.handleSellerPayout(data);
+
+            if (notification) {
+                sendNotificationToUser(data.userId, notification);
+            }
+        } catch (error) {
+            console.error('Error handling seller payout event:', error);
         }
     }
     /**

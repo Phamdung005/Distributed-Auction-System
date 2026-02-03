@@ -186,7 +186,7 @@ class WalletController {
     async payAuction(req, res) {
         try {
             const userId = req.user.userId;
-            const { auctionId, finalPrice, auctionTitle } = req.body;
+            const { auctionId, finalPrice, auctionTitle, sellerId } = req.body;
 
             // Validate input
             if (!auctionId) {
@@ -203,7 +203,7 @@ class WalletController {
                 });
             }
 
-            const result = await walletService.payAuctionWinner(userId, auctionId, finalPrice, auctionTitle);
+            const result = await walletService.payAuctionWinner(userId, auctionId, finalPrice, auctionTitle, sellerId);
 
             if (!result.success) {
                 return res.status(400).json(result);

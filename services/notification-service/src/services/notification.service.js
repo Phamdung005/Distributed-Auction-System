@@ -230,6 +230,24 @@ class NotificationService {
             }
         });
     }
+
+    /**
+     * Create notification for seller payout
+     */
+    async handleSellerPayout(payoutData) {
+        const { userId, amount, auctionId, auctionTitle } = payoutData;
+
+        return await this.createNotification({
+            userId,
+            userRole: 'seller',
+            type: 'seller_payout_received',
+            notificationData: {
+                amount,
+                auctionId,
+                auctionTitle: auctionTitle || 'Phiên đấu giá'
+            }
+        });
+    }
 }
 
 module.exports = new NotificationService();
