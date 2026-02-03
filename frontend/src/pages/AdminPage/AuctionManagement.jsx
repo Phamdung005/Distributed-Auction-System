@@ -50,7 +50,9 @@ const AuctionManagement = () => {
 
                 const map = {};
                 actualUsers.forEach(user => {
-                    map[user.id] = user;
+                    // Ensure ID matching handles both string/objectID formats
+                    map[String(user.id)] = user;
+                    if (user._id) map[String(user._id)] = user;
                 });
                 setUsersMap(map);
 
@@ -101,7 +103,13 @@ const AuctionManagement = () => {
     };
 
     const filteredAuctions = auctions.filter(auction => {
-        const sellerName = usersMap[auction.seller]?.fullName || 'Unknown';
+        let sellerIdString = '';
+        if (auction.seller && typeof auction.seller === 'object') {
+            sellerIdString = String(auction.seller.id || auction.seller._id);
+        } else {
+            sellerIdString = String(auction.seller);
+        }
+        const sellerName = usersMap[sellerIdString]?.fullName || 'Unknown';
         return auction.title?.toLowerCase().includes(searchTerm.toLowerCase()) ||
             sellerName.toLowerCase().includes(searchTerm.toLowerCase());
     });
@@ -156,8 +164,8 @@ const AuctionManagement = () => {
     };
 
     return (
-        <div className="space-y-6">
-            <div className="flex justify-between items-center">
+        <div className="space-y-6 h-full flex flex-col">
+            <div className="flex justify-between items-center shrink-0">
                 <div className="relative w-64">
                     <input
                         type="text"
@@ -171,10 +179,10 @@ const AuctionManagement = () => {
                 {/* Create Auction usually done by Seller, accessible here? Maybe unrelated for now */}
             </div>
 
-            <div className="bg-white rounded-xl border border-gray-100 shadow-sm overflow-hidden">
-                <div className="overflow-x-auto">
-                    <table className="w-full text-left border-collapse">
-                        <thead className="bg-[#F8F9FA]">
+            <div className="bg-white rounded-xl border border-gray-100 shadow-sm flex-1 flex flex-col min-h-0">
+                <div className="overflow-auto flex-1">
+                    <table className="w-full text-left border-collapse relative">
+                        <thead className="bg-[#F8F9FA] sticky top-0 z-10">
                             <tr>
                                 <th className="px-6 py-4 text-xs font-bold text-gray-500 uppercase tracking-wider">Product Info</th>
                                 <th className="px-6 py-4 text-xs font-bold text-gray-500 uppercase tracking-wider">Seller</th>
@@ -192,7 +200,34 @@ const AuctionManagement = () => {
                                 </tr>
                             ) : (
                                 filteredAuctions.map(auction => {
-                                    const seller = usersMap[auction.seller] || { fullName: 'Unknown', email: 'N/A' };
+                                    // Robust Seller Extraction
+                                    let sellerInfo = { fullName: 'Unknown', email: 'N/A' };
+                                    let sellerId = 'N/A';
+
+                                    if (auction.seller) {
+                                        if (typeof auction.seller === 'object') {
+                                            if (auction.seller.fullName) {
+                                                sellerInfo = auction.seller;
+                                            } else {
+                                                const rawId = auction.seller.id || auction.seller._id;
+                                                if (rawId) {
+                                                    const id = String(rawId);
+                                                    sellerId = id;
+                                                    if (usersMap[id]) sellerInfo = usersMap[id];
+                                                }
+                                            }
+                                        } else {
+                                            const id = String(auction.seller);
+                                            sellerId = id;
+                                            if (usersMap[id]) sellerInfo = usersMap[id];
+                                        }
+                                    }
+
+                                    // Fallback display
+                                    if (sellerInfo.fullName === 'Unknown' && sellerId !== 'N/A') {
+                                        sellerInfo.fullName = `Không tồn tại (ID: ${sellerId.substring(0, 6)}...)`;
+                                    }
+
                                     const displayStatus = getDisplayStatus(auction);
 
                                     return (
@@ -210,17 +245,17 @@ const AuctionManagement = () => {
                                             </td>
                                             <td className="px-6 py-4">
                                                 <div className="text-sm">
-                                                    <p className="font-bold text-gray-900">{seller.fullName}</p>
-                                                    <p className="text-xs text-gray-500">{seller.email}</p>
+                                                    <p className="font-bold text-gray-900">{sellerInfo.fullName}</p>
+                                                    <p className="text-xs text-gray-500">{sellerInfo.email}</p>
                                                 </div>
                                             </td>
                                             <td className="px-6 py-4">
                                                 <div className="flex flex-col">
                                                     <span className="text-sm font-bold text-orange-600">{formatVND(auction.currentPrice || auction.startPrice)}</span>
                                                     <span className={`text-[10px] font-bold uppercase w-fit px-2 py-0.5 rounded-full mt-1 ${displayStatus === 'active' ? 'bg-green-100 text-green-700' :
-                                                            displayStatus === 'pending' ? 'bg-yellow-100 text-yellow-700' :
-                                                                displayStatus === 'cancelled' ? 'bg-red-100 text-red-700' :
-                                                                    'bg-gray-100 text-gray-700'
+                                                        displayStatus === 'pending' ? 'bg-yellow-100 text-yellow-700' :
+                                                            displayStatus === 'cancelled' ? 'bg-red-100 text-red-700' :
+                                                                'bg-gray-100 text-gray-700'
                                                         }`}>
                                                         {displayStatus}
                                                     </span>

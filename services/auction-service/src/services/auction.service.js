@@ -316,16 +316,16 @@ class AuctionService {
             startTime: auction.startTime,
             endTime: auction.endTime,
             status: auction.status,
-            seller: auction.seller ? {
+            seller: (auction.seller && auction.seller.username) ? {
                 id: auction.seller._id,
                 username: auction.seller.username,
                 fullName: auction.seller.fullName
-            } : null,
-            winner: auction.winner ? {
+            } : (auction.seller ? auction.seller.toString() : null),
+            winner: (auction.winner && auction.winner.username) ? {
                 id: auction.winner._id,
                 username: auction.winner.username,
                 fullName: auction.winner.fullName
-            } : null,
+            } : (auction.winner ? auction.winner.toString() : null),
             totalBids: auction.totalBids,
             totalParticipants: auction.totalParticipants,
             viewCount: auction.viewCount,

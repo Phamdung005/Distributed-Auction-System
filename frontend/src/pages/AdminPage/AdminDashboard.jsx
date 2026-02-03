@@ -1,16 +1,9 @@
+
 import React, { useState, useEffect } from 'react';
 import { toast } from 'react-toastify';
 import {
-    LayoutDashboard,
-    Users,
-    Gavel,
-    Wallet,
-    FileBarChart,
-    Settings,
-    LogOut,
-    Calendar,
-    Download,
-    Bell
+    LayoutDashboard, Users, Gavel, Settings, LogOut,
+    TrendingUp, Activity, DollarSign, Calendar, Download, Clock, PlayCircle, CheckCircle, Bell
 } from 'lucide-react';
 import AdminService from '../../services/admin.service';
 import { auctionAPI } from '../../services/api';
@@ -26,7 +19,11 @@ const AdminDashboard = () => {
         activeUsers: 0,
         bidders: 0,
         sellers: 0,
-        auctions: 0
+        auctions: 0,
+        pendingAuctions: 0,
+        activeAuctions: 0,
+        endedAuctions: 0,
+        pendingApprovals: 0,
     });
     const [activeAuctions, setActiveAuctions] = useState([]);
     const [pendingAuctions, setPendingAuctions] = useState([]); // Added state for pending auctions
@@ -46,7 +43,10 @@ const AdminDashboard = () => {
                 activeUsers: Number(statsData.activeUsers) || 0,
                 bidders: Number(statsData.bidders) || 0,
                 sellers: Number(statsData.sellers) || 0,
-                auctions: Number(statsData.auctions) || 0
+                auctions: Number(statsData.auctions) || 0,
+                pendingAuctions: Number(statsData.pendingAuctions) || 0,
+                activeAuctions: Number(statsData.activeAuctions) || 0,
+                endedAuctions: Number(statsData.endedAuctions) || 0,
             });
 
             // Fetch Active Auctions and Users in parallel
@@ -55,15 +55,17 @@ const AdminDashboard = () => {
                 AdminService.getUsers()
             ]);
 
-            // auctionsRes.data.data.auctions
-            setActiveAuctions(auctionsRes.data?.data?.auctions || []);
+            const fetchedAuctions = auctionsRes.data?.data?.auctions || auctionsRes.data?.auctions || auctionsRes.auctions || [];
+            setActiveAuctions(fetchedAuctions);
 
             // Process users map
             const usersList = usersRes.data || usersRes || [];
             const actualUsers = Array.isArray(usersList) ? usersList : (usersList.data || []);
+
             const map = {};
             actualUsers.forEach(user => {
-                map[user.id] = user;
+                map[String(user.id)] = user;
+                if (user._id) map[String(user._id)] = user;
             });
             setUsersMap(map);
 
@@ -128,8 +130,17 @@ const AdminDashboard = () => {
     const bidderPercent = totalRoles > 0 ? (stats.bidders / totalRoles) * 100 : 0;
     const sellerPercent = totalRoles > 0 ? (stats.sellers / totalRoles) * 100 : 0;
 
+    const getHeaderTitle = () => {
+        switch (activeTab) {
+            case 'overview': return 'Tổng quan';
+            case 'users': return 'Quản lý Người dùng';
+            case 'auctions': return 'Quản lý Đấu giá';
+            default: return 'Bảng điều khiển';
+        }
+    };
+
     return (
-        <div className="flex h-screen bg-[#F8F9FA] text-[#1A1A1A] font-sans">
+        <div className="flex h-screen bg-[#F8F9FA] text-[#1A1A1A] font-sans overflow-hidden">
             {/* Sidebar */}
             <aside className="w-64 bg-white border-r border-gray-200 flex flex-col h-full shrink-0">
                 <div className="p-6 flex items-center gap-3 mb-6">
@@ -161,14 +172,8 @@ const AdminDashboard = () => {
                         active={activeTab === 'auctions'}
                         onClick={() => setActiveTab('auctions')}
                     />
-                    <NavItem icon={<Wallet size={20} />} label="Tài chính" />
-                    <NavItem icon={<FileBarChart size={20} />} label="Báo cáo" />
 
-                    <div className="pt-6 pb-2 px-4 text-xs font-semibold text-gray-400 uppercase tracking-wider">
-                        Cài đặt
-                    </div>
-                    <NavItem icon={<Settings size={20} />} label="Hệ thống" />
-                    <NavItem icon={<Users size={20} />} label="Phân quyền" />
+
                 </nav>
 
                 <div className="p-4 border-t border-gray-100">
@@ -188,7 +193,7 @@ const AdminDashboard = () => {
                 {/* Header */}
                 <header className="bg-white border-b border-gray-200 px-8 py-4 flex items-center justify-between sticky top-0 z-10 transition-shadow hover:shadow-sm">
                     <div>
-                        <h2 className="text-2xl font-bold text-gray-900">Tổng quan</h2>
+                        <h2 className="text-2xl font-bold text-gray-900">{getHeaderTitle()}</h2>
                         <p className="text-gray-500 text-sm mt-1">
                             Tổng quan hệ thống ngày <span className="text-orange-600 font-medium">{new Date().toLocaleDateString('vi-VN')}</span>
                         </p>
@@ -221,11 +226,24 @@ const AdminDashboard = () => {
                                 icon={<Users size={24} className="text-green-600" />}
                                 bg="bg-green-50"
                             />
+
                             <StatCard
-                                title="Tổng phiên đấu giá"
-                                value={stats.auctions.toString()}
-                                icon={<LayoutDashboard size={24} className="text-purple-600" />}
-                                bg="bg-purple-50"
+                                title="Sắp bắt đầu"
+                                value={stats.pendingAuctions?.toString() || '0'}
+                                icon={<Clock size={24} className="text-yellow-600" />}
+                                bg="bg-yellow-50"
+                            />
+                            <StatCard
+                                title="Đang diễn ra"
+                                value={stats.activeAuctions?.toString() || '0'}
+                                icon={<PlayCircle size={24} className="text-green-600" />}
+                                bg="bg-green-50"
+                            />
+                            <StatCard
+                                title="Đã kết thúc"
+                                value={stats.endedAuctions?.toString() || '0'}
+                                icon={<CheckCircle size={24} className="text-gray-600" />}
+                                bg="bg-gray-50"
                             />
                         </section>
 
@@ -293,26 +311,59 @@ const AdminDashboard = () => {
                                                 </tr>
                                             ) : (
                                                 activeAuctions.map(auction => {
-                                                    const seller = usersMap[auction.seller] || { fullName: 'Unknown', email: 'N/A' };
+                                                    // Robust Seller Extraction
+                                                    let sellerInfo = { fullName: 'Unknown', email: 'N/A' };
+                                                    let sellerId = 'N/A';
+
+                                                    if (auction.seller) {
+                                                        if (typeof auction.seller === 'object') {
+                                                            // Case 1: Populated object
+                                                            if (auction.seller.fullName) {
+                                                                sellerInfo = auction.seller;
+                                                            } else {
+                                                                // Case 2: Object with ID only
+                                                                const rawId = auction.seller.id || auction.seller._id;
+                                                                if (rawId) {
+                                                                    const id = String(rawId);
+                                                                    sellerId = id;
+                                                                    if (usersMap[id]) sellerInfo = usersMap[id];
+                                                                }
+                                                            }
+                                                        } else {
+                                                            // Case 3: String ID
+                                                            const id = String(auction.seller);
+                                                            sellerId = id;
+                                                            if (usersMap[id]) sellerInfo = usersMap[id];
+                                                        }
+                                                    }
+
+                                                    // Fallback display if still unknown but we have an ID
+                                                    if (sellerInfo.fullName === 'Unknown' && sellerId !== 'N/A') {
+                                                        sellerInfo.fullName = `Không tìm thấy(ID: ${sellerId.substring(0, 6)}...)`;
+                                                    }
+
                                                     return (
                                                         <tr key={auction.id} className="hover:bg-gray-50 transition-colors">
                                                             <td className="px-6 py-4">
                                                                 <div className="flex items-center gap-3">
                                                                     <div className="h-10 w-10 rounded-lg bg-gray-100 bg-cover bg-center shrink-0 border border-gray-200"
                                                                         style={{ backgroundImage: `url('${auction.image || auction.images?.[0] || 'https://via.placeholder.com/150'}')` }}>
-                                                                    </div>
+                                                                    </div >
                                                                     <div>
                                                                         <p className="text-sm font-bold text-gray-900 line-clamp-1">{auction.title}</p>
                                                                         <p className="text-xs text-gray-500">{auction.category || 'Chung'}</p>
                                                                     </div>
-                                                                </div>
-                                                            </td>
+                                                                </div >
+                                                            </td >
                                                             <td className="px-6 py-4">
                                                                 <div className="flex items-center gap-2">
                                                                     <div className="w-6 h-6 rounded-full bg-gray-200 flex items-center justify-center text-xs font-bold text-gray-600">
-                                                                        {seller.fullName?.[0] || 'U'}
+                                                                        {sellerInfo.fullName !== 'Unknown' ? sellerInfo.fullName[0] : '?'}
                                                                     </div>
-                                                                    <span className="text-sm text-gray-600 font-medium">{seller.fullName}</span>
+                                                                    <div className="flex flex-col">
+                                                                        <span className="text-sm text-gray-600 font-medium">{sellerInfo.fullName}</span>
+                                                                        <span className="text-xs text-gray-400">{sellerInfo.email}</span>
+                                                                    </div>
                                                                 </div>
                                                             </td>
                                                             <td className="px-6 py-4">
@@ -323,32 +374,36 @@ const AdminDashboard = () => {
                                                                     Active
                                                                 </span>
                                                             </td>
-                                                        </tr>
+                                                        </tr >
                                                     )
                                                 })
                                             )}
-                                        </tbody>
-                                    </table>
-                                </div>
-                            </div>
-                        </section>
+                                        </tbody >
+                                    </table >
+                                </div >
+                            </div >
+                        </section >
 
 
-                    </div>
+                    </div >
                 )}
 
-                {activeTab === 'users' && (
-                    <div className="p-8">
-                        <UserManagement />
-                    </div>
-                )}
+                {
+                    activeTab === 'users' && (
+                        <div className="p-8">
+                            <UserManagement />
+                        </div>
+                    )
+                }
 
-                {activeTab === 'auctions' && (
-                    <div className="p-8">
-                        <AuctionManagement />
-                    </div>
-                )}
-            </main>
+                {
+                    activeTab === 'auctions' && (
+                        <div className="p-8">
+                            <AuctionManagement />
+                        </div>
+                    )
+                }
+            </main >
         </div >
     );
 };
