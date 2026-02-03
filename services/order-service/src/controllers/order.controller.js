@@ -52,6 +52,25 @@ class OrderController {
             next(error);
         }
     }
+    async confirmShipping(req, res, next) {
+        try {
+            const userId = req.user.userId;
+            const order = await orderService.confirmShipping(req.params.id, userId);
+            res.status(200).json({ success: true, data: order });
+        } catch (error) {
+            next(error);
+        }
+    }
+
+    async confirmReceipt(req, res, next) {
+        try {
+            const userId = req.user.userId;
+            const order = await orderService.confirmReceipt(req.params.id, userId);
+            res.status(200).json({ success: true, data: order });
+        } catch (error) {
+            next(error);
+        }
+    }
 }
 
 module.exports = new OrderController();

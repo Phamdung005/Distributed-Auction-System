@@ -4,6 +4,7 @@ import orderService from '../../services/order.service';
 import { useAuth } from '../../contexts/AuthContext';
 
 import walletApi from '../../services/walletApi';
+import { toast } from 'react-toastify';
 
 const OrderDetailPage = () => {
     const { id } = useParams();
@@ -66,12 +67,57 @@ const OrderDetailPage = () => {
     const fetchOrderDetails = async () => {
         try {
             const result = await orderService.getOrderById(id);
-            setOrder(result.data);
-            setLoading(false);
+            if (result.success) {
+                setOrder(result.data);
+            }
         } catch (error) {
             console.error('Failed to fetch order details', error);
+            toast.error('Không thể tải thông tin đơn hàng');
+        } finally {
             setLoading(false);
         }
+    };
+
+    const handleConfirmShipping = async () => {
+        try {
+            const result = await orderService.confirmShipping(id);
+            if (result.success) {
+                toast.success('Xác nhận giao hàng thành công!');
+                fetchOrderDetails();
+            }
+        } catch (error) {
+            toast.error(error.response?.data?.message || 'Có lỗi xảy ra');
+        }
+    };
+
+    const handleConfirmReceipt = async () => {
+        try {
+            const result = await orderService.confirmReceipt(id);
+            if (result.success) {
+                toast.success('Xác nhận đã nhận hàng. Đơn hàng hoàn tất!');
+                fetchOrderDetails();
+            }
+        } catch (error) {
+            toast.error(error.response?.data?.message || 'Có lỗi xảy ra');
+        }
+    };
+
+    const statusLabels = {
+        pending_payment: 'Chờ thanh toán',
+        paid: 'Đã thanh toán',
+        shipping: 'Đang giao hàng',
+        completed: 'Hoàn tất',
+        cancelled: 'Đã hủy',
+        refunded: 'Hoàn tiền'
+    };
+
+    const statusColors = {
+        pending_payment: 'text-yellow-600',
+        paid: 'text-blue-600',
+        shipping: 'text-indigo-600 font-bold',
+        completed: 'text-green-600 font-bold',
+        cancelled: 'text-red-600',
+        refunded: 'text-gray-600'
     };
 
     const scrollToBottom = () => {
@@ -88,7 +134,7 @@ const OrderDetailPage = () => {
             fetchOrderDetails(); // Refresh immediately
         } catch (error) {
             console.error('Failed to send message', error);
-            alert('Gửi tin nhắn thất bại');
+            toast.error('Gửi tin nhắn thất bại');
         }
     };
 
@@ -111,14 +157,14 @@ const OrderDetailPage = () => {
             });
 
             if (result.success) {
-                alert('Thanh toán thành công!');
+                toast.success('Thanh toán thành công!');
                 fetchOrderDetails(); // Reload order to show Paid status
             } else {
-                alert(result.message || 'Thanh toán thất bại');
+                toast.error(result.message || 'Thanh toán thất bại');
             }
         } catch (error) {
             console.error('Payment failed', error);
-            alert(error.response?.data?.message || 'Lỗi khi thanh toán: ' + error.message);
+            toast.error(error.response?.data?.message || 'Lỗi khi thanh toán: ' + error.message);
         } finally {
             setIsPaying(false);
         }
@@ -157,7 +203,9 @@ const OrderDetailPage = () => {
                             </div>
                             <div className="flex justify-between">
                                 <span className="text-gray-500">Trạng thái:</span>
-                                <span className="font-medium capitalize">{order.status.replace('_', ' ')}</span>
+                                <span className={`font-medium ${statusColors[order.status] || ''}`}>
+                                    {statusLabels[order.status] || order.status}
+                                </span>
                             </div>
                             <div className="flex justify-between">
                                 <span className="text-gray-500">Ngày tạo:</span>
@@ -169,7 +217,7 @@ const OrderDetailPage = () => {
                             </div>
                         </div>
 
-                        {/* Action Buttons Placeholder */}
+                        {/* Action Buttons */}
                         {isBuyer && order.status === 'pending_payment' && (
                             <button
                                 onClick={handlePayment}
@@ -179,14 +227,40 @@ const OrderDetailPage = () => {
                                 {isPaying ? 'Đang xử lý...' : 'Thanh Toán Ngay'}
                             </button>
                         )}
+
                         {!isBuyer && order.status === 'paid' && (
-                            <button className="w-full mt-6 bg-orange-500 text-white py-3 rounded-xl hover:bg-orange-600 font-bold shadow-lg shadow-orange-100 transition-all">
+                            <button
+                                onClick={handleConfirmShipping}
+                                className="w-full mt-6 bg-orange-500 text-white py-3 rounded-xl hover:bg-orange-600 font-bold shadow-lg shadow-orange-100 transition-all"
+                            >
                                 Xác nhận giao hàng
                             </button>
                         )}
+
+                        {isBuyer && order.status === 'shipping' && (
+                            <button
+                                onClick={handleConfirmReceipt}
+                                className="w-full mt-6 bg-indigo-600 text-white py-3 rounded-xl hover:bg-indigo-700 font-bold shadow-lg shadow-indigo-100 transition-all"
+                            >
+                                Xác nhận nhận hàng
+                            </button>
+                        )}
+
                         {order.status === 'paid' && (
                             <div className="mt-4 p-4 bg-green-50 text-green-700 rounded-lg text-xs font-medium border border-green-100 text-center">
-                                Đơn hàng đã được thanh toán thành công
+                                Đơn hàng đã được thanh toán thành công. Vui lòng chờ người bán giao hàng.
+                            </div>
+                        )}
+
+                        {order.status === 'shipping' && (
+                            <div className="mt-4 p-4 bg-indigo-50 text-indigo-700 rounded-lg text-xs font-medium border border-indigo-100 text-center">
+                                Đơn hàng đang được vận chuyển.
+                            </div>
+                        )}
+
+                        {order.status === 'completed' && (
+                            <div className="mt-4 p-4 bg-gray-50 text-gray-700 rounded-lg text-xs font-medium border border-gray-100 text-center">
+                                Đơn hàng đã hoàn thành. Cảm ơn bạn!
                             </div>
                         )}
                     </div>

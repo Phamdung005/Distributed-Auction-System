@@ -130,12 +130,34 @@ class OrderService {
         return await orderRepository.updateOrder(orderId, { shippingAddress: addressData });
     }
 
-    async updateStatus(orderId, userId, status) {
+    async confirmShipping(orderId, userId) {
         const order = await orderRepository.getOrderById(orderId);
         if (!order) throw new Error('Order not found');
 
-        // This logic can be expanded
-        return await orderRepository.updateOrder(orderId, { status });
+        if (order.sellerId !== userId) {
+            throw new Error('Only seller can confirm shipping');
+        }
+
+        if (order.status !== 'paid') {
+            throw new Error(`Cannot confirm shipping for order in ${order.status} status`);
+        }
+
+        return await orderRepository.updateOrder(orderId, { status: 'shipping' });
+    }
+
+    async confirmReceipt(orderId, userId) {
+        const order = await orderRepository.getOrderById(orderId);
+        if (!order) throw new Error('Order not found');
+
+        if (order.buyerId !== userId) {
+            throw new Error('Only bidder can confirm receipt');
+        }
+
+        if (order.status !== 'shipping') {
+            throw new Error(`Cannot confirm receipt for order in ${order.status} status`);
+        }
+
+        return await orderRepository.updateOrder(orderId, { status: 'completed' });
     }
 
     async markOrderAsPaid(auctionId, paymentData) {

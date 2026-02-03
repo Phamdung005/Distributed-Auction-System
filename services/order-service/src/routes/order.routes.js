@@ -6,6 +6,15 @@ const { authenticate } = require('../middlewares/auth.middleware');
 // All routes require authentication
 router.use(authenticate);
 
+console.log('--- Registering Order Routes ---');
+router.post('/:id/ship', (req, res, next) => {
+    console.log(`[OrderRoutes] POST /${req.params.id}/ship hit`);
+    orderController.confirmShipping(req, res, next);
+});
+router.post('/:id/receive', (req, res, next) => {
+    console.log(`[OrderRoutes] POST /${req.params.id}/receive hit`);
+    orderController.confirmReceipt(req, res, next);
+});
 router.get('/buying', orderController.getMyBuyingOrders);
 router.get('/selling', orderController.getMySellingOrders);
 router.get('/:id', orderController.getOrderById);

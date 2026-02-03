@@ -51,6 +51,12 @@ app.get('/health', (req, res) => {
     res.status(200).json({ status: 'OK', service: 'order-service' });
 });
 
+// Debug middleware to log all requests
+app.use((req, res, next) => {
+    console.log(`[OrderService] ${req.method} ${req.url}`);
+    next();
+});
+
 app.use('/api/orders', orderRoutes);
 
 app.use((req, res) => {
