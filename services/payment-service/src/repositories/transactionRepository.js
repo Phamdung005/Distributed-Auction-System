@@ -171,6 +171,68 @@ class TransactionRepository {
     }
 
     /**
+     * Lấy thống kê transactions toàn hệ thống (Admin)
+     * @returns {Promise<Object>} - Statistics object
+     */
+    async getGlobalTransactionStats() {
+        const stats = await Transaction.aggregate([
+            {
+                $match: {
+                    status: 'completed'
+                }
+            },
+            {
+                $group: {
+                    _id: '$type',
+                    total: { $sum: '$amount' },
+                    count: { $sum: 1 }
+                }
+            }
+        ]);
+
+        // Format stats
+        const formattedStats = {
+            totalDeposit: 0,
+            totalWithdraw: 0,
+            totalBidDeposit: 0,
+            totalBidRefund: 0,
+            totalAuctionPayment: 0,
+            totalSellerPayout: 0,
+            totalPlatformFee: 0,
+            transactionCount: 0
+        };
+
+        stats.forEach(stat => {
+            formattedStats.transactionCount += stat.count;
+            switch (stat._id) {
+                case 'deposit':
+                    formattedStats.totalDeposit = stat.total;
+                    break;
+                case 'withdraw':
+                    formattedStats.totalWithdraw = stat.total;
+                    break;
+                case 'bid_deposit':
+                    formattedStats.totalBidDeposit = stat.total;
+                    break;
+                case 'bid_refund':
+                    formattedStats.totalBidRefund = stat.total;
+                    break;
+                case 'auction_payment':
+                    formattedStats.totalAuctionPayment = stat.total;
+                    break;
+                case 'seller_payout':
+                    formattedStats.totalSellerPayout = stat.total;
+                    break;
+                case 'platform_fee':
+                    formattedStats.totalPlatformFee = stat.total;
+                    break;
+            }
+        });
+
+        return formattedStats;
+    }
+
+    /**
      * Update transaction status
      * @param {string} transactionId - ID của transaction
      * @param {string} status - Status mới

@@ -100,6 +100,22 @@ class AuthRepository {
             $set: { refreshTokens: [] }
         });
     }
+    /**
+     * Lấy tất cả users (cẩn thận với số lượng lớn)
+     * @returns {Promise<Array>}
+     */
+    async findAll() {
+        return await User.find({}).sort({ createdAt: -1 });
+    }
+
+    /**
+     * Xóa user
+     * @param {string} userId
+     * @returns {Promise<User|null>}
+     */
+    async deleteUser(userId) {
+        return await User.findByIdAndDelete(userId);
+    }
 }
 
 module.exports = new AuthRepository();

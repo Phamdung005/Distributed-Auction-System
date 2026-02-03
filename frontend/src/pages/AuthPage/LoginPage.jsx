@@ -18,7 +18,11 @@ const LoginPage = () => {
     try {
       const result = await login(data);
       if (result.success) {
-        navigate('/');
+        if (result.user?.role === 'admin') {
+          navigate('/admin');
+        } else {
+          navigate('/');
+        }
       } else {
         setLoginError(result.message || 'Đăng nhập thất bại. Vui lòng kiểm tra lại thông tin.');
       }

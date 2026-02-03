@@ -46,7 +46,40 @@ class AuctionRepository {
         const now = new Date();
         const enhancedFilter = { ...filter };
 
-        if (filter.status === 'active') {
+        // Handle comma-separated statuses for $in query
+        if (filter.status && typeof filter.status === 'string' && filter.status.includes(',')) {
+            const statuses = filter.status.split(',');
+            delete enhancedFilter.status; // Remove pure string match
+
+            // Build $or query for time-based validity of each status
+            const statusConditions = [];
+
+            if (statuses.includes('active')) {
+                statusConditions.push({
+                    status: 'active',
+                    startTime: { $lte: now },
+                    endTime: { $gt: now }
+                });
+            }
+            if (statuses.includes('pending')) {
+                statusConditions.push({
+                    status: 'pending',
+                    startTime: { $gt: now }
+                });
+            }
+            if (statuses.includes('ended')) {
+                statusConditions.push({
+                    status: 'ended', // Ended auctions might not strictly need endTime check if purely updated by status, but good to be safe or just trust status
+                });
+            }
+
+            if (statusConditions.length > 0) {
+                enhancedFilter.$or = statusConditions;
+            } else {
+                enhancedFilter.status = { $in: statuses };
+            }
+
+        } else if (filter.status === 'active') {
             // For active auctions, ensure they haven't expired
             enhancedFilter.startTime = { $lte: now };
             enhancedFilter.endTime = { $gt: now };

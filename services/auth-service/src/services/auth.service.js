@@ -280,6 +280,111 @@ class AuthService {
         user.password = newPassword;
         await user.save();
     }
+    /**
+     * Lấy danh sách users (Admin)
+     * @returns {Promise<Object>}
+     */
+    async getAllUsers() {
+        const users = await authRepository.findAll();
+        return users.map(user => ({
+            id: user._id,
+            email: user.email,
+            fullName: user.fullName,
+            phone: user.phone,
+            role: user.role,
+            isActive: user.isActive,
+            createdAt: user.createdAt
+        }));
+    }
+
+    /**
+     * Tạo user bởi Admin
+     * @param {Object} userData
+     * @returns {Promise<Object>}
+     */
+    async createUserByAdmin(userData) {
+        const { email, password, fullName, phone, role } = userData;
+
+        const existingEmail = await authRepository.findByEmail(email);
+        if (existingEmail) {
+            throw new Error('Email đã được sử dụng');
+        }
+
+        const user = await authRepository.createUser({
+            email,
+            password, // Password will be hashed by pre-save hook
+            fullName,
+            phone,
+            role,
+            isActive: true
+        });
+
+        // Sync to payment service
+        syncUserToPaymentService(user).catch(err => {
+            console.error('Failed to sync user to payment service:', err);
+        });
+
+        return {
+            id: user._id,
+            email: user.email,
+            fullName: user.fullName,
+            role: user.role
+        };
+    }
+
+    /**
+     * Cập nhật user bởi Admin
+     * @param {string} userId
+     * @param {Object} updateData
+     * @returns {Promise<Object>}
+     */
+    async updateUserByAdmin(userId, updateData) {
+        // Allow updating role, isActive, etc.
+        const allowedUpdates = ['fullName', 'phone', 'role', 'isActive', 'password'];
+        const data = {};
+
+        Object.keys(updateData).forEach(key => {
+            if (allowedUpdates.includes(key)) {
+                data[key] = updateData[key];
+            }
+        });
+
+        // If password is being updated, we need to handle hashing if the repository uses simple update. 
+        // However, repository uses findByIdAndUpdate which DOES NOT trigger pre-save hooks by default for hashing.
+        // We must manually hash if password is changed, OR execute save() on document.
+        // Let's check repository implementation... it uses findByIdAndUpdate.
+        // So we need to handle password specially or change repository method.
+        // For simplicity/safety, let's use check:
+        if (data.password) {
+            const salt = await require('bcryptjs').genSalt(10);
+            data.password = await require('bcryptjs').hash(data.password, salt);
+        }
+
+        const user = await authRepository.updateUser(userId, data);
+        if (!user) {
+            throw new Error('User không tồn tại');
+        }
+
+        return {
+            id: user._id,
+            email: user.email,
+            fullName: user.fullName,
+            role: user.role,
+            isActive: user.isActive
+        };
+    }
+
+    /**
+     * Xóa user bởi Admin
+     * @param {string} userId
+     * @returns {Promise<void>}
+     */
+    async deleteUser(userId) {
+        const user = await authRepository.deleteUser(userId);
+        if (!user) {
+            throw new Error('User không tồn tại');
+        }
+    }
 }
 
 module.exports = new AuthService();

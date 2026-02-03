@@ -139,21 +139,25 @@ class AuctionService {
      * @param {string} auctionId
      * @param {string} sellerId
      * @param {Object} updateData
+     * @param {string} userRole
      * @returns {Promise<Object>}
      */
-    async updateAuction(auctionId, sellerId, updateData) {
+    async updateAuction(auctionId, sellerId, updateData, userRole) {
         const auction = await auctionRepository.getAuctionById(auctionId);
 
         if (!auction) {
             throw new Error('Auction không tồn tại');
         }
 
-        // Kiểm tra quyền sở hữu
-        if (auction.seller._id.toString() !== sellerId) {
+        // Kiểm tra quyền sở hữu (Admin bypass)
+        if (userRole !== 'admin' && auction.seller._id.toString() !== sellerId) {
             throw new Error('Bạn không có quyền chỉnh sửa auction này');
         }
 
-        // Không cho phép update nếu đã có người bid
+        // Không cho phép update nếu đã có người bid (trừ khi admin cần can thiệp gấp - nhưng logic business nên giữ chặt)
+        // Let's allow admin to update even if bids exist? No, that breaks integrity. 
+        // Admin should cancelling if logic is broken.
+        // Keeping integrity check for now even for admin unless explicitly requested otherwise.
         if (auction.totalBids > 0) {
             throw new Error('Không thể chỉnh sửa auction đã có người đặt giá');
         }
@@ -206,14 +210,15 @@ class AuctionService {
      * @param {string} sellerId
      * @returns {Promise<void>}
      */
-    async deleteAuction(auctionId, sellerId) {
+    async deleteAuction(auctionId, sellerId, userRole) {
         const auction = await auctionRepository.getAuctionById(auctionId);
 
         if (!auction) {
             throw new Error('Auction không tồn tại');
         }
 
-        if (auction.seller._id.toString() !== sellerId) {
+        // Nếu không phải admin thì phải check owner
+        if (userRole !== 'admin' && auction.seller._id.toString() !== sellerId) {
             throw new Error('Bạn không có quyền xóa auction này');
         }
 
@@ -228,16 +233,17 @@ class AuctionService {
      * Hủy auction
      * @param {string} auctionId
      * @param {string} sellerId
+     * @param {string} userRole
      * @returns {Promise<Object>}
      */
-    async cancelAuction(auctionId, sellerId) {
+    async cancelAuction(auctionId, sellerId, userRole) {
         const auction = await auctionRepository.getAuctionById(auctionId);
 
         if (!auction) {
             throw new Error('Auction không tồn tại');
         }
 
-        if (auction.seller._id.toString() !== sellerId) {
+        if (userRole !== 'admin' && auction.seller._id.toString() !== sellerId) {
             throw new Error('Bạn không có quyền hủy auction này');
         }
 
@@ -310,16 +316,16 @@ class AuctionService {
             startTime: auction.startTime,
             endTime: auction.endTime,
             status: auction.status,
-            seller: auction.seller ? {
+            seller: (auction.seller && auction.seller.username) ? {
                 id: auction.seller._id,
                 username: auction.seller.username,
                 fullName: auction.seller.fullName
-            } : null,
-            winner: auction.winner ? {
+            } : (auction.seller ? auction.seller.toString() : null),
+            winner: (auction.winner && auction.winner.username) ? {
                 id: auction.winner._id,
                 username: auction.winner.username,
                 fullName: auction.winner.fullName
-            } : null,
+            } : (auction.winner ? auction.winner.toString() : null),
             totalBids: auction.totalBids,
             totalParticipants: auction.totalParticipants,
             viewCount: auction.viewCount,

@@ -1,6 +1,6 @@
 import React, { useContext } from 'react';
 import { AuthContext } from '../../../contexts/AuthContext';
-import { NavbarAdmin, NavbarBidder, NavbarSeller, Navbar } from '../Navbar';
+import { NavbarBidder, NavbarSeller, Navbar } from '../Navbar';
 
 const NavbarSelector = () => {
     const { user, isAuthenticated } = useContext(AuthContext); //Lấy user từ context
@@ -10,8 +10,6 @@ const NavbarSelector = () => {
     }
 
     switch (user?.role) {
-        case 'admin':
-            return <NavbarAdmin />;
         case 'seller':
             return <NavbarSeller />;
         case 'bidder':

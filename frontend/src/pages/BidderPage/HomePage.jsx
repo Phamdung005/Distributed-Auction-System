@@ -265,9 +265,6 @@ const HomePage = () => {
             </h2>
             <p className="text-[#9c6c49] mt-2 text-lg">Preview and register for future events.</p>
           </div>
-          <Link to="/upcoming" className="hidden sm:flex items-center text-orange-600 font-bold hover:underline gap-1 group">
-            See Calendar <span className="material-symbols-outlined group-hover:translate-x-1 transition-transform">arrow_forward</span>
-          </Link>
         </div>
 
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">

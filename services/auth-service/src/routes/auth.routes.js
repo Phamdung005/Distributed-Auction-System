@@ -74,4 +74,39 @@ router.post('/verify', authController.verifyToken);
  */
 router.get('/profile/:userId', authController.getProfileById);
 
+router.get('/profile/:userId', authController.getProfileById);
+
+/**
+ * @route   GET /api/auth/users
+ * @desc    Lấy tất cả users (Admin)
+ * @access  Private (Admin)
+ */
+router.get('/users', authenticate, (req, res, next) => {
+    if (req.user.role !== 'admin') {
+        return res.status(403).json({ success: false, message: 'Forbidden' });
+    }
+    next();
+}, authController.getAllUsers);
+
+router.post('/users', authenticate, (req, res, next) => {
+    if (req.user.role !== 'admin') {
+        return res.status(403).json({ success: false, message: 'Forbidden' });
+    }
+    next();
+}, authController.createUser);
+
+router.put('/users/:id', authenticate, (req, res, next) => {
+    if (req.user.role !== 'admin') {
+        return res.status(403).json({ success: false, message: 'Forbidden' });
+    }
+    next();
+}, authController.updateUser);
+
+router.delete('/users/:id', authenticate, (req, res, next) => {
+    if (req.user.role !== 'admin') {
+        return res.status(403).json({ success: false, message: 'Forbidden' });
+    }
+    next();
+}, authController.deleteUser);
+
 module.exports = router;
