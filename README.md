@@ -2,13 +2,28 @@
 
 ## Tong quan
 
-He thong dau gia truc tuyen su dung kien truc **Microservices**, xu ly dau gia realtime voi kha nang chong race condition khi nhieu nguoi dat gia dong thoi.
+He thong dau gia truc tuyen su dung kien truc **Microservices**, xu ly dau gia realtime voi kha nang chong race condition khi nhieu nguoi dat gia dong thoi. He thong cung cap kha nang tu dong mo rong (Autoscaling) tren moi truong Kubernetes.
 
 ## Cong nghe su dung
 
-**Backend**: Node.js, Express, MongoDB, Redis, Socket.io
-**Frontend**: React, Vite, Tailwind CSS
-**DevOps**: Docker, Docker Compose
+- **Backend**: Node.js, Express, MongoDB, Redis, Socket.io
+- **Frontend**: React, Vite, Tailwind CSS
+- **DevOps**: Docker, Docker Compose, Kubernetes (K8s)
+- **Monitoring**: Prometheus, Metrics Server
+
+## Kien truc Du lieu (Database per Service)
+
+He thong ap dung mo hinh **Database per Service** de dam bao tinh doc lap va kha nang mo rong cho tung dich vu:
+
+- **Auth Service**: `auth_db` (users)
+- **Auction Service**: `auction_db` (auctions, auction_registrations)
+- **Bidding Service**: `bidding_db` (bids)
+- **Payment Service**: `payment_db` (transactions, escrows)
+- **Notification Service**: `notification_db` (notifications)
+- **Community Service**: `community_db` (posts, comments)
+- **Order Service**: `order_db` (orders)
+
+Tat ca cac database deu chay tren MongoDB, moi dich vu chi co the truy cap vao database rieng cua minh.
 
 ## Cau truc du an
 
@@ -16,78 +31,42 @@ He thong dau gia truc tuyen su dung kien truc **Microservices**, xu ly dau gia r
 ung-dung-phan-tan-web-auction/
 ├── frontend/                    # Ung dung Web React (Port 5173)
 ├── services/                    # Cac Microservices
-│   ├── auth-service/           # Xac thuc (Port 3001)
-│   ├── auction-service/        # Quan ly dau gia (Port 3002)
-│   ├── bidding-service/        # Dau gia Realtime (Port 3003)
-│   ├── notification-service/   # Thong bao (Port 3004)
-│   ├── payment-service/        # Vi & Thanh toan (Port 3006)
-│   ├── community-service/      # Bai viet & Binh luan (Port 3005)
-│   └── order-service/          # Don hang & Giao van (Port 3007)
+├── k8s/                         # Cau hinh trien khai Kubernetes
+├── scripts/                     # Script tien ich (Deploy, Load test)
 └── docker-compose.yml
 ```
 
-## So do ERD
-
-![Database ERD](image/erd.png)
-
-**10 Bang**: users, auctions, bids, auction_registrations, transactions, escrows, notifications, posts, comments, orders
-
-## Cac chuc nang da hoan thanh
+## Cac chuc nang chinh
 
 - Xac thuc & JWT
-- Quan ly dau gia (CRUD) & vong doi auction
+- Quan ly dau gia & vong doi san pham
 - Dau gia realtime voi WebSocket
-- Xu ly race condition (Redis locks)
-- Dang ky tham gia dau gia voi dat coc 10%
-- He thong vi & thanh toan
-- Thong bao realtime (18 loai)
-- Bai viet & binh luan cong dong
-- Quan ly don hang & trang thai shipping
+- Xu ly xung dot dat gia voi Redis locks
+- Dang ky tham gia va dat coc (Escrow)
+- He thong vi dien tu & thanh toan
+- Thong bao realtime da kenh
+- Cong dong (Bai viet & Binh luan)
+- Quan ly don hang & trang thai giao hang
 
-## Cac chuc nang chua hoan thanh
+## Huong dan khoi chay
 
-- Xac thuc email & dat lai mat khau
-- Tim kiem nang cao & bo loc
-- Tu dong dau gia
-- Trang quan tri admin
-- Nhieu phuong thuc thanh toan
-- Phan tich & bao cao
-
-## Ke hoach tuong lai
-
-### Tach rieng Database
-Tach database rieng cho moi service voi kien truc huong su kien va Saga pattern
-
-### Tinh nang nang cao
-- **Dashboard realtime cho seller**: Thong ke dau gia (luot xem, luot dat gia, du doan doanh thu)
-- **Phan tich cho bidder**: Ty le thang/thua, theo doi chi tieu
-- Goi y dua tren AI
-- Ung dung di dong (React Native)
-
-### Kha nang mo rong
-- Trien khai Kubernetes
-- Tu dong mo rong & can bang tai
-- Phan manh database & read replicas
-- Giam sat (Prometheus, Grafana)
-
-### Tinh nang kinh doanh
-- Nhieu loai dau gia (silent, dutch, sealed-bid)
-- Tinh nang cao cap & huy hieu xac minh
-- Tich hop van chuyen & thanh toan
-
-## Khoi chay
-
-Xem chi tiet tai [QUICK_START.md](QUICK_START.md)
-
+### Cach 1: Chay bang Docker Compose (Phu hop de phat trien)
 ```bash
 docker-compose up -d
 ```
+Truy cap: `http://localhost:5173`
 
-**Frontend**: http://localhost:5173
+### Cach 2: Chay bang Kubernetes (Phu hop de test Autoscaling)
+Yeu cau: Da cai dat Metrics Server.
+```powershell
+.\scripts\deploy-k8s.bat
+```
+Truy cap: `http://localhost:8080`
 
-## Tai lieu
+Xem chi tiet tai [K8S_README.md](K8S_README.md).
 
-- [QUICK_START.md](QUICK_START.md) - Huong dan khoi dong
-- [STRUCTURE.md](STRUCTURE.md) - Cau truc chi tiet
-- [RACE_CONDITION_EXPLAINED.md](RACE_CONDITION_EXPLAINED.md) - Xu ly race condition
-- [PROJECT_FLOW_AND_ASSIGNMENT.md](PROJECT_FLOW_AND_ASSIGNMENT.md) - Flow nguoi dung va phan cong cong viec
+## Tai lieu tham khao
+
+- [SYSTEM_ARCHITECTURE.md](SYSTEM_ARCHITECTURE.md) - Chi tiet kien truc he thong
+- [K8S_README.md](K8S_README.md) - Huong dan Kubernetes & Autoscaling
+- [RACE_CONDITION_EXPLAINED.md](RACE_CONDITION_EXPLAINED.md) - Co che xu ly dat gia dong thoi
