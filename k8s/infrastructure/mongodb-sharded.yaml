@@ -1,0 +1,122 @@
+# 1. Config Server (3 nodes Replica Set)
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: mongo-config
+spec:
+  serviceName: "mongo-config"
+  replicas: 3
+  selector:
+    matchLabels:
+      app: mongo-config
+  template:
+    metadata:
+      labels:
+        app: mongo-config
+    spec:
+      containers:
+      - name: mongo
+        image: mongo:7.0
+        command: ["mongod", "--configsvr", "--replSet", "config-rs", "--bind_ip_all"]
+        ports:
+        - containerPort: 27019
+        volumeMounts:
+        - name: config-data
+          mountPath: /data/db
+  volumeClaimTemplates:
+  - metadata:
+      name: config-data
+    spec:
+      accessModes: [ "ReadWriteOnce" ]
+      resources:
+        requests:
+          storage: 1Gi
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: mongo-config
+spec:
+  clusterIP: None
+  selector:
+    app: mongo-config
+  ports:
+  - port: 27019
+---
+# 2. Shard 1 (3 nodes Replica Set)
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: mongo-shard1
+spec:
+  serviceName: "mongo-shard1"
+  replicas: 3
+  selector:
+    matchLabels:
+      app: mongo-shard1
+  template:
+    metadata:
+      labels:
+        app: mongo-shard1
+    spec:
+      containers:
+      - name: mongo
+        image: mongo:7.0
+        command: ["mongod", "--shardsvr", "--replSet", "shard1-rs", "--bind_ip_all"]
+        ports:
+        - containerPort: 27018
+        volumeMounts:
+        - name: shard1-data
+          mountPath: /data/db
+  volumeClaimTemplates:
+  - metadata:
+      name: shard1-data
+    spec:
+      accessModes: [ "ReadWriteOnce" ]
+      resources:
+        requests:
+          storage: 1Gi
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: mongo-shard1
+spec:
+  clusterIP: None
+  selector:
+    app: mongo-shard1
+  ports:
+  - port: 27018
+---
+# 3. Router (Mongos)
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: mongo-router
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: mongo-router
+  template:
+    metadata:
+      labels:
+        app: mongo-router
+    spec:
+      containers:
+      - name: mongos
+        image: mongo:7.0
+        command: ["mongos", "--configdb", "config-rs/mongo-config-0.mongo-config:27019,mongo-config-1.mongo-config:27019,mongo-config-2.mongo-config:27019", "--bind_ip_all"]
+        ports:
+        - containerPort: 27017
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: mongo-router
+spec:
+  selector:
+    app: mongo-router
+  ports:
+  - port: 27017
+    targetPort: 27017

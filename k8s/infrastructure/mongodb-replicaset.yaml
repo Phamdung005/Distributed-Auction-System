@@ -1,0 +1,74 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: mongodb-replicaset
+  labels:
+    app: mongodb-replicaset
+spec:
+  ports:
+  - port: 27017
+    name: peer
+  clusterIP: None
+  selector:
+    app: mongodb-replicaset
+---
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: mongodb-replicaset
+spec:
+  serviceName: "mongodb-replicaset"
+  replicas: 3
+  selector:
+    matchLabels:
+      app: mongodb-replicaset
+  template:
+    metadata:
+      labels:
+        app: mongodb-replicaset
+    spec:
+      terminationGracePeriodSeconds: 10
+      containers:
+      - name: mongodb
+        image: mongo:7.0
+        command:
+        - mongod
+        - "--replSet"
+        - rs0
+        - "--bind_ip_all"
+        ports:
+        - containerPort: 27017
+        volumeMounts:
+        - name: mongo-persistent-storage
+          mountPath: /data/db
+        env:
+        - name: MONGO_INITDB_DATABASE
+          value: auction_db
+  volumeClaimTemplates:
+  - metadata:
+      name: mongo-persistent-storage
+    spec:
+      accessModes: [ "ReadWriteOnce" ]
+      resources:
+        requests:
+          storage: 1Gi
+---
+# Helper Pod to initialize Replica Set
+apiVersion: v1
+kind: Pod
+metadata:
+  name: mongodb-replicaset-init
+spec:
+  restartPolicy: OnFailure
+  containers:
+  - name: init-replicaset
+    image: mongo:7.0
+    command:
+    - /bin/bash
+    - -c
+    - |
+      echo "Waiting for pods to be ready..."
+      sleep 10
+      echo "Initializing Replica Set..."
+      mongosh --host mongodb-replicaset-0.mongodb-replicaset:27017 --eval 'rs.initiate({_id: "rs0", members: [{_id: 0, host: "mongodb-replicaset-0.mongodb-replicaset:27017"}, {_id: 1, host: "mongodb-replicaset-1.mongodb-replicaset:27017"}, {_id: 2, host: "mongodb-replicaset-2.mongodb-replicaset:27017"}]})'
+      echo "Replica Set Initialized!"
