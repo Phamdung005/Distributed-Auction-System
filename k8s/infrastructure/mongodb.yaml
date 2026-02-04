@@ -1,0 +1,335 @@
+# Auth DB
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: mongodb-auth
+spec:
+  serviceName: "mongodb-auth"
+  replicas: 1
+  selector:
+    matchLabels:
+      app: mongodb-auth
+  template:
+    metadata:
+      labels:
+        app: mongodb-auth
+    spec:
+      containers:
+      - name: mongodb
+        image: mongo:7.0
+        ports:
+        - containerPort: 27017
+        env:
+        - name: MONGO_INITDB_DATABASE
+          value: auth_db
+        volumeMounts:
+        - name: mongodb-auth-data
+          mountPath: /data/db
+  volumeClaimTemplates:
+  - metadata:
+      name: mongodb-auth-data
+    spec:
+      accessModes: [ "ReadWriteOnce" ]
+      resources:
+        requests:
+          storage: 1Gi
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: mongodb-auth
+spec:
+  clusterIP: None
+  selector:
+    app: mongodb-auth
+  ports:
+  - port: 27017
+    targetPort: 27017
+---
+# Auction DB
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: mongodb-auction
+spec:
+  serviceName: "mongodb-auction"
+  replicas: 1
+  selector:
+    matchLabels:
+      app: mongodb-auction
+  template:
+    metadata:
+      labels:
+        app: mongodb-auction
+    spec:
+      containers:
+      - name: mongodb
+        image: mongo:7.0
+        ports:
+        - containerPort: 27017
+        env:
+        - name: MONGO_INITDB_DATABASE
+          value: auction_db
+        volumeMounts:
+        - name: mongodb-auction-data
+          mountPath: /data/db
+  volumeClaimTemplates:
+  - metadata:
+      name: mongodb-auction-data
+    spec:
+      accessModes: [ "ReadWriteOnce" ]
+      resources:
+        requests:
+          storage: 1Gi
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: mongodb-auction
+spec:
+  clusterIP: None
+  selector:
+    app: mongodb-auction
+  ports:
+  - port: 27017
+    targetPort: 27017
+---
+# Bidding DB
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: mongodb-bidding
+spec:
+  serviceName: "mongodb-bidding"
+  replicas: 1
+  selector:
+    matchLabels:
+      app: mongodb-bidding
+  template:
+    metadata:
+      labels:
+        app: mongodb-bidding
+    spec:
+      containers:
+      - name: mongodb
+        image: mongo:7.0
+        ports:
+        - containerPort: 27017
+        env:
+        - name: MONGO_INITDB_DATABASE
+          value: bidding_db
+        volumeMounts:
+        - name: mongodb-bidding-data
+          mountPath: /data/db
+  volumeClaimTemplates:
+  - metadata:
+      name: mongodb-bidding-data
+    spec:
+      accessModes: [ "ReadWriteOnce" ]
+      resources:
+        requests:
+          storage: 1Gi
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: mongodb-bidding
+spec:
+  clusterIP: None
+  selector:
+    app: mongodb-bidding
+  ports:
+  - port: 27017
+    targetPort: 27017
+---
+# Payment DB
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: mongodb-payment
+spec:
+  serviceName: "mongodb-payment"
+  replicas: 1
+  selector:
+    matchLabels:
+      app: mongodb-payment
+  template:
+    metadata:
+      labels:
+        app: mongodb-payment
+    spec:
+      containers:
+      - name: mongodb
+        image: mongo:7.0
+        ports:
+        - containerPort: 27017
+        env:
+        - name: MONGO_INITDB_DATABASE
+          value: payment_db
+        volumeMounts:
+        - name: mongodb-payment-data
+          mountPath: /data/db
+  volumeClaimTemplates:
+  - metadata:
+      name: mongodb-payment-data
+    spec:
+      accessModes: [ "ReadWriteOnce" ]
+      resources:
+        requests:
+          storage: 1Gi
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: mongodb-payment
+spec:
+  clusterIP: None
+  selector:
+    app: mongodb-payment
+  ports:
+  - port: 27017
+    targetPort: 27017
+---
+# Notification DB
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: mongodb-notification
+spec:
+  serviceName: "mongodb-notification"
+  replicas: 1
+  selector:
+    matchLabels:
+      app: mongodb-notification
+  template:
+    metadata:
+      labels:
+        app: mongodb-notification
+    spec:
+      containers:
+      - name: mongodb
+        image: mongo:7.0
+        ports:
+        - containerPort: 27017
+        env:
+        - name: MONGO_INITDB_DATABASE
+          value: notification_db
+        volumeMounts:
+        - name: mongodb-notification-data
+          mountPath: /data/db
+  volumeClaimTemplates:
+  - metadata:
+      name: mongodb-notification-data
+    spec:
+      accessModes: [ "ReadWriteOnce" ]
+      resources:
+        requests:
+          storage: 1Gi
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: mongodb-notification
+spec:
+  clusterIP: None
+  selector:
+    app: mongodb-notification
+  ports:
+  - port: 27017
+    targetPort: 27017
+---
+# Community DB
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: mongodb-community
+spec:
+  serviceName: "mongodb-community"
+  replicas: 1
+  selector:
+    matchLabels:
+      app: mongodb-community
+  template:
+    metadata:
+      labels:
+        app: mongodb-community
+    spec:
+      containers:
+      - name: mongodb
+        image: mongo:7.0
+        ports:
+        - containerPort: 27017
+        env:
+        - name: MONGO_INITDB_DATABASE
+          value: community_db
+        volumeMounts:
+        - name: mongodb-community-data
+          mountPath: /data/db
+  volumeClaimTemplates:
+  - metadata:
+      name: mongodb-community-data
+    spec:
+      accessModes: [ "ReadWriteOnce" ]
+      resources:
+        requests:
+          storage: 1Gi
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: mongodb-community
+spec:
+  clusterIP: None
+  selector:
+    app: mongodb-community
+  ports:
+  - port: 27017
+    targetPort: 27017
+---
+# Order DB
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: mongodb-order
+spec:
+  serviceName: "mongodb-order"
+  replicas: 1
+  selector:
+    matchLabels:
+      app: mongodb-order
+  template:
+    metadata:
+      labels:
+        app: mongodb-order
+    spec:
+      containers:
+      - name: mongodb
+        image: mongo:7.0
+        ports:
+        - containerPort: 27017
+        env:
+        - name: MONGO_INITDB_DATABASE
+          value: order_db
+        volumeMounts:
+        - name: mongodb-order-data
+          mountPath: /data/db
+  volumeClaimTemplates:
+  - metadata:
+      name: mongodb-order-data
+    spec:
+      accessModes: [ "ReadWriteOnce" ]
+      resources:
+        requests:
+          storage: 1Gi
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: mongodb-order
+spec:
+  clusterIP: None
+  selector:
+    app: mongodb-order
+  ports:
+  - port: 27017
+    targetPort: 27017

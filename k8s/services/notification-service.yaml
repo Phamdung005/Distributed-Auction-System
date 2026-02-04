@@ -1,0 +1,73 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: notification-service
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: notification-service
+  template:
+    metadata:
+      labels:
+        app: notification-service
+        prometheus.io/scrape: "true"
+        prometheus.io/port: "3004"
+    spec:
+      containers:
+      - name: notification-service
+        image: ung-dung-phan-tan-web-auction-notification-service:latest
+        imagePullPolicy: IfNotPresent
+        ports:
+        - containerPort: 3004
+        env:
+        - name: NODE_ENV
+          value: "production"
+        - name: PORT
+          value: "3004"
+        - name: MONGODB_URI
+          value: "mongodb://mongodb-notification:27017/notification_db"
+        - name: REDIS_URL
+          value: "redis://:redis123@redis:6379"
+        - name: AUTH_SERVICE_URL
+          value: "http://auth-service:3001"
+        - name: JWT_SECRET
+          value: "your-super-secret-jwt-key-change-in-production"
+        resources:
+          requests:
+            cpu: 100m
+            memory: 128Mi
+          limits:
+            cpu: 500m
+            memory: 512Mi
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: notification-service
+spec:
+  selector:
+    app: notification-service
+  ports:
+    - protocol: TCP
+      port: 3004
+      targetPort: 3004
+---
+apiVersion: autoscaling/v2
+kind: HorizontalPodAutoscaler
+metadata:
+  name: notification-service-hpa
+spec:
+  scaleTargetRef:
+    apiVersion: apps/v1
+    kind: Deployment
+    name: notification-service
+  minReplicas: 1
+  maxReplicas: 5
+  metrics:
+  - type: Resource
+    resource:
+      name: cpu
+      target:
+        type: Utilization
+        averageUtilization: 70

@@ -1,0 +1,73 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: bidding-service
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: bidding-service
+  template:
+    metadata:
+      labels:
+        app: bidding-service
+        prometheus.io/scrape: "true"
+        prometheus.io/port: "3003"
+    spec:
+      containers:
+      - name: bidding-service
+        image: ung-dung-phan-tan-web-auction-bidding-service:latest
+        imagePullPolicy: IfNotPresent
+        ports:
+        - containerPort: 3003
+        env:
+        - name: NODE_ENV
+          value: "production"
+        - name: PORT
+          value: "3003"
+        - name: MONGODB_URI
+          value: "mongodb://mongodb-bidding:27017/bidding_db"
+        - name: REDIS_URL
+          value: "redis://:redis123@redis:6379"
+        - name: AUTH_SERVICE_URL
+          value: "http://auth-service:3001"
+        - name: AUCTION_SERVICE_URL
+          value: "http://auction-service:3002"
+        resources:
+          requests:
+            cpu: 100m
+            memory: 128Mi
+          limits:
+            cpu: 500m
+            memory: 512Mi
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: bidding-service
+spec:
+  selector:
+    app: bidding-service
+  ports:
+    - protocol: TCP
+      port: 3003
+      targetPort: 3003
+---
+apiVersion: autoscaling/v2
+kind: HorizontalPodAutoscaler
+metadata:
+  name: bidding-service-hpa
+spec:
+  scaleTargetRef:
+    apiVersion: apps/v1
+    kind: Deployment
+    name: bidding-service
+  minReplicas: 1
+  maxReplicas: 10 # Higher max for bidding service
+  metrics:
+  - type: Resource
+    resource:
+      name: cpu
+      target:
+        type: Utilization
+        averageUtilization: 60 # Lower threshold for faster scaling

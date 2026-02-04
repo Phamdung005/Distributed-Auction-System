@@ -1,0 +1,73 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: order-service
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: order-service
+  template:
+    metadata:
+      labels:
+        app: order-service
+        prometheus.io/scrape: "true"
+        prometheus.io/port: "3007"
+    spec:
+      containers:
+      - name: order-service
+        image: ung-dung-phan-tan-web-auction-order-service:latest
+        imagePullPolicy: IfNotPresent
+        ports:
+        - containerPort: 3007
+        env:
+        - name: NODE_ENV
+          value: "production"
+        - name: PORT
+          value: "3007"
+        - name: MONGODB_URI
+          value: "mongodb://mongodb-order:27017/order_db"
+        - name: REDIS_URL
+          value: "redis://:redis123@redis:6379"
+        - name: JWT_SECRET
+          value: "your-super-secret-jwt-key-change-in-production"
+        - name: AUTH_SERVICE_URL
+          value: "http://auth-service:3001"
+        resources:
+          requests:
+            cpu: 100m
+            memory: 128Mi
+          limits:
+            cpu: 500m
+            memory: 512Mi
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: order-service
+spec:
+  selector:
+    app: order-service
+  ports:
+    - protocol: TCP
+      port: 3007
+      targetPort: 3007
+---
+apiVersion: autoscaling/v2
+kind: HorizontalPodAutoscaler
+metadata:
+  name: order-service-hpa
+spec:
+  scaleTargetRef:
+    apiVersion: apps/v1
+    kind: Deployment
+    name: order-service
+  minReplicas: 1
+  maxReplicas: 5
+  metrics:
+  - type: Resource
+    resource:
+      name: cpu
+      target:
+        type: Utilization
+        averageUtilization: 70
