@@ -1,8 +1,8 @@
-# 🏗️ Kiến Trúc Hệ Thống Đấu Giá Trực Tuyến Realtime
+# Kien Truc He Thong Dau Gia Truc Tuyen Realtime
 
-## 📊 Tổng Quan Kiến Trúc
+## Tong Quan Kien Truc
 
-Hệ thống sử dụng **Microservices Architecture** với các thành phần độc lập giao tiếp qua HTTP/REST và WebSocket.
+He thong su dung **Microservices Architecture** voi cac thanh phan doc lap giao tiep qua HTTP/REST va WebSocket.
 
 ```
 ┌─────────────────────────────────────────────────────────────────┐
@@ -18,29 +18,31 @@ Hệ thống sử dụng **Microservices Architecture** với các thành phần
 ┌───────────────────┴─────────────────┴──────────────────────────┐
 │                    API GATEWAY / LOAD BALANCER                   │
 │              (Frontend communicates with all services)           │
+│                    (Nginx: Port 80/443)                          │
 └───────────────────┬─────────────────────────────────────────────┘
                     │
-        ┌───────────┼───────────┬─────────────────┬──────────────┐
-        │           │           │                 │              │
-    ┌───▼─────┐ ┌──▼──────┐ ┌──▼──────┐ ┌────────▼──┐ ┌──────────▼──┐
-    │AUTH     │ │AUCTION  │ │BIDDING  │ │PAYMENT   │ │NOTIFICATION│
-    │SERVICE  │ │SERVICE  │ │SERVICE  │ │SERVICE   │ │SERVICE    │
-    │PORT3001 │ │PORT3002 │ │PORT3003 │ │PORT3006  │ │PORT3004   │
-    └───┬─────┘ └────┬────┘ └────┬────┘ └────┬─────┘ └─────┬──────┘
-        │            │           │           │             │
-        │            │           ├──────────────────────────┼──────┐
-        │            │           │                          │      │
-        └────┬───────┴───────────┴──────────────┬───────────┘      │
-             │                                  │                  │
-        ┌────▼────────────────────────────┬─────▼──────────────┐   │
-        │    MONGODB (Persistence)         │  REDIS (Cache)     │   │
-        │    ├── Users                     │  ├── Locks         │   │
-        │    ├── Auctions                  │  ├── Sessions      │   │
-        │    ├── Bids                      │  └── Pub/Sub       │   │
-        │    ├── Transactions              │                    │   │
-        │    ├── Notifications             │ (Race Condition)  │   │
-        │    └── ...                       └────────────────────┘   │
-        │                                                           │
+        ┌───────────┼───────────┬─────────────────┬──────────────┬───────────────┐
+        │           │           │                 │              │               │
+    ┌───▼─────┐ ┌──▼──────┐ ┌──▼──────┐ ┌────────▼──┐ ┌──────────▼──┐ ┌──────────▼──┐
+    │AUTH     │ │AUCTION  │ │BIDDING  │ │PAYMENT   │ │NOTIFICATION│ │ORDER       │
+    │SERVICE  │ │SERVICE  │ │SERVICE  │ │SERVICE   │ │SERVICE    │ │SERVICE     │
+    │PORT3001 │ │PORT3002 │ │PORT3003 │ │PORT3006  │ │PORT3004   │ │PORT3007    │
+    └───┬─────┘ └────┬────┘ └────┬────┘ └────┬─────┘ └─────┬──────┘ └─────┬──────┘
+        │            │           │           │             │              │
+        │            │           ├──────────────────────────┼──────────────┤
+        │            │           │                          │              │
+        └────┬───────┴───────────┴──────────────┬───────────┴──────────────┘
+             │                                  │
+        ┌────▼────────────────────────────┬─────▼──────────────┐
+        │    MONGODB (Persistence)         │  REDIS (Cache)     │
+        │    ├── Users                     │  ├── Locks         │
+        │    ├── Auctions                  │  ├── Sessions      │
+        │    ├── Bids                      │  └── Pub/Sub       │
+        │    ├── Transactions              │                    │
+        │    ├── Notifications             │ (Race Condition)  │
+        │    ├── Orders                    │                    │
+        │    └── ...                       └────────────────────┘
+        │
         └────────────────────────────────────────────────────────┘
         
         ┌──────────────────────────────────────────────────────┐
@@ -52,20 +54,20 @@ Hệ thống sử dụng **Microservices Architecture** với các thành phần
 
 ---
 
-## 🔧 Chi Tiết Các Microservices
+## Chi Tiet Cac Microservices
 
 ### 1. **AUTH SERVICE** (Port 3001)
-**Chức năng:** Quản lý xác thực người dùng
+**Chuc nang:** Quan ly xac thuc nguoi dung
 
 **Endpoints:**
-- `POST /api/auth/register` - Đăng ký người dùng mới
-- `POST /api/auth/login` - Đăng nhập
-- `POST /api/auth/refresh-token` - Làm mới token
-- `GET /api/auth/me` - Lấy thông tin user hiện tại
-- `POST /api/auth/logout` - Đăng xuất
+- `POST /api/auth/register` - Dang ky nguoi dung moi
+- `POST /api/auth/login` - Dang nhap
+- `POST /api/auth/refresh-token` - Lam moi token
+- `GET /api/auth/me` - Lay thong tin user hien tai
+- `POST /api/auth/logout` - Dang xuat
 
 **Dependencies:**
-- MongoDB (lưu user info)
+- MongoDB (luu user info)
 - Redis (cache sessions)
 
 **Authentication:** JWT (JSON Web Tokens)
@@ -73,101 +75,101 @@ Hệ thống sử dụng **Microservices Architecture** với các thành phần
 ---
 
 ### 2. **AUCTION SERVICE** (Port 3002)
-**Chức năng:** Quản lý vòng đời đấu giá
+**Chuc nang:** Quan ly vong doi dau gia
 
 **Endpoints:**
-- `GET /api/auctions` - Lấy danh sách đấu giá
-- `POST /api/auctions` - Tạo đấu giá (Seller)
-- `GET /api/auctions/:id` - Chi tiết đấu giá
-- `PUT /api/auctions/:id` - Cập nhật đấu giá
-- `DELETE /api/auctions/:id` - Xóa đấu giá
-- `POST /api/auctions/:id/register` - Đăng ký tham gia
-- `GET /api/auctions/:id/winner` - Lấy người thắng
+- `GET /api/auctions` - Lay danh sach dau gia
+- `POST /api/auctions` - Tao dau gia (Seller)
+- `GET /api/auctions/:id` - Chi tiet dau gia
+- `PUT /api/auctions/:id` - Cap nhat dau gia
+- `DELETE /api/auctions/:id` - Xoa dau gia
+- `POST /api/auctions/:id/register` - Dang ky tham gia
+- `GET /api/auctions/:id/winner` - Lay nguoi thang
 
-**Trạng thái Auction:**
+**Trang thai Auction:**
 ```
-DRAFT → OPEN → CLOSING → CLOSED → COMPLETED
-         ↓                           ↑
-         └─────→ EXPIRED ──→ CANCELLED
+DRAFT -> OPEN -> CLOSING -> CLOSED -> COMPLETED
+        |                          ^
+        └─────-> EXPIRED -----> CANCELLED
 ```
 
 **Dependencies:**
-- Payment Service (xác nhận đặt cọc)
-- MongoDB (lưu auction data)
+- Payment Service (xac nhan dat coc)
+- MongoDB (luu auction data)
 
 ---
 
 ### 3. **BIDDING SERVICE** (Port 3003)
-**Chức năng:** Xử lý đấu giá realtime, chống race condition
+**Chuc nang:** Xu ly dau gia realtime, chong race condition
 
 **WebSocket Events:**
 ```
-CLIENT → SERVER:
-├── "join-auction" - Tham gia phòng đấu giá
-├── "place-bid" - Đặt giá
-├── "leave-auction" - Rời khỏi phòng
-└── "get-bidding-history" - Lấy lịch sử
+CLIENT -> SERVER:
+├── "join-auction" - Tham gia phong dau gia
+├── "place-bid" - Dat gia
+├── "leave-auction" - Roi khoi phong
+└── "get-bidding-history" - Lay lich su
 
-SERVER → CLIENT:
-├── "bid-placed" - Có người đặt giá
-├── "auction-closing" - Sắp kết thúc
-├── "auction-closed" - Kết thúc
-├── "bid-rejected" - Giá bị từ chối
-└── "active-bidders" - Số người đang đặt giá
+SERVER -> CLIENT:
+├── "bid-placed" - Co nguoi dat gia
+├── "auction-closing" - Sap ket thuc
+├── "auction-closed" - Ket thuc
+├── "bid-rejected" - Gia bi tu choi
+└── "active-bidders" - So nguoi dang dat gia
 ```
 
 **Race Condition Prevention:**
 - Redis Locks (Distributed locks)
-- Optimistic locking với version field
+- Optimistic locking voi version field
 - Sequence validation
 
 **Algorithm:**
 ```
-1. Client gửi "place-bid" event
-2. Server yêu cầu Redis lock trên auctionId
-3. Validate: giá > current bid, auction còn open, user có balance
-4. Cập nhật bid trong MongoDB (atomic operation)
+1. Client gui "place-bid" event
+2. Server yeu cau Redis lock tren auctionId
+3. Validate: gia > current bid, auction con open, user co balance
+4. Cap nhat bid trong MongoDB (atomic operation)
 5. Release lock
-6. Broadcast "bid-placed" event tới clients
+6. Broadcast "bid-placed" event toi clients
 ```
 
 **Dependencies:**
-- MongoDB (lưu bids)
+- MongoDB (luu bids)
 - Redis (distributed locks)
 - Socket.io (realtime communication)
 
 ---
 
 ### 4. **PAYMENT SERVICE** (Port 3006)
-**Chức năng:** Quản lý ví, thanh toán, escrow
+**Chuc nang:** Quan ly vi, thanh toan, escrow
 
 **Endpoints:**
-- `GET /api/wallet` - Lấy balance ví
-- `POST /api/wallet/deposit` - Nạp tiền
-- `POST /api/wallet/withdraw` - Rút tiền
-- `POST /api/transactions` - Tạo giao dịch
-- `GET /api/transactions` - Lịch sử giao dịch
+- `GET /api/wallet` - Lay balance vi
+- `POST /api/wallet/deposit` - Nap tien
+- `POST /api/wallet/withdraw` - Rut tien
+- `POST /api/transactions` - Tao giao dich
+- `GET /api/transactions` - Lich su giao dich
 - `GET /api/escrows/:auctionId` - Xem escrow
-- `POST /api/escrows/:auctionId/release` - Giải phóng escrow
+- `POST /api/escrows/:auctionId/release` - Giai phong escrow
 
 **Escrow Workflow:**
 ```
-1. Bidder thắng → Lock 10% deposit
-2. Seller xác nhận nhận hàng → Giải phóng 90%
-3. Bidder xác nhận nhận hàng → Giải phóng 100% cho seller
-4. Nếu dispute → Manual admin review
+1. Bidder thang -> Lock 10% deposit
+2. Seller xac nhan nhan hang -> Giai phong 90%
+3. Bidder xac nhan nhan hang -> Giai phong 100% cho seller
+4. Neu dispute -> Manual admin review
 ```
 
 **Dependencies:**
-- MongoDB (lưu transactions, wallets)
+- MongoDB (luu transactions, wallets)
 - Redis (cache balances)
 
 ---
 
 ### 5. **NOTIFICATION SERVICE** (Port 3004)
-**Chức năng:** Gửi thông báo realtime
+**Chuc nang:** Gui thong bao realtime
 
-**18 Loại Thông Báo:**
+**18 Loai Thong Bao:**
 1. **Auction Events:**
    - Auction created/updated/closed
    - Your bid was outbid
@@ -185,43 +187,69 @@ SERVER → CLIENT:
 4. **Admin Events:**
    - Auction removed
    - Account suspended
+   
+5. **Order Events:**
+    - Order shipped
+    - Order completed
 
 **WebSocket Connection:**
 ```
-CLIENT → NOTIFICATION SERVICE (Socket.io)
-         ↓
+CLIENT -> NOTIFICATION SERVICE (Socket.io)
+         |
       Subscribe to user channels
-         ↓
+         |
 Redis Pub/Sub receives events from other services
-         ↓
+         |
 Broadcast to connected clients
 ```
 
 **Dependencies:**
-- MongoDB (lưu notification history)
+- MongoDB (luu notification history)
 - Redis (Pub/Sub for events)
 - Socket.io
 
 ---
 
 ### 6. **COMMUNITY SERVICE** (Port 3005)
-**Chức năng:** Quản lý bài viết, bình luận
+**Chuc nang:** Quan ly bai viet, binh luan
 
 **Endpoints:**
-- `GET /api/posts` - Lấy danh sách bài
-- `POST /api/posts` - Tạo bài viết mới
-- `PUT /api/posts/:id` - Cập nhật bài
-- `DELETE /api/posts/:id` - Xóa bài
-- `GET /api/posts/:id/comments` - Lấy bình luận
-- `POST /api/posts/:id/comments` - Thêm bình luận
-- `DELETE /api/comments/:id` - Xóa bình luận
+- `GET /api/posts` - Lay danh sach bai
+- `POST /api/posts` - Tao bai viet moi
+- `PUT /api/posts/:id` - Cap nhat bai
+- `DELETE /api/posts/:id` - Xoa bai
+- `GET /api/posts/:id/comments` - Lay binh luan
+- `POST /api/posts/:id/comments` - Them binh luan
+- `DELETE /api/comments/:id` - Xoa binh luan
 
 **Dependencies:**
-- MongoDB (lưu posts, comments)
+- MongoDB (luu posts, comments)
 
 ---
 
-## 🗄️ Database Schema
+### 7. **ORDER SERVICE** (Port 3007)
+**Chuc nang:** Quan ly don hang va giao van
+
+**Endpoints:**
+- `POST /api/orders` - Tao don hang moi (tu auction winner)
+- `GET /api/orders/:id` - Lay thong tin don hang
+- `PUT /api/orders/:id/status` - Cap nhat trang thai don hang
+- `GET /api/orders/user/me` - Lay danh sach don hang cua user
+
+**Trang thai Don Hang:**
+```
+PENDING -> SHIPPING -> COMPLETED
+   |          |
+   └-----> CANCELLED
+```
+
+**Dependencies:**
+- MongoDB (luu orders)
+- Notification Service (gui thong bao trang thai)
+
+---
+
+## Database Schema
 
 ### **MongoDB Collections:**
 
@@ -304,34 +332,46 @@ Broadcast to connected clients
   createdAt: Date,
   comments: [{ author, content, createdAt }]
 }
+
+// Orders
+{
+  _id: ObjectId,
+  auction: ObjectId (ref: Auctions),
+  seller: ObjectId (ref: Users),
+  buyer: ObjectId (ref: Users),
+  shippingAddress: String,
+  status: "pending" | "shipping" | "completed" | "cancelled",
+  createdAt: Date,
+  updatedAt: Date
+}
 ```
 
 ### **Redis Keys:**
 
 ```
 // Sessions
-session:{sessionId} → user data (TTL: varies)
+session:{sessionId} -> user data (TTL: varies)
 
 // Locks (Race condition prevention)
-lock:auction:{auctionId} → lock owner (TTL: 5s)
-lock:wallet:{userId} → lock owner (TTL: 5s)
+lock:auction:{auctionId} -> lock owner (TTL: 5s)
+lock:wallet:{userId} -> lock owner (TTL: 5s)
 
 // Cache
-auction:{auctionId} → auction data (TTL: 5m)
-user:{userId}:balance → wallet balance (TTL: 1m)
-active-bidders:{auctionId} → [bidderIds]
+auction:{auctionId} -> auction data (TTL: 5m)
+user:{userId}:balance -> wallet balance (TTL: 1m)
+active-bidders:{auctionId} -> [bidderIds]
 ```
 
 ---
 
-## 🔄 Communication Patterns
+## Communication Patterns
 
 ### **Synchronous (HTTP/REST):**
 ```
 Frontend/Service A
-        ↓ (REST API call)
+        | (REST API call)
 Service B
-        ↓ (response)
+        | (response)
 Return to Service A
 ```
 
@@ -343,9 +383,9 @@ Return to Service A
 ### **Asynchronous (Redis Pub/Sub):**
 ```
 Service A publishes event
-        ↓
+        |
 Redis Pub/Sub
-        ↓
+        |
 Service B subscribes & receives event
 Service C subscribes & receives event
 Service D subscribes & receives event
@@ -358,8 +398,8 @@ Service D subscribes & receives event
 
 ### **Real-time (WebSocket):**
 ```
-Client A ←→ Socket.io ←→ Bidding Service
-Client B ↕
+Client A <-> Socket.io <-> Bidding Service
+Client B ^
 Client C
          All connected clients receive
          "bid-placed" event simultaneously
@@ -372,39 +412,39 @@ Client C
 
 ---
 
-## 🛡️ Race Condition Prevention
+## Race Condition Prevention
 
-**Scenario:** 2 bidders đặt giá đồng thời trên cùng 1 đấu giá
+**Scenario:** 2 bidders dat gia dong thoi tren cung 1 dau gia
 
 **Without Protection:**
 ```
-Time │ Bidder A (Client)    │ Bidder B (Client)    │ Server
-─────┼──────────────────────┼──────────────────────┼─────────────
- 1   │ place-bid: $100      │                      │
- 2   │                      │ place-bid: $105      │
- 3   │                      │                      │ Check A: OK
- 4   │                      │                      │ Check B: OK  ✗ WRONG!
- 5   │                      │                      │ Update: $100
- 6   │                      │                      │ Update: $105 ✓ But lost A's bid!
+Time | Bidder A (Client)    | Bidder B (Client)    | Server
+-----+----------------------+----------------------+-------------
+ 1   | place-bid: $100      |                      |
+ 2   |                      | place-bid: $105      |
+ 3   |                      |                      | Check A: OK
+ 4   |                      |                      | Check B: OK  x WRONG!
+ 5   |                      |                      | Update: $100
+ 6   |                      |                      | Update: $105 v But lost A's bid!
 ```
 
 **With Redis Locks:**
 ```
-Time │ Bidder A (Server)    │ Bidder B (Server)    │ Redis
-─────┼──────────────────────┼──────────────────────┼────────────
- 1   │ Request lock         │ Request lock         │
- 2   │ ✓ Lock acquired      │ ✗ Lock waiting       │ Locked
- 3   │ Validate & Update    │ (waiting...)         │ Locked
- 4   │ Release lock         │                      │
- 5   │ Broadcast event      │ ✓ Lock acquired      │
- 6   │                      │ Validate & Update    │ Locked
- 7   │                      │ Release lock         │ Unlocked
- 8   │                      │ Broadcast event      │
+Time | Bidder A (Server)    | Bidder B (Server)    | Redis
+-----+----------------------+----------------------+------------
+ 1   | Request lock         | Request lock         |
+ 2   | v Lock acquired      | x Lock waiting       | Locked
+ 3   | Validate & Update    | (waiting...)         | Locked
+ 4   | Release lock         |                      |
+ 5   | Broadcast event      | v Lock acquired      |
+ 6   |                      | Validate & Update    | Locked
+ 7   |                      | Release lock         | Unlocked
+ 8   |                      | Broadcast event      |
 ```
 
 ---
 
-## 📱 Frontend Architecture
+## Frontend Architecture
 
 ### **Component Structure:**
 ```
@@ -429,6 +469,8 @@ src/
 │   │   └── WalletPage.jsx
 │   ├── SellerPage/
 │   │   └── CreateAuctionPage.jsx
+│   ├── OrderPage/
+│   │   └── OrderDetailPage.jsx
 │   └── AdminPage/
 │       └── AdminDashboard.jsx
 ├── contexts/
@@ -443,25 +485,25 @@ src/
 ### **Data Flow:**
 ```
 User Action (Click, Form Submit)
-    ↓
+    |
 React Component / Hook
-    ↓
+    |
 Service (api.js / socket.js)
-    ↓
+    |
 Backend API / WebSocket
-    ↓
+    |
 Response received
-    ↓
+    |
 Update Context / State
-    ↓
+    |
 Component re-render
-    ↓
+    |
 Update UI
 ```
 
 ---
 
-## 🚀 Deployment & Scaling
+## Deployment & Scaling
 
 ### **Current Setup (Docker Compose):**
 ```
@@ -480,6 +522,7 @@ Kubernetes Cluster:
 ├── Payment Service (2 replicas)
 ├── Notification Service (3 replicas)
 ├── Community Service (2 replicas)
+├── Order Service (2 replicas)
 ├── MongoDB (Replica Set)
 ├── Redis (Sentinel + Replication)
 └── Load Balancer (Nginx / HAProxy)
@@ -487,80 +530,80 @@ Kubernetes Cluster:
 
 ---
 
-## 🔐 Security Considerations
+## Security Considerations
 
-1. **Authentication:** JWT tokens với expiration
+1. **Authentication:** JWT tokens voi expiration
 2. **Authorization:** Role-based access control (RBAC)
-3. **Data Validation:** Input sanitization trên tất cả endpoints
+3. **Data Validation:** Input sanitization tren tat ca endpoints
 4. **Database:** Password hashing (bcrypt)
 5. **API Security:** CORS, Rate limiting
-6. **Payment:** Escrow mechanism để bảo vệ cả 2 bên
+6. **Payment:** Escrow mechanism de bao ve ca 2 ben
 7. **Race Condition:** Redis distributed locks
 
 ---
 
-## 📊 Performance Optimization
+## Performance Optimization
 
 1. **Caching:** Redis cache cho auctions, user data
-2. **Indexing:** MongoDB indexes trên frequently queried fields
+2. **Indexing:** MongoDB indexes tren frequently queried fields
 3. **Connection Pooling:** Reuse database connections
-4. **Load Balancing:** Services có thể scale horizontally
+4. **Load Balancing:** Services co the scale horizontally
 5. **Compression:** gzip compression cho HTTP responses
 6. **WebSocket:** Efficient binary protocol for real-time updates
 
 ---
 
-## 🎯 Request Flow - Ví dụ: Đặt Giá Mới
+## Request Flow - Vi du: Dat Gia Moi
 
 ```
 1. FRONTEND (React)
-   User clicks "Bid Now" → enters amount
+   User clicks "Bid Now" -> enters amount
 
-2. FRONTEND → BIDDING SERVICE (WebSocket)
+2. FRONTEND -> BIDDING SERVICE (WebSocket)
    Event: "place-bid" { auctionId, amount }
 
 3. BIDDING SERVICE
-   ├─ Acquire Redis lock on auctionId
-   ├─ Validate:
-   │  ├─ User is registered for this auction
-   │  ├─ User has enough balance
-   │  ├─ Amount > currentBid
-   │  ├─ Auction still OPEN
-   │  └─ Auction hasn't ended
-   ├─ Update MongoDB:
-   │  ├─ auctions.currentBid = amount
-   │  ├─ auctions.highestBidder = userId
-   │  ├─ auctions.version++ (for optimistic locking)
-   │  └─ bids.insert new bid record
-   ├─ Release Redis lock
-   └─ Publish Redis event "bid:placed"
+   |- Acquire Redis lock on auctionId
+   |- Validate:
+   |  |- User is registered for this auction
+   |  |- User has enough balance
+   |  |- Amount > currentBid
+   |  |- Auction still OPEN
+   |  L- Auction hasn't ended
+   |- Update MongoDB:
+   |  |- auctions.currentBid = amount
+   |  |- auctions.highestBidder = userId
+   |  |- auctions.version++ (for optimistic locking)
+   |  L- bids.insert new bid record
+   |- Release Redis lock
+   L- Publish Redis event "bid:placed"
 
 4. NOTIFICATION SERVICE (listening to Redis Pub/Sub)
-   ├─ Receives "bid:placed" event
-   ├─ Creates notifications for:
-   │  ├─ Previous highest bidder (outbid)
-   │  └─ Auction watchers
-   └─ Sends via WebSocket to connected clients
+   |- Receives "bid:placed" event
+   |- Creates notifications for:
+   |  |- Previous highest bidder (outbid)
+   |  L- Auction watchers
+   L- Sends via WebSocket to connected clients
 
 5. BIDDING SERVICE (WebSocket broadcast)
-   ├─ Broadcast "bid-placed" to all clients in auction room
-   └─ Includes:
-      ├─ Current bid amount
-      ├─ Highest bidder
-      └─ Time remaining
+   |- Broadcast "bid-placed" to all clients in auction room
+   L- Includes:
+      |- Current bid amount
+      |- Highest bidder
+      L- Time remaining
 
 6. FRONTEND (All connected clients)
-   ├─ Receive "bid-placed" event
-   ├─ Update UI with new bid
-   ├─ Show notifications
-   └─ Update leaderboard in real-time
+   |- Receive "bid-placed" event
+   |- Update UI with new bid
+   |- Show notifications
+   L- Update leaderboard in real-time
 ```
 
 ---
 
-## 🔍 Monitoring & Logging
+## Monitoring & Logging
 
-**Cần thêm:**
+**Can them:**
 - Winston / Morgan logging
 - Error tracking (Sentry)
 - Performance monitoring (APM)
@@ -569,18 +612,18 @@ Kubernetes Cluster:
 
 ---
 
-## 📝 Summary
+## Summary
 
-| Thành Phần | Công Nghệ | Chức Năng |
+| Thanh Phan | Cong Nghe | Chuc Nang |
 |-----------|-----------|---------|
-| **Frontend** | React + Vite | UI người dùng |
-| **Auth** | Node.js + JWT | Xác thực & authorization |
-| **Auction** | Node.js + MongoDB | CRUD đấu giá |
-| **Bidding** | Node.js + WebSocket + Redis | Đấu giá realtime |
-| **Payment** | Node.js + Escrow | Thanh toán & ví |
-| **Notification** | Node.js + Socket.io + Redis Pub/Sub | Thông báo realtime |
+| **Frontend** | React + Vite | UI nguoi dung |
+| **Auth** | Node.js + JWT | Xac thuc & authorization |
+| **Auction** | Node.js + MongoDB | CRUD dau gia |
+| **Bidding** | Node.js + WebSocket + Redis | Dau gia realtime |
+| **Payment** | Node.js + Escrow | Thanh toan & vi |
+| **Notification** | Node.js + Socket.io + Redis Pub/Sub | Thong bao realtime |
 | **Community** | Node.js + MongoDB | Posts & comments |
+| **Order** | Node.js + MongoDB | Quan ly don hang & giao van |
 | **Database** | MongoDB | Data persistence |
 | **Cache** | Redis | Locks & sessions |
 | **Orchestration** | Docker Compose | Container management |
-
