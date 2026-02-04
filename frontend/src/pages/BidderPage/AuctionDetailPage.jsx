@@ -571,7 +571,17 @@ const AuctionDetailPage = () => {
                   {/* Controls */}
                   {(isActive || isPending) && (
                     <div className="flex flex-col gap-3">
-                      {!isAuthenticated ? (
+                      {isAuthenticated && user?.role === 'seller' ? (
+                        <div className="text-center py-6 bg-gray-50 rounded-xl border border-dashed border-gray-300">
+                          <div className="inline-flex items-center justify-center w-12 h-12 rounded-full bg-gray-100 mb-3">
+                            <Eye className="text-gray-500" size={24} />
+                          </div>
+                          <h4 className="font-bold text-gray-700">Chế độ xem</h4>
+                          <p className="text-sm text-gray-500 mt-1 px-4">
+                            Tài khoản người bán chỉ có thể theo dõi diễn biến phiên đấu giá.
+                          </p>
+                        </div>
+                      ) : !isAuthenticated ? (
                         <div className="flex flex-col gap-3">
                           <button
                             onClick={() => navigate('/login')}
@@ -656,7 +666,7 @@ const AuctionDetailPage = () => {
                         </div>
                       )}
 
-                      {!connected && isAuthenticated && isRegistered && (
+                      {!connected && isAuthenticated && isRegistered && user?.role !== 'seller' && (
                         <p className="text-center text-xs text-[#9c6c49]">⚠️ Đang kết nối đến server...</p>
                       )}
 

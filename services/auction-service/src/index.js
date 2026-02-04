@@ -29,6 +29,30 @@ const initializeApp = async () => {
         redisClient = await createRedisClient(process.env.REDIS_URL);
         app.locals.redis = redisClient;
 
+        // Periodic check for ended auctions (every minute)
+        setInterval(async () => {
+            try {
+                const Auction = require('./models/Auction');
+                const auctionService = require('./services/auction.service');
+                const now = new Date();
+
+                // Find active auctions that should have ended
+                const auctionsToEnd = await Auction.find({
+                    status: 'active',
+                    endTime: { $lte: now }
+                });
+
+                if (auctionsToEnd.length > 0) {
+                    console.log(`🕒 Cron: Found ${auctionsToEnd.length} auctions to end`);
+                    for (const auction of auctionsToEnd) {
+                        await auctionService.getAuctionById(auction._id, false); // This triggers _updateAuctionStatus
+                    }
+                }
+            } catch (cronError) {
+                console.error('❌ Error in auction end cron:', cronError);
+            }
+        }, 60000);
+
         console.log('✅ Tất cả kết nối đã được thiết lập');
     } catch (error) {
         console.error('❌ Lỗi khởi tạo:', error);

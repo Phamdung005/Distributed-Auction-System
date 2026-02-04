@@ -31,6 +31,18 @@ const orderService = {
         const response = await api.patch(`${ORDER_BASE_URL}/${id}/address`, addressData);
 
         return response.data;
+    },
+
+    confirmShipping: async (id) => {
+        const response = await api.post(`${ORDER_BASE_URL}/${id}/ship`);
+
+        return response.data;
+    },
+
+    confirmReceipt: async (id) => {
+        const response = await api.post(`${ORDER_BASE_URL}/${id}/receive`);
+
+        return response.data;
     }
 };
 

@@ -1,0 +1,87 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: payment-service
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: payment-service
+  template:
+    metadata:
+      labels:
+        app: payment-service
+        prometheus.io/scrape: "true"
+        prometheus.io/port: "3006"
+    spec:
+      containers:
+      - name: payment-service
+        image: ung-dung-phan-tan-web-auction-payment-service:latest
+        imagePullPolicy: IfNotPresent
+        ports:
+        - containerPort: 3006
+        env:
+        - name: NODE_ENV
+          value: "production"
+        - name: PORT
+          value: "3006"
+        - name: MONGODB_URI
+          value: "mongodb://mongodb-payment:27017/payment_db"
+        - name: REDIS_URL
+          value: "redis://:redis123@redis:6379"
+        - name: JWT_SECRET
+          value: "your-super-secret-jwt-key-change-in-production"
+        - name: CORS_ORIGIN
+          value: "*" # Allow all for K8s ingress/gateway handling
+        - name: MOMO_PARTNER_CODE
+          value: "MOMO_TEST_PARTNER"
+        - name: MOMO_ACCESS_KEY
+          value: "test_access_key"
+        - name: MOMO_SECRET_KEY
+          value: "test_secret_key"
+        - name: MOMO_ENDPOINT
+          value: "https://test-payment.momo.vn/v2/gateway/api/create"
+        - name: MOMO_RETURN_URL
+          value: "http://localhost:80/payment/result" # Update to Ingress/Gateway URL
+        - name: MOMO_NOTIFY_URL
+          value: "http://payment-service:3006/api/payment/momo/callback"
+        - name: AUTH_SERVICE_URL
+          value: "http://auth-service:3001"
+        resources:
+          requests:
+            cpu: 100m
+            memory: 128Mi
+          limits:
+            cpu: 500m
+            memory: 512Mi
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: payment-service
+spec:
+  selector:
+    app: payment-service
+  ports:
+    - protocol: TCP
+      port: 3006
+      targetPort: 3006
+---
+apiVersion: autoscaling/v2
+kind: HorizontalPodAutoscaler
+metadata:
+  name: payment-service-hpa
+spec:
+  scaleTargetRef:
+    apiVersion: apps/v1
+    kind: Deployment
+    name: payment-service
+  minReplicas: 1
+  maxReplicas: 5
+  metrics:
+  - type: Resource
+    resource:
+      name: cpu
+      target:
+        type: Utilization
+        averageUtilization: 70

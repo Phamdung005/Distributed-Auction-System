@@ -195,7 +195,7 @@ services:
     container_name: notification-service
     restart: always
     ports:
-      - "3004:3004"
+      - "3014:3004"
     volumes:
       - ./services/notification-service/src:/app/src
       - ./services/notification-service/package.json:/app/package.json

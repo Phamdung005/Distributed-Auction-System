@@ -3,6 +3,8 @@ import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '../../../contexts/AuthContext';
 import { Gavel, Bell, Search, User, LogOut } from 'lucide-react';
 
+import { toast } from 'react-toastify';
+
 const NavLink = ({ to, children }) => (
     <Link
         to={to}
@@ -38,13 +40,23 @@ const NavbarBidder = () => {
     };
 
     const setupSocket = async () => {
-        const { connectSocket } = await import('../../../services/socket');
+        const { connectNotificationSocket } = await import('../../../services/notificationSocket');
         const token = localStorage.getItem('accessToken');
-        const socket = connectSocket(token);
+        const socket = connectNotificationSocket(token);
 
         if (socket) {
             socket.on('notification:new', (notification) => {
-                setUnreadCount(prev => prev + 1);
+                fetchUnreadCount();
+                // Show toast notification
+                toast.info(notification.message, {
+                    position: "top-right",
+                    autoClose: 5000,
+                    hideProgressBar: false,
+                    closeOnClick: true,
+                    pauseOnHover: true,
+                    draggable: true,
+                    onClick: () => navigate('/notifications')
+                });
             });
         }
     };

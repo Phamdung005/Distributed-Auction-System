@@ -15,15 +15,20 @@ class OrderRepository {
     }
 
     async getOrdersByBuyer(buyerId, options = {}) {
-        const { limit = 20, page = 1, sort = '-createdAt' } = options;
+        const { limit = 20, page = 1, sort = '-createdAt', status } = options;
         const skip = (page - 1) * limit;
 
+        const query = { buyerId };
+        if (status) {
+            query.status = status;
+        }
+
         const [orders, total] = await Promise.all([
-            Order.find({ buyerId })
+            Order.find(query)
                 .sort(sort)
                 .skip(skip)
                 .limit(limit),
-            Order.countDocuments({ buyerId })
+            Order.countDocuments(query)
         ]);
 
         return {
@@ -38,15 +43,20 @@ class OrderRepository {
     }
 
     async getOrdersBySeller(sellerId, options = {}) {
-        const { limit = 20, page = 1, sort = '-createdAt' } = options;
+        const { limit = 20, page = 1, sort = '-createdAt', status } = options;
         const skip = (page - 1) * limit;
 
+        const query = { sellerId };
+        if (status) {
+            query.status = status;
+        }
+
         const [orders, total] = await Promise.all([
-            Order.find({ sellerId })
+            Order.find(query)
                 .sort(sort)
                 .skip(skip)
                 .limit(limit),
-            Order.countDocuments({ sellerId })
+            Order.countDocuments(query)
         ]);
 
         return {

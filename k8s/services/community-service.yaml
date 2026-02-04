@@ -1,0 +1,73 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: community-service
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: community-service
+  template:
+    metadata:
+      labels:
+        app: community-service
+        prometheus.io/scrape: "true"
+        prometheus.io/port: "3005"
+    spec:
+      containers:
+      - name: community-service
+        image: ung-dung-phan-tan-web-auction-community-service:latest
+        imagePullPolicy: IfNotPresent
+        ports:
+        - containerPort: 3005
+        env:
+        - name: NODE_ENV
+          value: "production"
+        - name: PORT
+          value: "3005"
+        - name: MONGODB_URI
+          value: "mongodb://mongodb-community:27017/community_db"
+        - name: REDIS_URL
+          value: "redis://:redis123@redis:6379"
+        - name: JWT_SECRET
+          value: "your-super-secret-jwt-key-change-in-production"
+        - name: CORS_ORIGIN
+          value: "*"
+        resources:
+          requests:
+            cpu: 100m
+            memory: 128Mi
+          limits:
+            cpu: 500m
+            memory: 512Mi
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: community-service
+spec:
+  selector:
+    app: community-service
+  ports:
+    - protocol: TCP
+      port: 3005
+      targetPort: 3005
+---
+apiVersion: autoscaling/v2
+kind: HorizontalPodAutoscaler
+metadata:
+  name: community-service-hpa
+spec:
+  scaleTargetRef:
+    apiVersion: apps/v1
+    kind: Deployment
+    name: community-service
+  minReplicas: 1
+  maxReplicas: 5
+  metrics:
+  - type: Resource
+    resource:
+      name: cpu
+      target:
+        type: Utilization
+        averageUtilization: 70

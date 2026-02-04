@@ -2,23 +2,38 @@ import React, { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import orderService from '../../services/order.service';
 
-const OrderListPage = ({ isEmbedded = false }) => {
-    const [activeTab, setActiveTab] = useState('buying'); // 'buying' or 'selling'
+const OrderListPage = ({ isEmbedded = false, initialTab = 'buying' }) => {
+    const [activeTab, setActiveTab] = useState(initialTab); // 'buying' or 'selling'
+    const [subTab, setSubTab] = useState('active'); // 'active' or 'completed'
     const [orders, setOrders] = useState([]);
     const [loading, setLoading] = useState(true);
     const [pagination, setPagination] = useState(null);
 
     useEffect(() => {
         fetchOrders();
-    }, [activeTab]);
+    }, [activeTab, subTab]);
 
     const fetchOrders = async () => {
         setLoading(true);
         try {
+            const params = {};
+            if (subTab === 'completed') {
+                params.status = 'completed';
+            }
+
             const result = activeTab === 'buying'
-                ? await orderService.getBuyingOrders()
-                : await orderService.getSellingOrders();
-            setOrders(result.data.orders);
+                ? await orderService.getBuyingOrders(params)
+                : await orderService.getSellingOrders(params);
+
+            let fetchedOrders = result.data.orders;
+
+            // If active tab, manually filter out completed/cancelled locally if backend doesn't support $ne
+            // But usually active means NOT completed
+            if (subTab === 'active') {
+                fetchedOrders = fetchedOrders.filter(o => o.status !== 'completed' && o.status !== 'cancelled');
+            }
+
+            setOrders(fetchedOrders);
             setPagination(result.data.pagination);
         } catch (error) {
             console.error('Failed to fetch orders', error);
@@ -60,7 +75,7 @@ const OrderListPage = ({ isEmbedded = false }) => {
             <div className="flex border-b border-gray-200 mb-6">
                 <button
                     className={`pb-4 px-6 font-medium text-sm transition-colors relative ${activeTab === 'buying' ? 'text-indigo-600' : 'text-gray-500 hover:text-gray-700'}`}
-                    onClick={() => setActiveTab('buying')}
+                    onClick={() => { setActiveTab('buying'); setSubTab('active'); }}
                 >
                     Đơn Mua (Dành cho Bidder)
                     {activeTab === 'buying' && (
@@ -69,12 +84,34 @@ const OrderListPage = ({ isEmbedded = false }) => {
                 </button>
                 <button
                     className={`pb-4 px-6 font-medium text-sm transition-colors relative ${activeTab === 'selling' ? 'text-indigo-600' : 'text-gray-500 hover:text-gray-700'}`}
-                    onClick={() => setActiveTab('selling')}
+                    onClick={() => { setActiveTab('selling'); setSubTab('active'); }}
                 >
                     Đơn Bán (Dành cho Seller)
                     {activeTab === 'selling' && (
                         <span className="absolute bottom-0 left-0 w-full h-0.5 bg-indigo-600 rounded-t-full"></span>
                     )}
+                </button>
+            </div>
+
+            {/* Sub-Tabs (Active/History) */}
+            <div className="flex gap-4 mb-6 px-2">
+                <button
+                    onClick={() => setSubTab('active')}
+                    className={`px-4 py-1.5 rounded-full text-sm font-bold transition-all ${subTab === 'active'
+                        ? (activeTab === 'selling' ? 'bg-orange-500 text-white' : 'bg-indigo-600 text-white')
+                        : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
+                        }`}
+                >
+                    Đang xử lý
+                </button>
+                <button
+                    onClick={() => setSubTab('completed')}
+                    className={`px-4 py-1.5 rounded-full text-sm font-bold transition-all ${subTab === 'completed'
+                        ? (activeTab === 'selling' ? 'bg-orange-500 text-white' : 'bg-indigo-600 text-white')
+                        : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
+                        }`}
+                >
+                    Đã hoàn tất
                 </button>
             </div>
 
@@ -118,12 +155,12 @@ const OrderListPage = ({ isEmbedded = false }) => {
                                     <span className={`px-3 py-1 rounded-full text-sm font-medium ${statusColors[order.status] || 'bg-gray-100'}`}>
                                         {statusLabels[order.status] || order.status}
                                     </span>
-                                    <p className="text-indigo-600 font-bold text-xl">
+                                    <p className={`${activeTab === 'selling' ? 'text-orange-600' : 'text-indigo-600'} font-bold text-xl`}>
                                         {order.finalPrice.toLocaleString('vi-VN')} đ
                                     </p>
                                     <Link
                                         to={`/orders/${order._id}`}
-                                        className="inline-flex items-center text-indigo-600 hover:text-indigo-800 font-medium text-sm mt-1"
+                                        className={`inline-flex items-center ${activeTab === 'selling' ? 'text-orange-600 hover:text-orange-800' : 'text-indigo-600 hover:text-indigo-800'} font-medium text-sm mt-1`}
                                     >
                                         Xem chi tiết &rarr;
                                     </Link>

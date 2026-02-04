@@ -1,6 +1,6 @@
 import api from './api';
 
-const NOTIFICATION_BASE_URL = 'http://localhost:3004/api/notifications';
+const NOTIFICATION_BASE_URL = 'http://localhost:3014/api/notifications';
 
 export const notificationAPI = {
     // Get notifications

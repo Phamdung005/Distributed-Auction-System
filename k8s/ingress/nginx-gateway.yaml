@@ -1,0 +1,104 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: nginx-config
+data:
+  default.conf: |
+    server {
+        listen 80;
+        absolute_redirect off;
+        
+        # API Gateway Routes matching docker-compose nginx/nginx.conf
+        location /api/auth/ {
+            proxy_pass http://auth-service:3001/;
+            proxy_set_header Host $host;
+            proxy_set_header X-Real-IP $remote_addr;
+        }
+
+        location /api/auctions/ {
+            proxy_pass http://auction-service:3002/;
+            proxy_set_header Host $host;
+            proxy_set_header X-Real-IP $remote_addr;
+        }
+
+        # Bidding Service (WebSocket)
+        location /api/bids/ {
+            proxy_pass http://bidding-service:3003/;
+            proxy_set_header Host $host;
+            proxy_set_header X-Real-IP $remote_addr;
+        }
+        
+        location /socket.io {
+            proxy_pass http://bidding-service:3003;
+            proxy_http_version 1.1;
+            proxy_set_header Upgrade $http_upgrade;
+            proxy_set_header Connection "upgrade";
+        }
+
+        location /api/notifications {
+            proxy_pass http://notification-service:3004;
+            proxy_set_header Host $host;
+            proxy_set_header X-Real-IP $remote_addr;
+        }
+
+        location /api/posts {
+            proxy_pass http://community-service:3005;
+            proxy_set_header Host $host;
+            proxy_set_header X-Real-IP $remote_addr;
+        }
+
+        location /api/wallet {
+            proxy_pass http://payment-service:3006;
+            proxy_set_header Host $host;
+            proxy_set_header X-Real-IP $remote_addr;
+        }
+
+        location /api/orders {
+            proxy_pass http://order-service:3007;
+            proxy_set_header Host $host;
+            proxy_set_header X-Real-IP $remote_addr;
+        }
+    }
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: nginx-gateway
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: nginx-gateway
+  template:
+    metadata:
+      labels:
+        app: nginx-gateway
+    spec:
+      containers:
+      - name: nginx
+        image: nginx:alpine
+        ports:
+        - containerPort: 80
+        volumeMounts:
+        - name: nginx-config-volume
+          mountPath: /etc/nginx/conf.d/
+      volumes:
+      - name: nginx-config-volume
+        configMap:
+          name: nginx-config
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: nginx-gateway
+  labels:
+    app: nginx-gateway
+spec:
+  type: LoadBalancer # Exposes to localhost:8080 on Docker Desktop
+  selector:
+    app: nginx-gateway
+  ports:
+  - port: 8080
+    targetPort: 80
+    protocol: TCP
+    name: http

@@ -37,7 +37,7 @@ class AuctionService {
             status: startTime <= now ? 'active' : 'pending'
         });
 
-        return {
+        const formattedAuction = {
             id: auction._id,
             title: auction.title,
             description: auction.description,
@@ -47,8 +47,13 @@ class AuctionService {
             startTime: auction.startTime,
             endTime: auction.endTime,
             status: auction.status,
-            category: auction.category
+            category: auction.category,
+            seller: sellerId
         };
+
+        await this._publishEvent('auction:created', formattedAuction);
+
+        return formattedAuction;
     }
 
     /**
@@ -150,7 +155,7 @@ class AuctionService {
         }
 
         // Kiểm tra quyền sở hữu (Admin bypass)
-        if (userRole !== 'admin' && auction.seller._id.toString() !== sellerId) {
+        if (userRole !== 'admin' && auction.seller.toString() !== sellerId) {
             throw new Error('Bạn không có quyền chỉnh sửa auction này');
         }
 
@@ -167,8 +172,15 @@ class AuctionService {
             throw new Error('Không thể chỉnh sửa auction đã kết thúc');
         }
 
-        const updated = await auctionRepository.updateAuction(auctionId, updateData);
-        return this._formatAuction(updated);
+        // Apply updates using save() to trigger pre-save hooks and correct validation context
+        Object.keys(updateData).forEach(key => {
+            auction[key] = updateData[key];
+        });
+
+        const updated = await auction.save();
+        const formatted = this._formatAuction(updated);
+        await this._publishEvent('auction:updated', formatted);
+        return formatted;
     }
 
     /**
@@ -218,7 +230,7 @@ class AuctionService {
         }
 
         // Nếu không phải admin thì phải check owner
-        if (userRole !== 'admin' && auction.seller._id.toString() !== sellerId) {
+        if (userRole !== 'admin' && auction.seller.toString() !== sellerId) {
             throw new Error('Bạn không có quyền xóa auction này');
         }
 
@@ -227,6 +239,7 @@ class AuctionService {
         }
 
         await auctionRepository.deleteAuction(auctionId);
+        await this._publishEvent('auction:deleted', { id: auctionId, title: auction.title, seller: sellerId });
     }
 
     /**
@@ -243,7 +256,7 @@ class AuctionService {
             throw new Error('Auction không tồn tại');
         }
 
-        if (userRole !== 'admin' && auction.seller._id.toString() !== sellerId) {
+        if (userRole !== 'admin' && auction.seller.toString() !== sellerId) {
             throw new Error('Bạn không có quyền hủy auction này');
         }
 
@@ -335,6 +348,18 @@ class AuctionService {
             createdAt: auction.createdAt,
             updatedAt: auction.updatedAt
         };
+    }
+
+    async _publishEvent(channel, data) {
+        try {
+            const { createRedisClient } = require('shared/database/redis');
+            const redisPublisher = await createRedisClient(process.env.REDIS_URL);
+            await redisPublisher.publish(channel, JSON.stringify(data));
+            await redisPublisher.quit();
+            console.log(`📡 Published ${channel} event for auction ${data.id || data.auctionId}`);
+        } catch (error) {
+            console.error(`❌ Failed to publish ${channel} event:`, error);
+        }
     }
 }
 
