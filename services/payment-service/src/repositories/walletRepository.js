@@ -86,23 +86,49 @@ class WalletRepository {
      * @returns {Promise<Object>} - User object sau khi update
      */
     async updateBalance(userId, amount, session = null) {
-        const options = session ? { session, new: true } : { new: true };
+        let user;
 
-        const user = await User.findById(userId).session(session);
-        if (!user) {
-            throw new Error('User không tồn tại');
+        // Trường hợp RÚT TIỀN hoặc THANH TOÁN (amount âm)
+        if (amount < 0) {
+            // Chuyển amount sang số dương để so sánh
+            const positiveAmount = Math.abs(amount);
+
+            // Lệnh cập nhật nguyên tử (Atomic Update) trực tiếp dưới Database
+            user = await User.findOneAndUpdate(
+                {
+                    _id: userId,
+                    balance: { $gte: positiveAmount } // CHỈ thực hiện nếu số dư hiện tại trong DB >= số tiền rút
+                },
+                {
+                    $inc: { balance: amount } // Thực hiện trừ tiền bằng toán tử $inc nguyên tử
+                },
+                {
+                    new: true, // Trả về tài liệu sau khi cập nhật
+                    session
+                }
+            );
+
+            // Nếu DB trả về null, nghĩa là không tìm thấy User hoặc số dư không đủ thỏa mãn điều kiện lọc
+            if (!user) {
+                throw new Error('Số dư khả dụng không đủ hoặc người dùng không tồn tại');
+            }
         }
+        // Trường hợp NẠP TIỀN (amount dương)
+        else {
+            user = await User.findOneAndUpdate(
+                { _id: userId },
+                { $inc: { balance: amount } }, // Cộng tiền nguyên tử
+                { new: true, session }
+            );
 
-        const newBalance = user.balance + amount;
-        if (newBalance < 0) {
-            throw new Error('Số dư không đủ');
+            if (!user) {
+                throw new Error('Người dùng không tồn tại');
+            }
         }
-
-        user.balance = newBalance;
-        await user.save(options);
 
         return user;
     }
+
 
     /**
      * Kiểm tra user có đủ balance không (tính cả frozen funds)

@@ -1,0 +1,9 @@
+{
+  "name": "demo-concurrency-scripts",
+  "version": "1.0.0",
+  "description": "Dependencies for concurrency demo scripts",
+  "main": "demo-bidding-race.js",
+  "dependencies": {
+    "socket.io-client": "^4.6.1"
+  }
+}
