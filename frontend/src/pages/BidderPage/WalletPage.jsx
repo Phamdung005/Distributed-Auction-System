@@ -5,7 +5,6 @@ import walletApi from '../../services/walletApi';
 import { toast } from 'react-toastify';
 
 const WalletPage = () => {
-    const { user } = useAuth();
     const [walletInfo, setWalletInfo] = useState(null);
     const [transactions, setTransactions] = useState([]);
     const [loading, setLoading] = useState(true);
@@ -20,15 +19,13 @@ const WalletPage = () => {
 
     // Filter state
     const [activeFilter, setActiveFilter] = useState('all');
-    const [depositModalOpen, setDepositModalOpen] = useState(false);
     const [withdrawModalOpen, setWithdrawModalOpen] = useState(false);
     const [withdrawAmount, setWithdrawAmount] = useState('');
 
-    const [depositModleOpen, setDepositModleOpen] = useState('');
     const [submitting, setSubmitting] = useState(false);
     // Load wallet info
     useEffect(() => {
-        loadWalletInfo();
+        loadWalletInfo(); 
     }, []);
 
     // Load transactions when filter or page changes
