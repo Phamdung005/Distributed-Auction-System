@@ -22,6 +22,9 @@ const WalletPage = () => {
     const [activeFilter, setActiveFilter] = useState('all');
     const [depositModalOpen, setDepositModalOpen] = useState(false);
     const [withdrawModalOpen, setWithdrawModalOpen] = useState(false);
+
+    const [depositModleOpen, setDepositModleOpen] = useState('');
+    const [submitting, setSubmitting] = useState(false);
     // Load wallet info
     useEffect(() => {
         loadWalletInfo();
@@ -89,6 +92,40 @@ const WalletPage = () => {
             setLoading(false);
         }
     };
+
+    const handleWithdrawFunds = async (e) => {
+        e.preventDefault();
+        const amount = parseFloat(withdrawAmount);
+
+        if (isNaN(amount) || amount <= 0) {
+            toast.error('Số tiền không hợp lệ');
+            return;
+        }
+
+        const available = walletInfo ? walletInfo.balance - walletInfo.frozenFunds : 0;
+        if (amount > available) {
+            toast.error('Số dư khả dụng không đủ');
+            return;
+        }
+        try {
+            setSubmitting(true);
+            const response = await walletApi.withdrawFunds(amount, {
+                description: 'Rút tiền khỏi ví'
+            });
+            if (response.success) {
+                toast.success(`Rút tiền thành công ${formatCurrency(amount)}`);
+                setWithdrawAmount('');
+                await Promise.all([loadWalletInfo(), loadTransactions()]);
+            } else {
+                toast.error(response.message || 'Rút tiền thất bại');
+            }
+        } catch (err) {
+            console.error(err);
+            toast.error(err.message || 'Lỗi khi rút tiền');
+        } finally {
+            setSubmitting(false);
+        }
+    }
 
     const handleFilterChange = (filter) => {
         setActiveFilter(filter);
@@ -255,7 +292,9 @@ const WalletPage = () => {
                             <span className="material-symbols-outlined">add_card</span>
                             Nạp tiền ngay
                         </button>
-                        <button className="flex w-full items-center justify-center gap-2 rounded-lg border border-gray-200 bg-transparent py-3 text-sm font-bold text-gray-900 hover:bg-gray-50 transition-all active:scale-[0.98]">
+                        <button
+                            onClick={() => setWithdrawModalOpen(true)}
+                            className="flex w-full items-center justify-center gap-2 rounded-lg border border-gray-200 bg-transparent py-3 text-sm font-bold text-gray-900 hover:bg-gray-50 transition-all active:scale-[0.98]">
                             <span className="material-symbols-outlined">payments</span>
                             Rút tiền
                         </button>
@@ -377,6 +416,88 @@ const WalletPage = () => {
                             </table>
                         )}
                     </div>
+                    {/* Hộp thoại Modal Rút tiền (Chỉ hiện khi withdrawModalOpen === true) */}
+                    {withdrawModalOpen && (
+                        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50 p-4">
+                            <div className="w-full max-w-md rounded-xl bg-white p-6 shadow-xl border border-gray-100">
+                                {/* Header của Modal */}
+                                <div className="flex items-center justify-between mb-4">
+                                    <h3 className="text-xl font-bold text-gray-950">Rút tiền từ ví</h3>
+                                    <button
+                                        onClick={() => { setWithdrawModalOpen(false); setWithdrawAmount(''); }}
+                                        className="text-gray-400 hover:text-gray-600 flex items-center"
+                                    >
+                                        <span className="material-symbols-outlined">close</span>
+                                    </button>
+                                </div>
+
+                                {/* Form nhập số tiền rút */}
+                                <form onSubmit={handleWithdrawFund} className="space-y-4">
+                                    <div>
+                                        <label className="block text-sm font-semibold text-gray-600 mb-2">
+                                            Số dư khả dụng: <span className="font-bold text-orange-600">{walletInfo ? formatCurrency(walletInfo.balance - walletInfo.frozenFunds) : '0 ₫'}</span>
+                                        </label>
+                                        <input
+                                            type="number"
+                                            required
+                                            min="1000"
+                                            placeholder="Nhập số tiền muốn rút (VND)"
+                                            value={withdrawAmount}
+                                            onChange={(e) => setWithdrawAmount(e.target.value)}
+                                            className="w-full rounded-lg border border-gray-300 px-3 py-2 text-gray-950 focus:border-orange-500 focus:outline-none"
+                                        />
+                                    </div>
+
+                                    {/* Gợi ý rút tiền nhanh */}
+                                    <div className="flex gap-2">
+                                        <button
+                                            type="button"
+                                            onClick={() => setWithdrawAmount('50000')}
+                                            className="px-3 py-1 text-xs rounded border border-gray-200 hover:bg-gray-50 text-gray-800"
+                                        >
+                                            50K
+                                        </button>
+                                        <button
+                                            type="button"
+                                            onClick={() => setWithdrawAmount('200000')}
+                                            className="px-3 py-1 text-xs rounded border border-gray-200 hover:bg-gray-50 text-gray-800"
+                                        >
+                                            200K
+                                        </button>
+                                        <button
+                                            type="button"
+                                            onClick={() => {
+                                                const available = walletInfo ? walletInfo.balance - walletInfo.frozenFunds : 0;
+                                                setWithdrawAmount(available.toString());
+                                            }}
+                                            className="px-3 py-1 text-xs rounded border border-gray-200 hover:bg-gray-50 text-gray-800"
+                                        >
+                                            Rút hết
+                                        </button>
+                                    </div>
+
+                                    {/* Các nút hành động */}
+                                    <div className="flex gap-3 pt-2">
+                                        <button
+                                            type="button"
+                                            onClick={() => { setWithdrawModalOpen(false); setWithdrawAmount(''); }}
+                                            className="flex-1 rounded-lg border border-gray-200 py-2.5 text-sm font-bold text-gray-700 hover:bg-gray-50 transition-all"
+                                        >
+                                            Hủy
+                                        </button>
+                                        <button
+                                            type="submit"
+                                            disabled={submitting}
+                                            className="flex-1 rounded-lg bg-orange-600 py-2.5 text-sm font-bold text-white shadow-md hover:bg-orange-700 transition-all active:scale-[0.98] disabled:opacity-50"
+                                        >
+                                            {submitting ? 'Đang xử lý...' : 'Xác nhận rút'}
+                                        </button>
+                                    </div>
+                                </form>
+                            </div>
+                        </div>
+                    )}
+
 
                     {/* Pagination */}
                     {!transactionsLoading && transactions.length > 0 && (
