@@ -12,7 +12,7 @@ async function run() {
     const password = 'Password123';
 
     console.log(`\n=== 1. ĐĂNG KÝ CÁC TÀI KHOẢN THỬ NGHIỆM ===`);
-    
+
     // Đăng ký Seller
     let res = await fetch(`${BASE_URL}/auth/register`, {
         method: 'POST',
@@ -62,8 +62,8 @@ async function run() {
     console.log(`\n=== 3. SELLER TẠO PHIÊN ĐẤU GIÁ MỚI ===`);
     const now = new Date();
     const endTime = new Date(now.getTime() + 3600 * 1000); // 1 tiếng sau kết thúc
-    
-    res = await fetch(`${BASE_URL}/auctions`, {
+
+    res = await fetch(`${BASE_URL}/auctions/`, {
         method: 'POST',
         headers: {
             'Content-Type': 'application/json',
@@ -85,7 +85,8 @@ async function run() {
         console.error('Tạo đấu giá thất bại:', auctionRes.message);
         return;
     }
-    const auctionId = auctionRes.data._id;
+    const auctionId = auctionRes.data.id || auctionRes.data._id;
+
     console.log(` Tạo đấu giá thành công! ID: ${auctionId}`);
     console.log(`Giá khởi điểm: 100.000 VND. Bước giá tối thiểu: 10.000 VND.`);
 
@@ -97,11 +98,16 @@ async function run() {
     console.log(' Cả 3 Bidder đã kết nối WebSocket thành công.');
 
     // Tham gia phòng đấu giá
+    // Tham gia phòng đấu giá
     console.log(`\n=== 5. THAM GIA PHIÊN ĐẤU GIÁ ===`);
+    console.log(`[Bidder A] Đang tham gia phòng đấu giá ${auctionId}...`);
     await joinRoom(socketA, auctionId);
+    console.log(`[Bidder B] Đang tham gia phòng đấu giá ${auctionId}...`);
     await joinRoom(socketB, auctionId);
+    console.log(`[Bidder C] Đang tham gia phòng đấu giá ${auctionId}...`);
     await joinRoom(socketC, auctionId);
     console.log(' Tất cả Bidder đã join vào phòng đấu giá.');
+
 
     // Gửi yêu cầu đặt giá đồng thời
     const bidAmount = 110000; // Bằng giá khởi điểm (100k) + Bước giá (10k)
@@ -130,12 +136,12 @@ async function run() {
     const history = await getBidHistory(socketA, auctionId);
     console.log('Lịch sử đặt giá được ghi nhận:');
     history.forEach((bid, i) => {
-        console.log(`Lượt #${i+1}: Bidder: ${bid.bidderName} - Số tiền: \x1b[33m${bid.amount.toLocaleString('vi-VN')} VND\x1b[0m`);
+        console.log(`Lượt #${i + 1}: Bidder: ${bid.bidderName} - Số tiền: \x1b[33m${bid.amount.toLocaleString('vi-VN')} VND\x1b[0m`);
     });
 
     const totalSuccessful = results.filter(r => r.success).length;
     console.log(`\nTổng số lượt đặt giá thành công ở mức ${bidAmount.toLocaleString('vi-VN')} VND: ${totalSuccessful}/${results.length}`);
-    
+
     if (totalSuccessful > 1) {
         console.log(`\x1b[31m CẢNH BÁO BẢO MẬT: Phát hiện Race Condition! Có ${totalSuccessful} lượt bid được chấp nhận ở cùng một mức giá, phá vỡ quy tắc bước nhảy của phiên đấu giá.\x1b[0m`);
     } else {
@@ -160,21 +166,37 @@ async function login(email, password) {
 }
 
 function connectSocket(token) {
-    return new Promise((resolve) => {
+    return new Promise((resolve, reject) => {
+        const timeout = setTimeout(() => {
+            reject(new Error('Kết nối Socket quá thời gian (5 giây)'));
+        }, 5000);
+
         const socket = io(SOCKET_URL, {
             transports: ['websocket'],
             auth: { token }
         });
+
         socket.on('connect', () => {
+            clearTimeout(timeout);
             resolve(socket);
+        });
+
+        socket.on('connect_error', (err) => {
+            clearTimeout(timeout);
+            reject(err);
         });
     });
 }
 
 function joinRoom(socket, auctionId) {
-    return new Promise((resolve) => {
+    return new Promise((resolve, reject) => {
+        const timeout = setTimeout(() => {
+            reject(new Error(`Vào phòng đấu giá ${auctionId} quá thời gian (5 giây)`));
+        }, 5000);
+
         socket.emit('auction:join', { auctionId });
         socket.once('auction:joined', (data) => {
+            clearTimeout(timeout);
             resolve(data);
         });
     });
@@ -182,15 +204,21 @@ function joinRoom(socket, auctionId) {
 
 function placeBid(socket, auctionId, amount, name) {
     return new Promise((resolve) => {
+        const timeout = setTimeout(() => {
+            resolve({ success: false, name, message: 'Đặt giá quá thời gian phản hồi (5 giây)' });
+        }, 5000);
+
         socket.emit('bid:place', { auctionId, amount });
         
         const successHandler = (data) => {
+            clearTimeout(timeout);
             socket.off('bid:success', successHandler);
             socket.off('bid:error', errorHandler);
             resolve({ success: true, name, data });
         };
 
         const errorHandler = (data) => {
+            clearTimeout(timeout);
             socket.off('bid:success', successHandler);
             socket.off('bid:error', errorHandler);
             resolve({ success: false, name, message: data.message });
@@ -203,8 +231,14 @@ function placeBid(socket, auctionId, amount, name) {
 
 function getBidHistory(socket, auctionId) {
     return new Promise((resolve) => {
+        const timeout = setTimeout(() => {
+            console.log('Lấy lịch sử đấu giá quá thời gian (5 giây)');
+            resolve([]);
+        }, 5000);
+
         socket.emit('bid:history', { auctionId, limit: 10 });
         socket.once('bid:history:response', (data) => {
+            clearTimeout(timeout);
             resolve(data.bids || []);
         });
     });
