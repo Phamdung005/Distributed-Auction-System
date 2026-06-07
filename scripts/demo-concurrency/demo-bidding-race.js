@@ -3,6 +3,9 @@ const io = require('socket.io-client');
 const BASE_URL = 'http://localhost:8080/api';
 const SOCKET_URL = 'http://localhost:3003';
 
+const sleep = (ms) => new Promise((resolve) =>
+    setTimeout(resolve, ms));
+
 async function run() {
     const randomSuffix = Math.floor(Math.random() * 100000);
     const sellerEmail = `seller${randomSuffix}@gmail.com`;
@@ -61,6 +64,7 @@ async function run() {
     // Tạo phiên đấu giá mới
     console.log(`\n=== 3. SELLER TẠO PHIÊN ĐẤU GIÁ MỚI ===`);
     const now = new Date();
+    const startTime = new Date(now.getTime() + 2000);
     const endTime = new Date(now.getTime() + 3600 * 1000); // 1 tiếng sau kết thúc
 
     res = await fetch(`${BASE_URL}/auctions/`, {
@@ -75,7 +79,7 @@ async function run() {
             category: 'electronics',
             startPrice: 100000,
             minBidIncrement: 10000,
-            startTime: now.toISOString(),
+            startTime: startTime.toISOString(),
             endTime: endTime.toISOString(),
             images: ['http://example.com/item.png']
         })
@@ -89,6 +93,8 @@ async function run() {
 
     console.log(` Tạo đấu giá thành công! ID: ${auctionId}`);
     console.log(`Giá khởi điểm: 100.000 VND. Bước giá tối thiểu: 10.000 VND.`);
+    console.log('\nĐang chờ 5 giây để phiên đấu giá chính thức bắt đầu trên Docker...');
+    await sleep(5000);
 
     // Kết nối các Socket Client
     console.log(`\n=== 4. KẾT NỐI SOCKET CLIENTS CHO CÁC BIDDER ===`);
@@ -144,8 +150,10 @@ async function run() {
 
     if (totalSuccessful > 1) {
         console.log(`\x1b[31m CẢNH BÁO BẢO MẬT: Phát hiện Race Condition! Có ${totalSuccessful} lượt bid được chấp nhận ở cùng một mức giá, phá vỡ quy tắc bước nhảy của phiên đấu giá.\x1b[0m`);
-    } else {
+    } else if (totalSuccessful === 1) {
         console.log(`\x1b[32m HỆ THỐNG AN TOÀN: Chỉ có duy nhất 1 lượt bid thành công, các lượt còn lại gửi đồng thời bị chặn do không đạt khóa phân tán (Distributed Lock) hoặc bước nhảy giá.\x1b[0m`);
+    } else {
+        console.log(`\x1b[31m LỖI THỬ NGHIỆM: Không có lượt bid nào thành công (0/3). Vui lòng kiểm tra trạng thái dịch vụ hoặc log docker.\x1b[0m`);
     }
 
     // Ngắt kết nối
@@ -209,7 +217,7 @@ function placeBid(socket, auctionId, amount, name) {
         }, 5000);
 
         socket.emit('bid:place', { auctionId, amount });
-        
+
         const successHandler = (data) => {
             clearTimeout(timeout);
             socket.off('bid:success', successHandler);
