@@ -22,6 +22,7 @@ const WalletPage = () => {
     const [activeFilter, setActiveFilter] = useState('all');
     const [depositModalOpen, setDepositModalOpen] = useState(false);
     const [withdrawModalOpen, setWithdrawModalOpen] = useState(false);
+    const [withdrawAmount, setWithdrawAmount] = useState('');
 
     const [depositModleOpen, setDepositModleOpen] = useState('');
     const [submitting, setSubmitting] = useState(false);
@@ -283,21 +284,90 @@ const WalletPage = () => {
                         </div>
                     </div>
 
-                    {/* Quick Actions */}
-                    <div className="flex flex-col justify-center gap-3 rounded-xl border border-gray-200 p-6 shadow-sm">
-                        <button
-                            onClick={handleTestDeposit}
-                            className="flex w-full items-center justify-center gap-2 rounded-lg bg-orange-600 py-3 text-sm font-bold text-white shadow-md hover:bg-orange-700 transition-all active:scale-[0.98]"
-                        >
-                            <span className="material-symbols-outlined">add_card</span>
-                            Nạp tiền ngay
-                        </button>
-                        <button
-                            onClick={() => setWithdrawModalOpen(true)}
-                            className="flex w-full items-center justify-center gap-2 rounded-lg border border-gray-200 bg-transparent py-3 text-sm font-bold text-gray-900 hover:bg-gray-50 transition-all active:scale-[0.98]">
-                            <span className="material-symbols-outlined">payments</span>
-                            Rút tiền
-                        </button>
+                    <div className="flex flex-col justify-center gap-3 rounded-xl border border-gray-200 bg-white p-6 shadow-sm min-h-[160px] transition-all duration-300">
+                        {!withdrawModalOpen ? (
+                            // Giao diện nút bấm mặc định
+                            <>
+                                <button
+                                    onClick={handleTestDeposit}
+                                    className="flex w-full items-center justify-center gap-2 rounded-lg bg-orange-600 py-3 text-sm font-bold text-white shadow-md hover:bg-orange-700 transition-all active:scale-[0.98]"
+                                >
+                                    <span className="material-symbols-outlined">add_card</span>
+                                    Nạp tiền ngay
+                                </button>
+                                <button
+                                    onClick={() => setWithdrawModalOpen(true)}
+                                    className="flex w-full items-center justify-center gap-2 rounded-lg border border-gray-200 bg-transparent py-3 text-sm font-bold text-gray-900 hover:bg-gray-50 transition-all active:scale-[0.98]"
+                                >
+                                    <span className="material-symbols-outlined">payments</span>
+                                    Rút tiền
+                                </button>
+                            </>
+                        ) : (
+                            // Giao diện Form Rút tiền inline hiển thị ngay tại chỗ
+                            <form onSubmit={handleWithdrawFunds} className="space-y-3 animate-fadeIn">
+                                <div className="flex items-center justify-between border-b border-gray-100 pb-2">
+                                    <h4 className="text-sm font-bold text-gray-900 flex items-center gap-1.5">
+                                        <span className="material-symbols-outlined text-orange-600 text-[18px]">payments</span>
+                                        Rút tiền nhanh
+                                    </h4>
+                                    <button
+                                        type="button"
+                                        onClick={() => { setWithdrawModalOpen(false); setWithdrawAmount(''); }}
+                                        className="text-gray-400 hover:text-gray-600 text-xs flex items-center gap-0.5 border border-gray-200 px-2 py-0.5 rounded-md"
+                                    >
+                                        <span className="material-symbols-outlined text-[14px]">close</span> Hủy
+                                    </button>
+                                </div>
+                                <div>
+                                    <label className="block text-xs font-semibold text-gray-500 mb-1">
+                                        Số dư khả dụng: <span className="font-bold text-orange-600">{walletInfo ? formatCurrency(walletInfo.balance - walletInfo.frozenFunds) : '0 ₫'}</span>
+                                    </label>
+                                    <input
+                                        type="number"
+                                        required
+                                        min="1000"
+                                        placeholder="Nhập số tiền..."
+                                        value={withdrawAmount}
+                                        onChange={(e) => setWithdrawAmount(e.target.value)}
+                                        className="w-full rounded-lg border border-gray-300 px-3 py-1.5 text-sm text-gray-950 focus:border-orange-500 focus:outline-none"
+                                    />
+                                </div>
+                                <div className="flex gap-1.5">
+                                    <button
+                                        type="button"
+                                        onClick={() => setWithdrawAmount('50000')}
+                                        className="flex-1 py-1 text-[11px] rounded border border-gray-200 hover:bg-gray-50 text-gray-800"
+                                    >
+                                        50K
+                                    </button>
+                                    <button
+                                        type="button"
+                                        onClick={() => setWithdrawAmount('200000')}
+                                        className="flex-1 py-1 text-[11px] rounded border border-gray-200 hover:bg-gray-50 text-gray-800"
+                                    >
+                                        200K
+                                    </button>
+                                    <button
+                                        type="button"
+                                        onClick={() => {
+                                            const available = walletInfo ? walletInfo.balance - walletInfo.frozenFunds : 0;
+                                            setWithdrawAmount(available.toString());
+                                        }}
+                                        className="flex-1 py-1 text-[11px] rounded border border-gray-200 hover:bg-gray-50 text-gray-800 font-medium"
+                                    >
+                                        Hết
+                                    </button>
+                                </div>
+                                <button
+                                    type="submit"
+                                    disabled={submitting}
+                                    className="w-full rounded-lg bg-orange-600 py-2 text-sm font-bold text-white shadow-md hover:bg-orange-700 transition-all active:scale-[0.98] disabled:opacity-50"
+                                >
+                                    {submitting ? 'Đang xử lý...' : 'Xác nhận rút'}
+                                </button>
+                            </form>
+                        )}
                     </div>
                 </div>
 
@@ -416,89 +486,6 @@ const WalletPage = () => {
                             </table>
                         )}
                     </div>
-                    {/* Hộp thoại Modal Rút tiền (Chỉ hiện khi withdrawModalOpen === true) */}
-                    {withdrawModalOpen && (
-                        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50 p-4">
-                            <div className="w-full max-w-md rounded-xl bg-white p-6 shadow-xl border border-gray-100">
-                                {/* Header của Modal */}
-                                <div className="flex items-center justify-between mb-4">
-                                    <h3 className="text-xl font-bold text-gray-950">Rút tiền từ ví</h3>
-                                    <button
-                                        onClick={() => { setWithdrawModalOpen(false); setWithdrawAmount(''); }}
-                                        className="text-gray-400 hover:text-gray-600 flex items-center"
-                                    >
-                                        <span className="material-symbols-outlined">close</span>
-                                    </button>
-                                </div>
-
-                                {/* Form nhập số tiền rút */}
-                                <form onSubmit={handleWithdrawFund} className="space-y-4">
-                                    <div>
-                                        <label className="block text-sm font-semibold text-gray-600 mb-2">
-                                            Số dư khả dụng: <span className="font-bold text-orange-600">{walletInfo ? formatCurrency(walletInfo.balance - walletInfo.frozenFunds) : '0 ₫'}</span>
-                                        </label>
-                                        <input
-                                            type="number"
-                                            required
-                                            min="1000"
-                                            placeholder="Nhập số tiền muốn rút (VND)"
-                                            value={withdrawAmount}
-                                            onChange={(e) => setWithdrawAmount(e.target.value)}
-                                            className="w-full rounded-lg border border-gray-300 px-3 py-2 text-gray-950 focus:border-orange-500 focus:outline-none"
-                                        />
-                                    </div>
-
-                                    {/* Gợi ý rút tiền nhanh */}
-                                    <div className="flex gap-2">
-                                        <button
-                                            type="button"
-                                            onClick={() => setWithdrawAmount('50000')}
-                                            className="px-3 py-1 text-xs rounded border border-gray-200 hover:bg-gray-50 text-gray-800"
-                                        >
-                                            50K
-                                        </button>
-                                        <button
-                                            type="button"
-                                            onClick={() => setWithdrawAmount('200000')}
-                                            className="px-3 py-1 text-xs rounded border border-gray-200 hover:bg-gray-50 text-gray-800"
-                                        >
-                                            200K
-                                        </button>
-                                        <button
-                                            type="button"
-                                            onClick={() => {
-                                                const available = walletInfo ? walletInfo.balance - walletInfo.frozenFunds : 0;
-                                                setWithdrawAmount(available.toString());
-                                            }}
-                                            className="px-3 py-1 text-xs rounded border border-gray-200 hover:bg-gray-50 text-gray-800"
-                                        >
-                                            Rút hết
-                                        </button>
-                                    </div>
-
-                                    {/* Các nút hành động */}
-                                    <div className="flex gap-3 pt-2">
-                                        <button
-                                            type="button"
-                                            onClick={() => { setWithdrawModalOpen(false); setWithdrawAmount(''); }}
-                                            className="flex-1 rounded-lg border border-gray-200 py-2.5 text-sm font-bold text-gray-700 hover:bg-gray-50 transition-all"
-                                        >
-                                            Hủy
-                                        </button>
-                                        <button
-                                            type="submit"
-                                            disabled={submitting}
-                                            className="flex-1 rounded-lg bg-orange-600 py-2.5 text-sm font-bold text-white shadow-md hover:bg-orange-700 transition-all active:scale-[0.98] disabled:opacity-50"
-                                        >
-                                            {submitting ? 'Đang xử lý...' : 'Xác nhận rút'}
-                                        </button>
-                                    </div>
-                                </form>
-                            </div>
-                        </div>
-                    )}
-
-
                     {/* Pagination */}
                     {!transactionsLoading && transactions.length > 0 && (
                         <div className="flex items-center justify-between border-t border-gray-200 pt-4">
