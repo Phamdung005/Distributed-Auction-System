@@ -32,16 +32,6 @@ class BiddingService {
         const lockTTL = 5; // 5 giây
 
         try {
-            // Bước 1: Thử acquire lock bằng SET NX (SET if Not eXists)
-            const lockAcquired = await redis.set(lockKey, lockValue, {
-                NX: true, // Chỉ set nếu key chưa tồn tại
-                EX: lockTTL // Expire sau 5 giây
-            });
-
-            if (!lockAcquired) {
-                throw new Error('Đang có người khác đặt giá, vui lòng thử lại');
-            }
-
             // Bước 2: Lấy thông tin auction
             const auction = await biddingRepository.getAuctionById(auctionId);
 
