@@ -87,37 +87,30 @@ class WalletRepository {
      */
     async updateBalance(userId, amount, session = null) {
         let user;
-
-        // Trường hợp RÚT TIỀN hoặc THANH TOÁN (amount âm)
         if (amount < 0) {
             // Chuyển amount sang số dương để so sánh
             const positiveAmount = Math.abs(amount);
-
-            // Lệnh cập nhật nguyên tử (Atomic Update) trực tiếp dưới Database
             user = await User.findOneAndUpdate(
                 {
                     _id: userId,
-                    balance: { $gte: positiveAmount } // CHỈ thực hiện nếu số dư hiện tại trong DB >= số tiền rút
+                    balance: { $gte: positiveAmount }
                 },
                 {
-                    $inc: { balance: amount } // Thực hiện trừ tiền bằng toán tử $inc nguyên tử
+                    $inc: { balance: amount }
                 },
                 {
-                    new: true, // Trả về tài liệu sau khi cập nhật
+                    new: true,
                     session
                 }
             );
-
-            // Nếu DB trả về null, nghĩa là không tìm thấy User hoặc số dư không đủ thỏa mãn điều kiện lọc
             if (!user) {
                 throw new Error('Số dư khả dụng không đủ hoặc người dùng không tồn tại');
             }
         }
-        // Trường hợp NẠP TIỀN (amount dương)
         else {
             user = await User.findOneAndUpdate(
                 { _id: userId },
-                { $inc: { balance: amount } }, // Cộng tiền nguyên tử
+                { $inc: { balance: amount } },
                 { new: true, session }
             );
 
@@ -138,7 +131,6 @@ class WalletRepository {
      */
     async hasEnoughBalance(userId, amount) {
         const walletInfo = await this.getWalletInfo(userId);
-        // Check available balance (balance - frozen funds)
         return walletInfo.availableBalance >= amount;
     }
 
