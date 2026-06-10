@@ -36,7 +36,7 @@ class WalletRepository {
                         isActive: true,
                         balance: 0
                     });
-                    console.log(`✅ Created user ${userId} in payment DB`);
+                    console.log(`Created user ${userId} in payment DB`);
                 } else {
                     throw new Error('User không tồn tại');
                 }
