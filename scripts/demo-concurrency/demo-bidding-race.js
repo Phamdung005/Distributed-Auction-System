@@ -22,6 +22,11 @@ async function run() {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ email: sellerEmail, password, fullName: 'Seller Test', phone: '0912345678', role: 'seller' })
     });
+    const serverDate = res.headers.get('date');
+    const serverTime = serverDate ? new Date(serverDate) : new Date();
+    const serverOffset = serverTime.getTime() - Date.now();
+    console.log(`[Clock Sync] Server offset: ${serverOffset}ms`);
+
     let sellerData = await res.json();
     if (!sellerData.success) {
         console.error('Đăng ký Seller thất bại:', sellerData.message);
@@ -63,9 +68,9 @@ async function run() {
 
     // Tạo phiên đấu giá mới
     console.log(`\n=== 3. SELLER TẠO PHIÊN ĐẤU GIÁ MỚI ===`);
-    const now = new Date();
-    const startTime = new Date(now.getTime() + 2000);
-    const endTime = new Date(now.getTime() + 3600 * 1000); // 1 tiếng sau kết thúc
+    const serverNow = new Date(Date.now() + serverOffset);
+    const startTime = new Date(serverNow.getTime() + 2000);
+    const endTime = new Date(serverNow.getTime() + 3600 * 1000); // 1 tiếng sau kết thúc
 
     res = await fetch(`${BASE_URL}/auctions/`, {
         method: 'POST',
