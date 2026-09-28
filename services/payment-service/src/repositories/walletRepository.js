@@ -86,23 +86,42 @@ class WalletRepository {
      * @returns {Promise<Object>} - User object sau khi update
      */
     async updateBalance(userId, amount, session = null) {
-        const options = session ? { session, new: true } : { new: true };
-
-        const user = await User.findById(userId).session(session);
-        if (!user) {
-            throw new Error('User không tồn tại');
+        let user;
+        if (amount < 0) {
+            // Chuyển amount sang số dương để so sánh
+            const positiveAmount = Math.abs(amount);
+            user = await User.findOneAndUpdate(
+                {
+                    _id: userId,
+                    balance: { $gte: positiveAmount }
+                },
+                {
+                    $inc: { balance: amount }
+                },
+                {
+                    new: true,
+                    session
+                }
+            );
+            if (!user) {
+                throw new Error('Số dư khả dụng không đủ hoặc người dùng không tồn tại');
+            }
         }
+        else {
+            user = await User.findOneAndUpdate(
+                { _id: userId },
+                { $inc: { balance: amount } },
+                { new: true, session }
+            );
 
-        const newBalance = user.balance + amount;
-        if (newBalance < 0) {
-            throw new Error('Số dư không đủ');
+            if (!user) {
+                throw new Error('Người dùng không tồn tại');
+            }
         }
-
-        user.balance = newBalance;
-        await user.save(options);
 
         return user;
     }
+
 
     /**
      * Kiểm tra user có đủ balance không (tính cả frozen funds)
@@ -112,7 +131,6 @@ class WalletRepository {
      */
     async hasEnoughBalance(userId, amount) {
         const walletInfo = await this.getWalletInfo(userId);
-        // Check available balance (balance - frozen funds)
         return walletInfo.availableBalance >= amount;
     }
 

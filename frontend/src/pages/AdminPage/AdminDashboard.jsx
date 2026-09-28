@@ -10,6 +10,8 @@ import { auctionAPI } from '../../services/api';
 import { useAuth } from '../../contexts/AuthContext';
 import UserManagement from './UserManagement';
 import AuctionManagement from './AuctionManagement';
+import SecurityDemo from './SecurityDemo';
+import { ShieldAlert } from 'lucide-react';
 
 const AdminDashboard = () => {
     const { logout } = useAuth();
@@ -182,6 +184,7 @@ const AdminDashboard = () => {
             case 'overview': return 'Tổng quan';
             case 'users': return 'Quản lý Người dùng';
             case 'auctions': return 'Quản lý Đấu giá';
+            case 'security-demo': return 'Mô phỏng Lỗ hổng Concurrency';
             default: return 'Bảng điều khiển';
         }
     };
@@ -218,6 +221,12 @@ const AdminDashboard = () => {
                         label="Đấu giá"
                         active={activeTab === 'auctions'}
                         onClick={() => setActiveTab('auctions')}
+                    />
+                    <NavItem
+                        icon={<ShieldAlert size={20} />}
+                        label="Thử nghiệm Concurrency"
+                        active={activeTab === 'security-demo'}
+                        onClick={() => setActiveTab('security-demo')}
                     />
 
 
@@ -456,6 +465,13 @@ const AdminDashboard = () => {
                     activeTab === 'auctions' && (
                         <div className="p-8">
                             <AuctionManagement />
+                        </div>
+                    )
+                }
+                {
+                    activeTab === 'security-demo' && (
+                        <div className="p-8">
+                            <SecurityDemo />
                         </div>
                     )
                 }
