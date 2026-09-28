@@ -2,9 +2,11 @@ const path = require('path');
 const mongoose = require('../services/auth-service/node_modules/mongoose');
 const bcrypt = require('../services/auth-service/node_modules/bcryptjs');
 
-// Database connection URIs
-const AUTH_DB_URI = 'mongodb://localhost:27017/auth_db';
-const PAYMENT_DB_URI = 'mongodb://localhost:27020/payment_db';
+require('dotenv').config({ path: path.resolve(__dirname, '../services/auth-service/.env') });
+
+// Database connection URIs loaded from environment variables
+const AUTH_DB_URI = process.env.AUTH_MONGODB_URI || process.env.MONGODB_URI || 'mongodb://localhost:27017/auth_db';
+const PAYMENT_DB_URI = process.env.PAYMENT_MONGODB_URI || process.env.MONGODB_URI?.replace('/auth_db', '/payment_db') || 'mongodb://localhost:27020/payment_db';
 
 async function seedAdmin() {
     try {
