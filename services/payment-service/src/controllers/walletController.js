@@ -247,6 +247,38 @@ class WalletController {
             });
         }
     }
+
+    /**
+     * Hoàn cọc hàng loạt cho phiên đấu giá bị hủy
+     * POST /api/wallet/refund-auction/:auctionId
+     */
+    async refundAuctionDeposits(req, res) {
+        try {
+            const { auctionId } = req.params;
+            const { reason, auctionTitle } = req.body || {};
+
+            if (!auctionId) {
+                return res.status(400).json({
+                    success: false,
+                    message: 'Auction ID là bắt buộc'
+                });
+            }
+
+            const result = await walletService.refundAuctionDeposits(auctionId, reason, auctionTitle);
+
+            if (!result.success) {
+                return res.status(400).json(result);
+            }
+
+            return res.status(200).json(result);
+        } catch (error) {
+            console.error('Error in refundAuctionDeposits controller:', error);
+            return res.status(500).json({
+                success: false,
+                message: 'Lỗi server khi hoàn cọc phiên đấu giá'
+            });
+        }
+    }
 }
 
 module.exports = new WalletController();

@@ -495,6 +495,100 @@ class WalletService {
             };
         }
     }
+
+    /**
+     * Hoàn tiền cọc cho tất cả người tham gia khi phiên đấu giá bị hủy
+     * @param {string} auctionId - ID của auction
+     * @param {string} reason - Lý do hủy
+     * @param {string} auctionTitle - Tên phiên đấu giá (optional)
+     * @returns {Promise<Object>}
+     */
+    async refundAuctionDeposits(auctionId, reason = 'Phiên đấu giá bị hủy bởi quản trị viên', auctionTitle = '') {
+        try {
+            const Escrow = require('../models/Escrow');
+
+            // Find all frozen escrows for this auction
+            const escrows = await Escrow.find({
+                auction_id: auctionId.toString(),
+                status: 'frozen'
+            });
+
+            console.log(`[WalletService] Found ${escrows.length} frozen escrows to refund for auction ${auctionId}`);
+
+            const refundedUsers = [];
+
+            for (const escrow of escrows) {
+                try {
+                    const userId = escrow.user_id;
+                    const amount = escrow.amount;
+
+                    const user = await walletRepository.getUserBalance(userId);
+                    const currentBalance = user ? user.balance : 0;
+
+                    // Create transaction record
+                    const transactionData = {
+                        user_id: userId,
+                        type: 'bid_refund',
+                        amount: amount,
+                        balanceBefore: currentBalance,
+                        balanceAfter: currentBalance,
+                        status: 'completed',
+                        paymentMethod: 'wallet',
+                        relatedAuction_id: auctionId,
+                        description: `Hoàn cọc đấu giá: ${reason}`,
+                        completedAt: new Date()
+                    };
+
+                    const transaction = await transactionRepository.createTransaction(transactionData);
+
+                    // Update escrow status to refunded
+                    await escrow.refund(transaction._id);
+
+                    // Publish event for notification service
+                    try {
+                        const { createRedisClient } = require('shared/database/redis');
+                        const redisPublisher = await createRedisClient(process.env.REDIS_URL);
+
+                        const eventData = {
+                            userId: userId,
+                            auctionId: auctionId,
+                            amount: amount,
+                            transactionId: transaction._id,
+                            auctionTitle: auctionTitle || 'Phiên đấu giá',
+                            reason: reason,
+                            timestamp: new Date().toISOString()
+                        };
+
+                        await redisPublisher.publish('payment:deposit:refunded', JSON.stringify(eventData));
+                        await redisPublisher.quit();
+                    } catch (redisError) {
+                        console.error(`Failed to publish refund event for user ${userId}:`, redisError);
+                    }
+
+                    refundedUsers.push({
+                        userId,
+                        amount,
+                        transactionId: transaction._id
+                    });
+                } catch (err) {
+                    console.error(`Error refunding escrow ${escrow._id} for user ${escrow.user_id}:`, err);
+                }
+            }
+
+            return {
+                success: true,
+                message: `Đã hoàn cọc thành công cho ${refundedUsers.length} người tham gia`,
+                refundedCount: refundedUsers.length,
+                data: refundedUsers
+            };
+        } catch (error) {
+            console.error('Error in refundAuctionDeposits:', error);
+            return {
+                success: false,
+                message: error.message || 'Lỗi khi hoàn cọc theo phiên'
+            };
+        }
+    }
 }
 
 module.exports = new WalletService();

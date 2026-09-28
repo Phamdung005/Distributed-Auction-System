@@ -151,7 +151,8 @@ class AuctionController {
         try {
             const sellerId = req.user.userId;
             const userRole = req.user.role;
-            const auction = await auctionService.cancelAuction(req.params.id, sellerId, userRole);
+            const reason = req.body?.reason || (userRole === 'admin' ? 'Phiên đấu giá bị hủy bởi quản trị viên' : 'Phiên đấu giá bị người bán hủy');
+            const auction = await auctionService.cancelAuction(req.params.id, sellerId, userRole, reason);
 
             res.status(200).json({
                 success: true,

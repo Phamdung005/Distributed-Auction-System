@@ -250,7 +250,7 @@ class AuctionService {
      * @param {string} userRole
      * @returns {Promise<Object>}
      */
-    async cancelAuction(auctionId, sellerId, userRole) {
+    async cancelAuction(auctionId, sellerId, userRole, reason = 'Phiên đấu giá bị hủy bởi quản trị viên') {
         const auction = await auctionRepository.getAuctionById(auctionId);
 
         if (!auction) {
@@ -268,6 +268,45 @@ class AuctionService {
         const updated = await auctionRepository.updateAuction(auctionId, {
             status: 'cancelled'
         });
+
+        // 1. Trigger auto-refund in payment-service for all frozen deposits
+        const PAYMENT_SERVICE_URL = process.env.PAYMENT_SERVICE_URL || 'http://localhost:3006';
+        const axios = require('axios');
+        try {
+            console.log(`[AuctionService] Triggering auto-refund for auction ${auctionId} via ${PAYMENT_SERVICE_URL}`);
+            const refundRes = await axios.post(`${PAYMENT_SERVICE_URL}/api/wallet/refund-auction/${auctionId}`, {
+                reason: reason,
+                auctionTitle: auction.title
+            }, { timeout: 10000 });
+            console.log(`[AuctionService] Refund result:`, refundRes.data);
+        } catch (refundErr) {
+            console.error('❌ Failed to trigger refund in payment-service:', refundErr.response?.data || refundErr.message);
+        }
+
+        // 2. Mark auction registrations as refunded
+        try {
+            const AuctionRegistration = require('../models/AuctionRegistration');
+            await AuctionRegistration.updateMany(
+                { auction_id: auctionId, status: { $in: ['approved', 'pending'] } },
+                { status: 'refunded', notes: `Đã hoàn cọc: ${reason}` }
+            );
+        } catch (regErr) {
+            console.error('❌ Failed to update auction registrations status:', regErr.message);
+        }
+
+        // 3. Publish auction:cancelled event to notify Seller and Bidders
+        try {
+            await this._publishEvent('auction:cancelled', {
+                auctionId: auctionId.toString(),
+                auctionTitle: auction.title,
+                sellerId: auction.seller.toString(),
+                cancelledBy: userRole,
+                reason: reason,
+                timestamp: new Date().toISOString()
+            });
+        } catch (eventErr) {
+            console.error('❌ Failed to publish auction:cancelled event:', eventErr.message);
+        }
 
         return this._formatAuction(updated);
     }

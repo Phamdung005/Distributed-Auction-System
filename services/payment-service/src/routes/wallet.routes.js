@@ -46,4 +46,11 @@ router.post('/unfreeze', authMiddleware, walletController.unfreezeFunds);
  */
 router.post('/pay-auction', authMiddleware, walletController.payAuction);
 
+/**
+ * @route   POST /api/wallet/refund-auction/:auctionId
+ * @desc    Refund all bidder deposits for a cancelled auction (Internal / Admin)
+ * @access  Public / Internal Service
+ */
+router.post('/refund-auction/:auctionId', walletController.refundAuctionDeposits);
+
 module.exports = router;

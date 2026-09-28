@@ -30,6 +30,7 @@ class PubSubService {
         await this.subscriber.subscribe('payment:deposit:completed', this.handleWalletDeposit.bind(this));
         await this.subscriber.subscribe('payment:auction:paid', this.handleAuctionPaid.bind(this));
         await this.subscriber.subscribe('payment:seller:payout:completed', this.handleSellerPayout.bind(this));
+        await this.subscriber.subscribe('auction:cancelled', this.handleAuctionCancelled.bind(this));
         await this.subscriber.subscribe('auction:created', this.handleAuctionLifecycleEvent.bind(this, 'seller_auction_created'));
         await this.subscriber.subscribe('auction:updated', this.handleAuctionLifecycleEvent.bind(this, 'seller_auction_updated'));
         await this.subscriber.subscribe('auction:deleted', this.handleAuctionLifecycleEvent.bind(this, 'seller_auction_deleted'));
@@ -134,10 +135,57 @@ class PubSubService {
     async handleDepositRefunded(message) {
         try {
             const data = JSON.parse(message);
-            // Implement notification logic if needed
-            console.log('Deposit refunded:', data.auctionId);
+            console.log('Deposit refunded event received:', JSON.stringify(data));
+
+            const notification = await notificationService.createNotification({
+                userId: data.userId,
+                userRole: 'bidder',
+                type: 'deposit_refunded',
+                notificationData: {
+                    auctionId: data.auctionId,
+                    auctionTitle: data.auctionTitle || 'Phiên đấu giá',
+                    amount: data.amount,
+                    reason: data.reason || 'Phiên đấu giá đã bị hủy'
+                }
+            });
+
+            if (notification) {
+                console.log(`[PubSub] Emitting refund notification to bidder ${data.userId}`);
+                sendNotificationToUser(data.userId, notification);
+            }
         } catch (error) {
             console.error('Error handling deposit refunded event:', error);
+        }
+    }
+
+    /**
+     * Handle auction cancelled event
+     */
+    async handleAuctionCancelled(message) {
+        try {
+            const data = JSON.parse(message);
+            console.log('Auction cancelled event received:', JSON.stringify(data));
+
+            // Notify Seller
+            if (data.sellerId) {
+                const sellerNotification = await notificationService.createNotification({
+                    userId: data.sellerId,
+                    userRole: 'seller',
+                    type: 'seller_auction_cancelled',
+                    notificationData: {
+                        auctionId: data.auctionId,
+                        auctionTitle: data.auctionTitle || 'Phiên đấu giá',
+                        reason: data.reason || 'Phiên đấu giá đã bị hủy bởi quản trị viên'
+                    }
+                });
+
+                if (sellerNotification) {
+                    console.log(`[PubSub] Emitting cancel notification to seller ${data.sellerId}`);
+                    sendNotificationToUser(data.sellerId, sellerNotification);
+                }
+            }
+        } catch (error) {
+            console.error('Error handling auction cancelled event:', error);
         }
     }
 

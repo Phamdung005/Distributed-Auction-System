@@ -37,8 +37,14 @@ const NOTIFICATION_TEMPLATES = {
 
     DEPOSIT_REFUNDED: {
         title: 'Hoàn trả tiền cọc',
-        message: (data) => `Tiền cọc ${formatPrice(data.amount)} cho "${data.auctionTitle}" đã được hoàn trả vào ví của bạn`,
-        priority: 'medium'
+        message: (data) => `Tiền cọc ${formatPrice(data.amount)} cho "${data.auctionTitle}" đã được hoàn trả vào ví của bạn.${data.reason ? ` Lý do: ${data.reason}` : ''}`,
+        priority: 'high'
+    },
+
+    AUCTION_CANCELLED: {
+        title: 'Phiên đấu giá đã bị hủy',
+        message: (data) => `Phiên đấu giá "${data.auctionTitle}" đã bị hủy.${data.reason ? ` Lý do: ${data.reason}` : ''}`,
+        priority: 'high'
     },
 
     AUCTION_STARTED: {
@@ -136,6 +142,12 @@ const NOTIFICATION_TEMPLATES = {
         title: 'Xóa đấu giá thành công',
         message: (data) => `Đấu giá "${data.auctionTitle}" đã được xóa khỏi hệ thống`,
         priority: 'medium'
+    },
+
+    SELLER_AUCTION_CANCELLED: {
+        title: 'Phiên đấu giá đã bị hủy',
+        message: (data) => `Phiên đấu giá "${data.auctionTitle}" của bạn đã bị hủy bởi quản trị viên.${data.reason ? ` Lý do: ${data.reason}` : ''}`,
+        priority: 'high'
     },
 
     SELLER_PAYOUT_RECEIVED: {

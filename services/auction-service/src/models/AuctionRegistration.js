@@ -24,7 +24,7 @@ const auctionRegistrationSchema = new mongoose.Schema({
     // Trạng thái đăng ký
     status: {
         type: String,
-        enum: ['pending', 'approved', 'rejected', 'forfeited'],
+        enum: ['pending', 'approved', 'rejected', 'forfeited', 'refunded', 'cancelled'],
         default: 'pending',
         index: true
     },
