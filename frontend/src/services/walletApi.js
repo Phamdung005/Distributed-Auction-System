@@ -1,6 +1,6 @@
 import axios from 'axios';
 
-const PAYMENT_SERVICE_URL = import.meta.env.VITE_PAYMENT_SERVICE_URL || 'http://localhost:3006';
+const PAYMENT_SERVICE_URL = import.meta.env.VITE_PAYMENT_SERVICE_URL || import.meta.env.VITE_API_URL || '';
 
 /**
  * API service cho Wallet operations

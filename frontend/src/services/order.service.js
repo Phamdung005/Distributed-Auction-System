@@ -1,6 +1,7 @@
 import api from './api';
 
-const ORDER_BASE_URL = 'http://localhost:3007/api/orders';
+const BASE_URL = import.meta.env.VITE_API_URL || '';
+const ORDER_BASE_URL = `${BASE_URL}/api/orders`;
 
 const orderService = {
     getBuyingOrders: async (params) => {

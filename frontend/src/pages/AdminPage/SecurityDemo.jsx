@@ -6,10 +6,11 @@ import {
     RefreshCw, AlertTriangle, Code, Wallet, Gavel, History, Terminal
 } from 'lucide-react';
 
-const AUTH_BASE_URL = 'http://localhost:3001/api/auth';
-const PAYMENT_BASE_URL = 'http://localhost:3006/api/wallet';
-const AUCTION_BASE_URL = 'http://localhost:3002/api/auctions';
-const SOCKET_URL = 'http://localhost:3003';
+const BASE_URL = import.meta.env.VITE_API_URL || '';
+const AUTH_BASE_URL = `${BASE_URL}/api/auth`;
+const PAYMENT_BASE_URL = `${BASE_URL}/api/wallet`;
+const AUCTION_BASE_URL = `${BASE_URL}/api/auctions`;
+const SOCKET_URL = import.meta.env.VITE_SOCKET_URL || BASE_URL || '';
 
 export default function SecurityDemo() {
     const [activeDemo, setActiveDemo] = useState('wallet'); // 'wallet' or 'bidding'

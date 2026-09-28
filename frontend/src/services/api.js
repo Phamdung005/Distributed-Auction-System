@@ -1,9 +1,10 @@
 import axios from 'axios';
 
-// Base URLs cho các services
-const AUTH_BASE_URL = 'http://localhost:3001/api/auth';
-const AUCTION_BASE_URL = 'http://localhost:3002/api/auctions';
-const BIDDING_BASE_URL = 'http://localhost:3003/api/bidding';
+// Base URLs đọc hoàn toàn từ biến môi trường .env (VITE_API_URL)
+const BASE_URL = import.meta.env.VITE_API_URL || '';
+const AUTH_BASE_URL = `${BASE_URL}/api/auth`;
+const AUCTION_BASE_URL = `${BASE_URL}/api/auctions`;
+const BIDDING_BASE_URL = `${BASE_URL}/api/bidding`;
 
 // Tạo axios instance
 const api = axios.create({

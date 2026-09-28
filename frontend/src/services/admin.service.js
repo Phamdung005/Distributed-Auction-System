@@ -2,7 +2,8 @@ import axios from 'axios';
 import api, { auctionAPI, authAPI, biddingAPI } from './api';
 import walletApi from './walletApi';
 
-const AUCTION_URL = 'http://localhost:3001/api/auctions'; // Define AUCTION_URL
+const BASE_URL = import.meta.env.VITE_API_URL || '';
+const USERS_URL = `${BASE_URL}/api/auth/users`;
 
 const AdminService = {
     // Get All Auctions (for management)
@@ -26,7 +27,7 @@ const AdminService = {
             // Parallel fetch for dashboard stats using allSettled to prevent one failure from breaking everything
             const results = await Promise.allSettled([
                 walletApi.getTransactionStats(),
-                api.get('http://localhost:3001/api/auth/users'),
+                api.get(USERS_URL),
                 auctionAPI.getAuctions({ limit: 1 }), // Total
                 auctionAPI.getAuctions({ status: 'pending', limit: 1 }),
                 auctionAPI.getAuctions({ status: 'active', limit: 1 }),
@@ -95,7 +96,7 @@ const AdminService = {
 
     // Get Users List
     getUsers: async () => {
-        const response = await api.get('http://localhost:3001/api/auth/users');
+        const response = await api.get(USERS_URL);
         return response.data;
     },
 
@@ -118,15 +119,15 @@ const AdminService = {
 
     // User Management API
     createUser: async (userData) => {
-        return await api.post('http://localhost:3001/api/auth/users', userData);
+        return await api.post(USERS_URL, userData);
     },
 
     updateUser: async (userId, userData) => {
-        return await api.put(`http://localhost:3001/api/auth/users/${userId}`, userData);
+        return await api.put(`${USERS_URL}/${userId}`, userData);
     },
 
     deleteUser: async (userId) => {
-        return await api.delete(`http://localhost:3001/api/auth/users/${userId}`);
+        return await api.delete(`${USERS_URL}/${userId}`);
     }
 };
 

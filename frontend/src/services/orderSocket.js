@@ -1,6 +1,6 @@
 import { io } from 'socket.io-client';
 
-const ORDER_SOCKET_URL = 'http://localhost:3007';
+const ORDER_SOCKET_URL = import.meta.env.VITE_SOCKET_URL || import.meta.env.VITE_API_URL || '';
 
 let orderSocket = null;
 let currentToken = null;

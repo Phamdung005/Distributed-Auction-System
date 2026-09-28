@@ -1,6 +1,7 @@
 import api from './api';
 
-const NOTIFICATION_BASE_URL = 'http://localhost:3014/api/notifications';
+const BASE_URL = import.meta.env.VITE_API_URL || '';
+const NOTIFICATION_BASE_URL = `${BASE_URL}/api/notifications`;
 
 export const notificationAPI = {
     // Get notifications

@@ -1,6 +1,6 @@
 import { io } from 'socket.io-client';
 
-const NOTIFICATION_SOCKET_URL = 'http://localhost:3014';
+const NOTIFICATION_SOCKET_URL = import.meta.env.VITE_SOCKET_URL || import.meta.env.VITE_API_URL || '';
 
 let notificationSocket = null;
 let currentToken = null;
