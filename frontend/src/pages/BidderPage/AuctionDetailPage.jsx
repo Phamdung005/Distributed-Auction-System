@@ -261,14 +261,31 @@ const AuctionDetailPage = () => {
 
   const handleShowDepositModal = () => {
     if (!isAuthenticated) {
-      toast.warning('Vui lòng đăng nhập để đăng ký');
+      toast.warning('Vui lòng đăng nhập để đăng ký tham gia');
       navigate('/login');
       return;
     }
+
+    if (user?.role !== 'bidder') {
+      toast.error('Chỉ tài khoản Người mua (Bidder) mới được quyền đăng ký tham gia đấu giá!');
+      return;
+    }
+
     setShowDepositModal(true);
   };
 
   const handleRegister = async () => {
+    if (!isAuthenticated) {
+      toast.warning('Vui lòng đăng nhập để đăng ký tham gia');
+      navigate('/login');
+      return;
+    }
+
+    if (user?.role !== 'bidder') {
+      toast.error('Chỉ tài khoản Người mua (Bidder) mới được quyền đăng ký tham gia đấu giá!');
+      return;
+    }
+
     try {
       setBidding(true);
       setShowDepositModal(false);
@@ -595,14 +612,14 @@ const AuctionDetailPage = () => {
                   {/* Controls */}
                   {(isActive || isPending) && (
                     <div className="flex flex-col gap-3">
-                      {isAuthenticated && user?.role === 'seller' ? (
+                      {isAuthenticated && user?.role !== 'bidder' ? (
                         <div className="text-center py-6 bg-gray-50 rounded-xl border border-dashed border-gray-300">
                           <div className="inline-flex items-center justify-center w-12 h-12 rounded-full bg-gray-100 mb-3">
                             <Eye className="text-gray-500" size={24} />
                           </div>
                           <h4 className="font-bold text-gray-700">Chế độ xem</h4>
                           <p className="text-sm text-gray-500 mt-1 px-4">
-                            Tài khoản người bán chỉ có thể theo dõi diễn biến phiên đấu giá.
+                            Tài khoản {user?.role === 'seller' ? 'Người bán' : 'Quản trị viên'} chỉ có thể theo dõi, không thể đăng ký hoặc tham gia đấu giá.
                           </p>
                         </div>
                       ) : !isAuthenticated ? (

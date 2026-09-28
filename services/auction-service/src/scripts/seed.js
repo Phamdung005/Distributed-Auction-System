@@ -6,9 +6,8 @@ require('dotenv').config();
 // Use port 27018 from host if running locally against docker container
 const MONGODB_URI = process.env.MONGODB_URI || 'mongodb://localhost:27018/auction_db';
 
-// Dummy Seller ID (Replace with a real User ID from your Auth Service if needed)
-// Use a fixed ID so we can refer to it
-const SELLER_ID = '65ba3d528b93995818987654';
+// Valid Seller ID from Auth Service (user1@auction.com)
+const SELLER_ID = process.env.SELLER_ID || '6aba728e9464dc8b84ea4696';
 
 const sampleAuctions = [
     {

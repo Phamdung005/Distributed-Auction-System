@@ -4,7 +4,7 @@ const Auction = require('../models/Auction');
 // Note: Escrow is in Payment Service, should use Payment Service API
 const axios = require('axios');
 
-const PAYMENT_SERVICE_URL = process.env.PAYMENT_SERVICE_URL || 'http://payment-service:3006';
+const PAYMENT_SERVICE_URL = process.env.PAYMENT_SERVICE_URL || 'http://localhost:3006';
 
 class RegistrationController {
     /**
@@ -15,6 +15,15 @@ class RegistrationController {
         try {
             const { id: auctionId } = req.params;
             const userId = req.user.userId;
+            const userRole = req.user.role;
+
+            // 0. Chỉ tài khoản bidder mới được phép đăng ký
+            if (userRole !== 'bidder') {
+                return res.status(403).json({
+                    success: false,
+                    message: 'Chỉ tài khoản người mua (bidder) mới có thể đăng ký tham gia đấu giá'
+                });
+            }
 
             // 1. Kiểm tra auction tồn tại
             const auction = await Auction.findById(auctionId);
@@ -22,6 +31,14 @@ class RegistrationController {
                 return res.status(404).json({
                     success: false,
                     message: 'Không tìm thấy phiên đấu giá'
+                });
+            }
+
+            // 1.1 Không được tự đăng ký đấu giá của chính mình
+            if (auction.seller && auction.seller.toString() === userId) {
+                return res.status(400).json({
+                    success: false,
+                    message: 'Bạn không thể đăng ký phiên đấu giá do chính mình tạo'
                 });
             }
 
