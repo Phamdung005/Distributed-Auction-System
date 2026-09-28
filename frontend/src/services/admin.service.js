@@ -17,7 +17,7 @@ const AdminService = {
 
     // Cancel Auction
     cancelAuction: async (id) => {
-        return await api.post(`${AUCTION_URL}/${id}/cancel`);
+        return await auctionAPI.cancelAuction(id);
     },
 
     // Stats

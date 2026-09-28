@@ -51,20 +51,20 @@ router.patch('/:id', auctionController.updatePrice);
  * @desc    Cập nhật auction
  * @access  Private (Seller, Owner)
  */
-router.put('/:id', authenticate, authorize('seller'), updateAuctionValidation, auctionController.updateAuction);
+router.put('/:id', authenticate, authorize('seller', 'admin'), updateAuctionValidation, auctionController.updateAuction);
 
 /**
  * @route   DELETE /api/auctions/:id
  * @desc    Xóa auction
- * @access  Private (Seller, Owner)
+ * @access  Private (Seller, Owner, Admin)
  */
-router.delete('/:id', authenticate, authorize('seller'), auctionController.deleteAuction);
+router.delete('/:id', authenticate, authorize('seller', 'admin'), auctionController.deleteAuction);
 
 /**
  * @route   POST /api/auctions/:id/cancel
  * @desc    Hủy auction
- * @access  Private (Seller, Owner)
+ * @access  Private (Seller, Owner, Admin)
  */
-router.post('/:id/cancel', authenticate, authorize('seller'), auctionController.cancelAuction);
+router.post('/:id/cancel', authenticate, authorize('seller', 'admin'), auctionController.cancelAuction);
 
 module.exports = router;
