@@ -37,9 +37,10 @@ COPY scripts/render/nginx.conf.template /etc/nginx/nginx.conf.template
 COPY scripts/render/entrypoint.sh /app/entrypoint.sh
 RUN chmod +x /app/entrypoint.sh
 
-EXPOSE 10000
-
 ENV PORT=10000
 ENV NODE_ENV=production
+ENV NODE_PATH=/app
+
+EXPOSE 10000
 
 CMD ["/bin/bash", "/app/entrypoint.sh"]
