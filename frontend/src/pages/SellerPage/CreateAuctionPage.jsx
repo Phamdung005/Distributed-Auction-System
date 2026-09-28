@@ -68,27 +68,43 @@ const CreateAuctionPage = () => {
     const onSubmit = async (data) => {
         setLoading(true);
         try {
-            const validImages = imageUrls.filter(url => url.trim() !== '');
+            const validImages = imageUrls.filter(url => url && url.trim() !== '');
+            if (validImages.length === 0) {
+                toast.error('Vui lòng thêm ít nhất 1 đường dẫn ảnh sản phẩm!');
+                setLoading(false);
+                return;
+            }
+
+            const startTimeDate = new Date(data.startTime);
+            const endTimeDate = new Date(data.endTime);
+
+            if (endTimeDate <= startTimeDate) {
+                toast.error('Thời gian kết thúc phải sau thời gian bắt đầu!');
+                setLoading(false);
+                return;
+            }
+
             const auctionData = {
                 ...data,
                 startPrice: parseInt(data.startPrice),
                 minBidIncrement: parseInt(data.minBidIncrement),
-                startTime: new Date(data.startTime).toISOString(),
-                endTime: new Date(data.endTime).toISOString(),
+                startTime: startTimeDate.toISOString(),
+                endTime: endTimeDate.toISOString(),
                 images: validImages
             };
 
             if (isEditMode) {
                 await auctionAPI.updateAuction(id, auctionData);
-                // toast.success('Cập nhật đấu giá thành công! 🎉'); // Removed as notification system handles this
+                toast.success('Cập nhật đấu giá thành công! 🎉');
             } else {
                 await auctionAPI.createAuction(auctionData);
-                // toast.success('Tạo đấu giá thành công! 🎉'); // Removed as notification system handles this
+                toast.success('Tạo đấu giá thành công! 🎉');
             }
             navigate('/my-auctions', { state: { refresh: true } });
         } catch (error) {
             console.error('Auction operation failed:', error);
-            toast.error(error.response?.data?.message || (isEditMode ? 'Cập nhật thất bại' : 'Tạo đấu giá thất bại'));
+            const errorDetails = error.response?.data?.errors?.map(e => e.message).join(' | ');
+            toast.error(errorDetails || error.response?.data?.message || (isEditMode ? 'Cập nhật thất bại' : 'Tạo đấu giá thất bại'));
         } finally {
             setLoading(false);
         }

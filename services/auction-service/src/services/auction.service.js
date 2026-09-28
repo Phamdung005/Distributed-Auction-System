@@ -17,8 +17,9 @@ class AuctionService {
         const startTime = new Date(auctionData.startTime);
         const endTime = new Date(auctionData.endTime);
 
-        if (startTime < now) {
-            throw new Error('Thời gian bắt đầu phải sau thời gian hiện tại');
+        const fiveMinutesAgo = new Date(now.getTime() - 5 * 60 * 1000);
+        if (startTime < fiveMinutesAgo) {
+            throw new Error('Thời gian bắt đầu không được trong quá khứ quá 5 phút');
         }
 
         if (endTime <= startTime) {
