@@ -160,8 +160,8 @@ const initializeSocketHandlers = (io, redis) => {
                     return;
                 }
 
-                // Kiểm tra user có thể bid không
-                const canBid = await biddingService.canUserBid(socket.user.userId, auctionId, socket.user.role);
+                // Kiểm tra user có thể bid không (kèm kiểm tra số dư ví)
+                const canBid = await biddingService.canUserBid(socket.user.userId, auctionId, socket.user.role, amount);
                 if (!canBid.canBid) {
                     socket.emit('bid:error', { message: canBid.reason });
                     return;

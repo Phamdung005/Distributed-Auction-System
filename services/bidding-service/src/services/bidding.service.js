@@ -73,6 +73,15 @@ class BiddingService {
                 throw new Error(`Giá đặt phải lớn hơn hoặc bằng ${minNextBid.toLocaleString('vi-VN')} VND`);
             }
 
+            // Bước 5.1: Kiểm tra số dư khả dụng trong ví của bidder
+            const wallet = await biddingRepository.getUserWallet(bidderId);
+            if (wallet) {
+                const availableBalance = wallet.availableBalance !== undefined ? wallet.availableBalance : (wallet.balance || 0);
+                if (bidAmount > availableBalance) {
+                    throw new Error(`Số dư ví khả dụng không đủ (${availableBalance.toLocaleString('vi-VN')} ₫) để đặt mức giá ${bidAmount.toLocaleString('vi-VN')} ₫. Vui lòng nạp thêm tiền vào ví!`);
+                }
+            }
+
             // Bước 6: Kiểm tra không tự bid vào auction của mình
             if (auction.seller.toString() === bidderId) {
                 throw new Error('Không thể đặt giá vào auction của chính mình');
@@ -200,7 +209,7 @@ class BiddingService {
      * @param {string} auctionId
      * @returns {Promise<Object>}
      */
-    async canUserBid(userId, auctionId, role) {
+    async canUserBid(userId, auctionId, role, bidAmount = null) {
         // Chỉ 'bidder' mới được phép đặt giá
         if (role !== 'bidder') {
             return { canBid: false, reason: 'Chỉ bidder mới được đặt giá' };
@@ -227,6 +236,20 @@ class BiddingService {
 
         if (auction.startTime > now) {
             return { canBid: false, reason: 'Auction chưa bắt đầu' };
+        }
+
+        // Kiểm tra số dư ví nếu có truyền bidAmount
+        if (bidAmount) {
+            const wallet = await biddingRepository.getUserWallet(userId);
+            if (wallet) {
+                const availableBalance = wallet.availableBalance !== undefined ? wallet.availableBalance : (wallet.balance || 0);
+                if (bidAmount > availableBalance) {
+                    return {
+                        canBid: false,
+                        reason: `Số dư ví khả dụng không đủ (${availableBalance.toLocaleString('vi-VN')} ₫) để đặt giá (${bidAmount.toLocaleString('vi-VN')} ₫). Vui lòng nạp thêm tiền vào ví!`
+                    };
+                }
+            }
         }
 
         return { canBid: true };

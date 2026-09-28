@@ -29,6 +29,35 @@ class WalletController {
     }
 
     /**
+     * GET /api/wallet/user/:userId/balance
+     * Lấy thông tin ví theo userId (cho inter-service calls)
+     */
+    async getUserBalance(req, res) {
+        try {
+            const { userId } = req.params;
+            if (!userId) {
+                return res.status(400).json({
+                    success: false,
+                    message: 'UserId là bắt buộc'
+                });
+            }
+
+            const result = await walletService.getWalletInfo(userId);
+            if (!result.success) {
+                return res.status(400).json(result);
+            }
+
+            return res.status(200).json(result);
+        } catch (error) {
+            console.error('Error in getUserBalance:', error);
+            return res.status(500).json({
+                success: false,
+                message: 'Lỗi server khi lấy thông tin ví'
+            });
+        }
+    }
+
+    /**
      * POST /api/wallet/deposit
      * Nạp tiền vào ví
      * Body: { amount, paymentMethod, metadata }

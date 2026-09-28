@@ -11,11 +11,13 @@ import {
   CheckCircle,
   Shield,
   Gavel,
-  ChevronRight
+  ChevronRight,
+  Wallet
 } from 'lucide-react';
 
 import { useAuth } from '../../contexts/AuthContext';
 import { auctionAPI, biddingAPI } from '../../services/api';
+import walletApi from '../../services/walletApi';
 import {
   connectSocket,
   disconnectSocket,
@@ -47,6 +49,18 @@ const AuctionDetailPage = () => {
   const [isRegistered, setIsRegistered] = useState(false);
   const [checkingRegistration, setCheckingRegistration] = useState(true);
   const [showDepositModal, setShowDepositModal] = useState(false);
+  const [userWallet, setUserWallet] = useState(null);
+
+  const fetchWallet = async () => {
+    try {
+      const res = await walletApi.getWalletBalance();
+      if (res?.data?.data) {
+        setUserWallet(res.data.data);
+      }
+    } catch (err) {
+      console.error('Error fetching wallet:', err);
+    }
+  };
 
   // Track if we've already joined this auction to prevent duplicates
   const hasJoinedRef = useRef(false);
@@ -64,6 +78,7 @@ const AuctionDetailPage = () => {
     fetchAuctionDetails();
     if (isAuthenticated) {
       checkRegistration();
+      fetchWallet();
     } else {
       setCheckingRegistration(false);
     }
@@ -294,11 +309,20 @@ const AuctionDetailPage = () => {
       return;
     }
 
+    if (userWallet) {
+      const availableBalance = userWallet.availableBalance !== undefined ? userWallet.availableBalance : (userWallet.balance || 0);
+      if (amount > availableBalance) {
+        toast.error(`Số dư ví không đủ (${availableBalance.toLocaleString('vi-VN')} ₫) để đặt giá (${amount.toLocaleString('vi-VN')} ₫). Vui lòng nạp thêm tiền!`);
+        return;
+      }
+    }
+
     setBidding(true);
     try {
       await placeBid(id, amount);
       // toast.success('Đặt giá thành công! 🎉');
       setBidAmount(amount + auction.minBidIncrement);
+      fetchWallet();
     } catch (error) {
       toast.error(error.message || 'Đặt giá thất bại');
     } finally {
@@ -608,6 +632,22 @@ const AuctionDetailPage = () => {
                         </div>
                       ) : isActive ? (
                         <form onSubmit={handlePlaceBid} className="flex flex-col gap-3">
+                          {userWallet && (
+                            <div className="flex items-center justify-between text-xs bg-orange-50/80 border border-orange-200/60 rounded-xl px-3.5 py-2.5 text-[#5c4536]">
+                              <div className="flex items-center gap-1.5">
+                                <Wallet size={15} className="text-[#f26c0d]" />
+                                <span>Ví khả dụng: <strong className="text-[#f26c0d] font-bold">{new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(userWallet.availableBalance !== undefined ? userWallet.availableBalance : userWallet.balance)}</strong></span>
+                              </div>
+                              <button
+                                type="button"
+                                onClick={() => navigate('/wallet')}
+                                className="text-[#f26c0d] font-bold hover:underline transition-colors text-xs"
+                              >
+                                Nạp thêm +
+                              </button>
+                            </div>
+                          )}
+
                           <div className="relative">
                             <span className="absolute left-4 top-1/2 -translate-y-1/2 text-[#9c6c49] font-semibold">₫</span>
                             <input

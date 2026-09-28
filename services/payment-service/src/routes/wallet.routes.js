@@ -9,6 +9,7 @@ const walletController = require('../controllers/walletController');
  * @access  Private
  */
 router.get('/balance', authMiddleware, walletController.getBalance);
+router.get('/user/:userId/balance', walletController.getUserBalance);
 
 /**
  * @route   POST /api/wallet/deposit

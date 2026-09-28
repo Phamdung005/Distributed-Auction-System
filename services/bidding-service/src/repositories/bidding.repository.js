@@ -1,14 +1,33 @@
 const Bid = require('../models/Bid');
 const axios = require('axios');
 
-// Auction Service URL from environment or default
-const AUCTION_SERVICE_URL = process.env.AUCTION_SERVICE_URL || 'http://auction-service:3002';
+// Auction & Payment Service URLs from environment or default
+const AUCTION_SERVICE_URL = process.env.AUCTION_SERVICE_URL || 'http://localhost:3002';
+const PAYMENT_SERVICE_URL = process.env.PAYMENT_SERVICE_URL || 'http://localhost:3006';
 
 /**
  * Repository Layer cho Bidding
  * Note: Auction data should be fetched via Auction Service API, not direct DB access
  */
 class BiddingRepository {
+
+    /**
+     * Lấy thông tin ví của user từ Payment Service
+     * @param {string} userId
+     * @returns {Promise<Object|null>}
+     */
+    async getUserWallet(userId) {
+        try {
+            const response = await axios.get(
+                `${PAYMENT_SERVICE_URL}/api/wallet/user/${userId}/balance`,
+                { timeout: 5000 }
+            );
+            return response.data?.data || null;
+        } catch (error) {
+            console.error(`Error fetching wallet for user ${userId}:`, error.message);
+            return null;
+        }
+    }
 
     /**
      * Lấy auction từ Auction Service
