@@ -9,7 +9,6 @@ Hệ thống sàn đấu giá trực tuyến xây dựng theo kiến trúc **Mic
 | Dịch vụ | Nền tảng | Đường dẫn truy cập | Mô tả |
 | :--- | :--- | :--- | :--- |
 | **Frontend Web App** | Vercel | [https://ung-dung-phan-tan-web-auction.vercel.app](https://ung-dung-phan-tan-web-auction.vercel.app) | Giao diện Web SPA cho Bidder, Seller và Admin |
-| **Backend API Gateway** | Render | [https://distributed-auction-system.onrender.com](https://distributed-auction-system.onrender.com) | Cổng kết nối trung tâm định tuyến toàn bộ REST API & WebSocket |
 | **API Health Check** | Render | [https://distributed-auction-system.onrender.com/health](https://distributed-auction-system.onrender.com/health) | Kiểm tra trạng thái hoạt động của hệ thống |
 | **Database** | MongoDB Atlas | *Cloud Replica Set* | Cụm cơ sở dữ liệu phân tán đám mây |
 | **In-Memory Cache & Pub/Sub** | Upstash Redis | *Cloud Redis Cluster* | Quản lý Distributed Lock và Event Pub/Sub |
@@ -109,26 +108,6 @@ Yêu cầu máy đã cài đặt **Docker** và **Docker Compose**.
    ```bash
    docker-compose down
    ```
-
----
-
-### Cách 2: Khởi chạy Frontend độc lập kết nối Cloud API
-
-Nếu muốn phát triển Frontend nhanh mà không cần chạy toàn bộ Backend ở local:
-
-```bash
-cd frontend
-npm install
-npm run dev
-```
-
-Cấu hình file `frontend/.env`:
-```env
-VITE_API_URL=https://distributed-auction-system.onrender.com
-VITE_SOCKET_URL=https://distributed-auction-system.onrender.com
-```
-
-Ứng dụng Frontend sẽ chạy tại `http://localhost:5173` và tự động kết nối tới API Gateway đã triển khai trên Render.
 
 ---
 
