@@ -8,7 +8,7 @@ Hệ thống sàn đấu giá trực tuyến xây dựng theo kiến trúc **Mic
 
 | Dịch vụ | Nền tảng | Đường dẫn truy cập | Mô tả |
 | :--- | :--- | :--- | :--- |
-| **Frontend Web App** | Vercel | [https://ung-dung-phan-tan-web-auction.vercel.app](https://ung-dung-phan-tan-web-auction.vercel.app) | Giao diện Web SPA cho Bidder, Seller và Admin |
+| **Frontend Web App** | Vercel | [https://ung-dung-phan-tan-web-auction.vercel.app](https://distributed-auction-system.vercel.app/) | Giao diện Web SPA cho Bidder, Seller và Admin |
 | **API Health Check** | Render | [https://distributed-auction-system.onrender.com/health](https://distributed-auction-system.onrender.com/health) | Kiểm tra trạng thái hoạt động của hệ thống |
 | **Database** | MongoDB Atlas | *Cloud Replica Set* | Cụm cơ sở dữ liệu phân tán đám mây |
 | **In-Memory Cache & Pub/Sub** | Upstash Redis | *Cloud Redis Cluster* | Quản lý Distributed Lock và Event Pub/Sub |
